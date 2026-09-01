@@ -39,7 +39,7 @@ function ResetPassword() {
 }
 
   return (
-    <div className="h-screen overflow-hidden bg-[#f7fbf8] text-[#173f2a] font-[Arial] flex flex-col">
+    <div className="h-screen overflow-hidden bg-[#f7fbf8] text-[#173f2a] font-[Arial] flex flex-col animate-[pageFadeIn_0.7s_ease]">
 
       <header className="w-full h-[76px] px-[7%] flex items-center justify-between bg-white border-b border-[#e5eee8] shrink-0">
         <Link to="/login" className="flex items-center no-underline">
@@ -74,7 +74,7 @@ function ResetPassword() {
             'radial-gradient(circle at 15% 30%, rgba(78, 160, 105, 0.08), transparent 25%), radial-gradient(circle at 85% 70%, rgba(78, 160, 105, 0.07), transparent 25%), #f7fbf8',
         }}
       >
-        <div className="w-full max-w-[460px] px-10 py-8 bg-white border border-[#e3eee6] rounded-[18px] shadow-[0_18px_45px_rgba(33,78,50,0.09)]">
+        <div className="w-full max-w-[460px] px-10 py-8 bg-white border border-[#e3eee6] rounded-[18px] shadow-[0_18px_45px_rgba(33,78,50,0.09)] animate-[slideUp_0.7s_ease-out]">
 
           <div className="text-center mb-6">
             <p className="mb-2 text-[#27834d] text-xs font-bold tracking-[2px]">
@@ -160,7 +160,7 @@ function ResetPassword() {
               )}
 
               <p className="text-[#718277] text-xs leading-relaxed">
-                Your password must contain at least 6 characters.
+                 Your password must contain at least 8 characters, including uppercase, lowercase, number and special character.
               </p>
 
               <button
