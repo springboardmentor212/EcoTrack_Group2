@@ -21,7 +21,7 @@ function ForgotPassword() {
     <div className="h-screen overflow-hidden bg-[#f7fbf8] text-[#173f2a] font-[Arial] flex flex-col animate-[pageFadeIn_0.7s_ease]">
 
       <header className="w-full h-[76px] px-[7%] flex items-center justify-between bg-white border-b border-[#e5eee8] shrink-0">
-        <Link to="/" className="flex items-center no-underline">
+        <Link to="/login" className="flex items-center no-underline">
           <img
             src="/assets/Ecotrack1.png"
             alt="EcoTrack"
