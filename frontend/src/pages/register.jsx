@@ -1,256 +1,265 @@
- import { useState } from "react";
- 
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+
 function Register() {
-   const [formData, setFormData] = useState({
-  name: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
-  terms: false,
-});
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [name, setName] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [acceptTerms, setAcceptTerms] = useState(false)
 
-const [errors, setErrors] = useState({});
+  
+  
+  
+  const handleSubmit = (event) => {
+  event.preventDefault()
+
+  setError('')
+
+  if (!email.trim()) {
+    setError('Please enter your email address.')
+    return
+  }
+
+  if (!email.includes('@')) {
+    setError('Please enter a valid email address.')
+    return
+  }
+
+  if (!password.trim()) {
+    setError('Please enter your password.')
+    return
+  }
+  if (!acceptTerms) {
+  setError('Please accept the Terms & Conditions.')
+  return
+}
+  setIsLoading(true)
  
+  setTimeout(() => {
+    setIsLoading(false)
+  }, 1500)
+}
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="h-screen overflow-hidden bg-[#f7fbf8] text-[#173f2a] font-[Arial] flex flex-col animate-[pageFadeIn_0.7s_ease]">
 
-      {/* Navbar */}
-      <header className="flex items-center justify-between px-8 py-5 border-b">
-        <div className="text-2xl font-bold text-green-700">
-          EcoTrack
-        </div>
+      <header className="w-full min-h-[90px] px-[7%] flex items-center justify-between bg-white border-b border-[#e5eee8] relative z-10 shrink-0">
+        <a href="/" className="flex items-center no-underline text-inherit">
+          <img
+            src="/assets/Ecotrack1.png"
+            alt="EcoTrack"
+            className="w-[145px] h-auto block"
+          />
+        </a>
 
-        <div className="flex items-center gap-4">
-          <button className="text-gray-700 hover:text-green-700">
+        <div className="flex items-center gap-[18px]">
+          <a
+            href="/"
+            className="text-[#27834d] text-[15px] font-semibold no-underline hover:text-[#1e6e40]"
+          >
             Login
-          </button>
+          </a>
 
-          <button className="rounded-lg bg-green-700 px-5 py-2 text-white hover:bg-green-800">
+          <a
+            href="/register"
+            className="px-[22px] py-[11px] bg-[#27834d] text-white rounded-lg text-sm font-semibold no-underline transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px"
+          >
             Register
-          </button>
+          </a>
         </div>
       </header>
 
+      <main
+        className="flex-1 min-h-0 flex items-center justify-center px-5 py-[18px]"
+        style={{
+          background:
+            'radial-gradient(circle at 15% 30%, rgba(78, 160, 105, 0.08), transparent 25%), radial-gradient(circle at 85% 70%, rgba(78, 160, 105, 0.07), transparent 25%), #f7fbf8',
+        }}
+      >
+        <div className="w-full max-w-[460px] px-10 py-[27px] bg-white border border-[#e3eee6] rounded-[18px] shadow-[0_18px_45px_rgba(33,78,50,0.09)] animate-[slideUp_0.7s_ease-out]">
 
-      {/* Registration Section */}
-      <main className="flex min-h-[calc(100vh-81px)] items-center justify-center px-4 py-10">
+          <div className="text-center mb-[19px]">
+            
 
-        <div className="w-full max-w-md">
-
-          {/* Heading */}
-          <div className="mb-8 text-center">
-
-            <p className="mb-2 text-sm font-semibold tracking-widest text-green-700">
-              GET STARTED
-            </p>
-
-            <h1 className="text-3xl font-bold text-gray-900">
-              Create your{" "}
-              <span className="text-green-700">
+            <h1 className="mb-[7px] text-[#173f2a] text-[30px] leading-[1.2] font-bold">
+              Register for{' '}
+              <span className="text-[#27834d]">
                 EcoTrack
-              </span>{" "}
-              account
+              </span>
             </h1>
 
-            <p className="mt-3 text-gray-500">
-              Start tracking your impact and build a greener future.
+            <p className="text-[#718277] text-sm leading-[1.5]">
+              Start your journey toward a greener future.
             </p>
-
           </div>
 
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-[13px]"
+          >
+            
 
-          {/* Registration Form */}
-        <form
-  className="space-y-5"
-  onSubmit={(e) => {
-    e.preventDefault();
-    console.log(formData);
-  }}
->
-
-            {/* Full Name */}
-            <div>
+          
+            <div className="flex flex-col gap-[7px]">
               <label
                 htmlFor="name"
-                className="mb-2 block text-sm font-medium text-gray-700"
+                className="text-[#294a36] text-sm font-semibold"
               >
-                Full Name
+                Name
               </label>
 
-              <input 
-  type="text" 
-  id="name" 
-  name="name" 
-  placeholder="Enter your full name"
-  value={formData.name}
-  onChange={(e) =>
-    setFormData({
-      ...formData,
-      name: e.target.value,
-    })
-  }
-  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100" 
-/>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your full name"
+                required
+                className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none"
+              />
             </div>
 
+            <div className="flex flex-col gap-[7px]">
+  <label
+    htmlFor="email"
+    className="text-[#294a36] text-sm font-semibold"
+  >
+    Email Address
+  </label>
 
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-sm font-medium text-gray-700"
-              >
-                Email Address
-              </label>
+  <input
+    type="email"
+    id="email"
+    name="email"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    placeholder="Enter your email"
+    autoComplete="email"
+    required
+    className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+  />
+</div>
 
-              <input 
-  type="email" 
-  id="email" 
-  name="email" 
-  placeholder="Enter your email"
-  value={formData.email}
-  onChange={(e) =>
-    setFormData({
-      ...formData,
-      email: e.target.value,
-    })
-  }
-  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100" 
-/>
-            </div>
-
-
-            {/* Password */}
-            <div>
+            <div className="flex flex-col gap-[7px]">
               <label
                 htmlFor="password"
-                className="mb-2 block text-sm font-medium text-gray-700"
+                className="text-[#294a36] text-sm font-semibold"
               >
                 Password
               </label>
 
-              <input 
-  type="password" 
-  id="password" 
-  name="password" 
-  placeholder="Create a password"
-  value={formData.password}
-  onChange={(e) =>
-    setFormData({
-      ...formData,
-      password: e.target.value,
-    })
-  }
-  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100" 
-/>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  required
+                  className="w-full h-[45px] px-[15px] pr-16 border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+                />
+
+                <button
+  type="button"
+  onClick={() => setShowPassword(!showPassword)}
+  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#27834d] text-lg bg-transparent border-0 cursor-pointer"
+>
+  {showPassword ? <FaEyeSlash /> : <FaEye />}
+</button>
+              </div>
+
+              <div className="flex flex-col gap-[7px]">
+  <label
+    htmlFor="confirmPassword"
+    className="text-[#294a36] text-sm font-semibold"
+  >
+    Confirm Password
+  </label>
+
+  <div className="relative">
+    <input
+      type={showConfirmPassword ? 'text' : 'password'}
+      id="confirmPassword"
+      value={confirmPassword}
+      onChange={(e) => setConfirmPassword(e.target.value)}
+      placeholder="Confirm your password"
+      required
+      className="w-full h-[45px] px-[15px] pr-16 border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white"
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#27834d] text-lg bg-transparent border-0 cursor-pointer"
+    >
+      {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+    </button>
+  </div>
+</div>
+              
             </div>
 
+            {error && (
+              <div className="px-4 py-3 rounded-[9px] bg-[#fff1f1] border border-[#f2caca] text-[#c53b3b] text-[13px] text-center">
+                {error}
+              </div>
+            )}
+            <div className="flex items-start gap-3">
+  <input
+    type="checkbox"
+    id="terms"
+    checked={acceptTerms}
+    onChange={(e) => setAcceptTerms(e.target.checked)}
+    className="mt-1 h-4 w-4 accent-[#27834d] cursor-pointer"
+  />
 
-            {/* Confirm Password */}
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="mb-2 block text-sm font-medium text-gray-700"
-              >
-                Confirm Password
-              </label>
-
-              <input 
-  type="password" 
-  id="confirmPassword" 
-  name="confirmPassword" 
-  placeholder="Confirm your password"
-  value={formData.confirmPassword}
-  onChange={(e) =>
-    setFormData({
-      ...formData,
-      confirmPassword: e.target.value,
-    })
-  }
-  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100" 
-/>
-            </div>
-
-
-            {/* Terms */}
-            <div className="flex items-start gap-3 text-sm text-gray-600">
-
-              <input 
-  type="checkbox" 
-  id="terms" 
-  name="terms"
-  checked={formData.terms}
-  onChange={(e) =>
-    setFormData({
-      ...formData,
-      terms: e.target.checked,
-    })
-  }
-  className="mt-1 h-4 w-4 accent-green-700" 
-/>
-
-              <label htmlFor="terms">
-                I agree to the{" "}
-                <a href="#" className="text-green-700 hover:underline">
-                  Terms & Conditions
-                </a>{" "}
-                and{" "}
-                <a href="#" className="text-green-700 hover:underline">
-                  Privacy Policy
-                </a>
-              </label>
-
-            </div>
-
-
-            {/* Create Account */}
+  <label
+    htmlFor="terms"
+    className="text-sm text-[#718277] leading-5"
+  >
+    I agree to the{" "}
+      Terms & Conditions
+    and{" "}
+      Privacy Policy
+  </label>
+</div>
             <button
               type="submit"
-              className="w-full rounded-lg bg-green-700 py-3 font-semibold text-white transition hover:bg-green-800"
+              className="w-full h-[45px] mt-0.5 border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px"
             >
-              Create Account
+              {isLoading ? 'Creating account...' : 'Create Account'}
             </button>
-
           </form>
 
-
-          {/* Divider */}
-          <div className="my-6 flex items-center gap-4">
-
-            <div className="h-px flex-1 bg-gray-200"></div>
-
-            <span className="text-sm text-gray-400">
-              OR
-            </span>
-
-            <div className="h-px flex-1 bg-gray-200"></div>
-
+          <div className="flex items-center gap-[14px] my-[15px] text-[#9aa99f] text-xs font-semibold">
+            <div className="flex-1 h-px bg-[#e1eae4]" />
           </div>
 
+          
 
-          {/* Google */}
-          <button
-            type="button"
-            className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 py-3 font-medium text-gray-700 transition hover:bg-gray-50"
-          >
-            Continue with Google
-          </button>
-
-
-          {/* Login */}
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{" "}
-            <a href="#" className="font-semibold text-green-700 hover:underline">
-              Login
+          <p className="mt-[14px] text-center text-[#718277] text-[13px]">
+            Already have an account?{' '}
+            <a
+              href="/login"
+              className="text-[#27834d] font-semibold no-underline hover:underline"
+            >
+              Log in
             </a>
           </p>
 
         </div>
-
       </main>
 
     </div>
-  );
+  )
 }
 
-export default Register;
+export default Register
