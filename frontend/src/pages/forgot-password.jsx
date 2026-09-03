@@ -1,62 +1,231 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import axios from 'axios'
+import { toast } from 'react-toastify'
 
 function ForgotPassword() {
-  const [email, setEmail] = useState('')
-  const [message, setMessage] = useState('')
-  const navigate = useNavigate()
-  const handleSubmit = (event) => {
-  event.preventDefault()
+const [email, setEmail] = useState('')
+const [otp, setOtp] = useState('')
+const [newPassword, setNewPassword] = useState('')
+const [confirmPassword, setConfirmPassword] = useState('')
+const [showNewPassword, setShowNewPassword] = useState(false)
+const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+const [error, setError] = useState('')
+const [isLoading, setIsLoading] = useState(false)
+const [step, setStep] = useState('forgot')
 
-  if (email.trim()) {
-    setMessage('Password reset instructions sent successfully.')
+const navigate = useNavigate()
 
-    setTimeout(() => {
-      navigate('/reset-password')
-    }, 1500)
-  }
+const emailPattern =
+/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+.[A-Za-z]{2,}$/
+
+const passwordPattern =
+/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{8,}$/
+
+const API_URL = 'http://localhost:3000/user'
+
+const handleSendOtp = async (event) => {
+event.preventDefault()
+
+setError('')
+
+if (!email.trim()) {
+  setError('Please enter your email address.')
+  return
 }
 
-  return (
-    <div className="h-screen overflow-hidden bg-[#f7fbf8] text-[#173f2a] font-[Arial] flex flex-col animate-[pageFadeIn_0.7s_ease]">
+if (!emailPattern.test(email)) {
+  setError('Please enter a valid email address.')
+  return
+}
 
-      <header className="w-full h-[76px] px-[7%] flex items-center justify-between bg-white border-b border-[#e5eee8] shrink-0">
-        <Link to="/login" className="flex items-center no-underline">
-          <img
-            src="/assets/Ecotrack1.png"
-            alt="EcoTrack"
-            className="w-[145px] h-auto block"
-          />
-        </Link>
+try {
+  setIsLoading(true)
 
-        <div className="flex items-center gap-[18px]">
-          <Link
-            to="/login"
-            className="text-[#27834d] text-[15px] font-semibold no-underline hover:text-[#1e6e40]"
-          >
-            Login
-          </Link>
+  const response = await axios.post(
+    `${API_URL}/resendOtp`,
+    {
+      email,
+    },
+    {
+      withCredentials: true,
+    }
+  )
 
-          <Link
-            to="/register"
-            className="px-[22px] py-[11px] bg-[#27834d] text-white rounded-lg text-sm font-semibold no-underline transition duration-200 hover:bg-[#1e6e40]"
-          >
-            Register
-          </Link>
-        </div>
-      </header>
+  const data = response.data
 
-      <main
-        className="flex-1 min-h-0 flex items-center justify-center px-5 py-[18px]"
-        style={{
-          background:
-            'radial-gradient(circle at 15% 30%, rgba(78, 160, 105, 0.08), transparent 25%), radial-gradient(circle at 85% 70%, rgba(78, 160, 105, 0.07), transparent 25%), #f7fbf8',
-        }}
+  if (data.success === true) {
+    toast.success(data.message)
+    setStep('otp')
+    return
+  }
+
+  toast.error(data.message || 'Failed to send OTP.')
+} catch (err) {
+  const message =
+    err.response?.data?.message ||
+    'Failed to send OTP. Please try again.'
+
+  setError(message)
+  toast.error(message)
+} finally {
+  setIsLoading(false)
+}
+```
+
+}
+
+const handleVerifyOtp = async (event) => {
+event.preventDefault()
+
+```
+setError('')
+
+if (!otp.trim()) {
+  setError('Please enter the OTP.')
+  return
+}
+
+try {
+  setIsLoading(true)
+
+  const response = await axios.post(
+    `${API_URL}/verifyEmail`,
+    {
+      email,
+      code: otp,
+    },
+    {
+      withCredentials: true,
+    }
+  )
+
+  const data = response.data
+
+  if (data.success === true) {
+    toast.success(data.message)
+    setStep('reset')
+    return
+  }
+
+  toast.error(data.message || 'OTP verification failed.')
+} catch (err) {
+  const message =
+    err.response?.data?.message || 'OTP verification failed.'
+
+  setError(message)
+  toast.error(message)
+} finally {
+  setIsLoading(false)
+}
+```
+
+}
+
+const handleResetPassword = async (event) => {
+event.preventDefault()
+
+```
+setError('')
+
+if (!newPassword.trim() || !confirmPassword.trim()) {
+  setError('Please fill in all password fields.')
+  return
+}
+
+if (!passwordPattern.test(newPassword)) {
+  setError(
+    'Password must contain at least 8 characters, including uppercase, lowercase, number and special character.'
+  )
+  return
+}
+
+if (newPassword !== confirmPassword) {
+  setError('Passwords do not match.')
+  return
+}
+
+try {
+  setIsLoading(true)
+
+  const response = await axios.patch(
+    `${API_URL}/resetPassword`,
+    {
+      email,
+      password: newPassword,
+      confirmPassword,
+    },
+    {
+      withCredentials: true,
+    }
+  )
+
+  const data = response.data
+
+  if (data.success === true) {
+    toast.success(data.message)
+
+    setTimeout(() => {
+      navigate('/login')
+    }, 1500)
+
+    return
+  }
+
+  toast.error(data.message || 'Password reset failed.')
+} catch (err) {
+  const message =
+    err.response?.data?.message ||
+    'Password reset failed. Please try again.'
+
+  setError(message)
+  toast.error(message)
+} finally {
+  setIsLoading(false)
+}
+
+}
+
+return ( <div className="h-screen overflow-hidden bg-[#f7fbf8] text-[#173f2a] font-[Arial] flex flex-col animate-[pageFadeIn_0.7s_ease]">
+
+  <header className="w-full h-[76px] px-[7%] flex items-center justify-between bg-white border-b border-[#e5eee8] shrink-0">
+    <Link to="/login" className="flex items-center no-underline">
+      <img
+        src="/assets/Ecotrack1.png"
+        alt="EcoTrack"
+        className="w-[145px] h-auto block"
+      />
+    </Link>
+
+    <div className="flex items-center gap-[18px]">
+      <Link
+        to="/login"
+        className="text-[#27834d] text-[15px] font-semibold no-underline hover:text-[#1e6e40]"
       >
-        <div className="w-full max-w-[460px] px-10 py-9 bg-white border border-[#e3eee6] rounded-[18px] shadow-[0_18px_45px_rgba(33,78,50,0.09)] animate-[slideUp_0.7s_ease-out]">
+        Login
+      </Link>
 
+      <Link
+        to="/register"
+        className="px-[22px] py-[11px] bg-[#27834d] text-white rounded-lg text-sm font-semibold no-underline transition duration-200 hover:bg-[#1e6e40]"
+      >
+        Register
+      </Link>
+    </div>
+  </header>
+
+  <main
+    className="flex-1 min-h-0 flex items-center justify-center px-5 py-[18px]"
+    style={{
+      background:
+        'radial-gradient(circle at 15% 30%, rgba(78, 160, 105, 0.08), transparent 25%), radial-gradient(circle at 85% 70%, rgba(78, 160, 105, 0.07), transparent 25%), #f7fbf8',
+    }}
+  >
+    <div className="w-full max-w-[460px] px-10 py-8 bg-white border border-[#e3eee6] rounded-[18px] shadow-[0_18px_45px_rgba(33,78,50,0.09)] animate-[slideUp_0.7s_ease-out]">
+
+      {step === 'forgot' && (
+        <>
           <div className="text-center mb-7">
-
             <p className="mb-2 text-[#27834d] text-xs font-bold tracking-[2px]">
               PASSWORD RECOVERY
             </p>
@@ -66,18 +235,15 @@ function ForgotPassword() {
             </h1>
 
             <p className="text-[#718277] text-sm leading-[1.6]">
-              Don't worry. Enter your email address and we'll help you reset your password.
+              Enter your registered email address and we'll send you an OTP.
             </p>
-
           </div>
 
           <form
-            onSubmit={handleSubmit}
+            onSubmit={handleSendOtp}
             className="flex flex-col gap-5"
           >
-
             <div className="flex flex-col gap-[7px]">
-
               <label
                 htmlFor="email"
                 className="text-[#294a36] text-sm font-semibold"
@@ -91,47 +257,208 @@ function ForgotPassword() {
                 value={email}
                 onChange={(event) => {
                   setEmail(event.target.value)
-                  setMessage('')
+                  setError('')
                 }}
                 placeholder="Enter your email"
                 autoComplete="email"
-                required
                 className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
               />
-
             </div>
 
-            {message && (
-              <div className="px-4 py-3 rounded-[9px] bg-[#edf8f0] border border-[#cde8d4] text-[#27834d] text-[13px] text-center">
-                {message}
+            {error && (
+              <div className="px-4 py-3 rounded-[9px] bg-[#fff1f1] border border-[#f2caca] text-[#c53b3b] text-[13px] text-center">
+                {error}
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px"
+              disabled={isLoading}
+              className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Send Reset Link
+              {isLoading ? 'Sending OTP...' : 'Send OTP'}
             </button>
-
           </form>
+        </>
+      )}
 
-          <div className="mt-6 text-center">
+      {step === 'otp' && (
+        <>
+          <div className="text-center mb-7">
+            <p className="mb-2 text-[#27834d] text-xs font-bold tracking-[2px]">
+              OTP VERIFICATION
+            </p>
 
-            <Link
-              to="/login"
-              className="text-[#27834d] text-[13px] font-semibold no-underline hover:underline"
-            >
-              ← Back to Login
-            </Link>
+            <h1 className="mb-3 text-[#173f2a] text-[30px] leading-[1.2] font-bold">
+              Verify your <span className="text-[#27834d]">email</span>
+            </h1>
 
+            <p className="text-[#718277] text-sm leading-[1.6]">
+              Enter the OTP sent to your email address.
+            </p>
           </div>
 
-        </div>
-      </main>
+          <form
+            onSubmit={handleVerifyOtp}
+            className="flex flex-col gap-5"
+          >
+            <div className="flex flex-col gap-[7px]">
+              <label
+                htmlFor="otp"
+                className="text-[#294a36] text-sm font-semibold"
+              >
+                OTP
+              </label>
+
+              <input
+                type="text"
+                id="otp"
+                value={otp}
+                onChange={(event) => {
+                  setOtp(event.target.value)
+                  setError('')
+                }}
+                placeholder="Enter OTP"
+                className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+              />
+            </div>
+
+            {error && (
+              <div className="px-4 py-3 rounded-[9px] bg-[#fff1f1] border border-[#f2caca] text-[#c53b3b] text-[13px] text-center">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Verifying...' : 'Verify OTP'}
+            </button>
+          </form>
+        </>
+      )}
+
+      {step === 'reset' && (
+        <>
+          <div className="text-center mb-6">
+            <p className="mb-2 text-[#27834d] text-xs font-bold tracking-[2px]">
+              CREATE NEW PASSWORD
+            </p>
+
+            <h1 className="mb-2 text-[#173f2a] text-[30px] leading-[1.2] font-bold">
+              Reset your <span className="text-[#27834d]">password</span>
+            </h1>
+
+            <p className="text-[#718277] text-sm leading-[1.5]">
+              Create a new secure password for your EcoTrack account.
+            </p>
+          </div>
+
+          <form
+            onSubmit={handleResetPassword}
+            className="flex flex-col gap-4"
+          >
+            <div className="flex flex-col gap-[7px]">
+              <label
+                htmlFor="newPassword"
+                className="text-[#294a36] text-sm font-semibold"
+              >
+                New Password
+              </label>
+
+              <div className="relative">
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  id="newPassword"
+                  value={newPassword}
+                  onChange={(event) => {
+                    setNewPassword(event.target.value)
+                    setError('')
+                  }}
+                  placeholder="Enter new password"
+                  className="w-full h-[45px] px-[15px] pr-14 border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#27834d] text-xs font-semibold bg-transparent border-0 cursor-pointer"
+                >
+                  {showNewPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-[7px]">
+              <label
+                htmlFor="confirmPassword"
+                className="text-[#294a36] text-sm font-semibold"
+              >
+                Confirm New Password
+              </label>
+
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value)
+                    setError('')
+                  }}
+                  placeholder="Confirm new password"
+                  className="w-full h-[45px] px-[15px] pr-14 border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowConfirmPassword(!showConfirmPassword)
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#27834d] text-xs font-semibold bg-transparent border-0 cursor-pointer"
+                >
+                  {showConfirmPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="px-4 py-3 rounded-[9px] bg-[#fff1f1] border border-[#f2caca] text-[#c53b3b] text-[13px] text-center">
+                {error}
+              </div>
+            )}
+
+            <p className="text-[#718277] text-xs leading-relaxed">
+              Your password must contain at least 8 characters, including uppercase, lowercase, number and special character.
+            </p>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Resetting Password...' : 'Reset Password'}
+            </button>
+          </form>
+        </>
+      )}
+
+      <div className="mt-6 text-center">
+        <Link
+          to="/login"
+          className="text-[#27834d] text-[13px] font-semibold no-underline hover:underline"
+        >
+          ← Back to Login
+        </Link>
+      </div>
 
     </div>
-  )
+  </main>
+</div>
+
+)
 }
 
 export default ForgotPassword
