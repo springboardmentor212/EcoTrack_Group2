@@ -1,39 +1,147 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
+import { toast } from 'react-toastify'
 
 function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [otp, setOtp] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  
-  const handleSubmit = (event) => {
-  event.preventDefault()
+  const [success, setSuccess] = useState(false)
 
-  setError('')
+  const navigate = useNavigate()
 
-  if (!email.trim()) {
-    setError('Please enter your email address.')
-    return
+  const emailPattern =
+    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
+
+  const passwordPattern =
+    /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{8,}$/
+
+  const API_URL = 'http://localhost:3000/user'
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+
+    setError('')
+
+    if (!email.trim()) {
+      setError('Please enter your email address.')
+      return
+    }
+
+    if (!emailPattern.test(email)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    if (!password.trim()) {
+      setError('Please enter your password.')
+      return
+    }
+
+    if (!passwordPattern.test(password)) {
+      setError(
+        'Password must contain uppercase, lowercase, number, special character and follow the required format.'
+      )
+      return
+    }
+
+    try {
+      setIsLoading(true)
+
+      const response = await axios.post(
+        `${API_URL}/login`,
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true,
+        }
+      )
+
+      const data = response.data
+
+      if (data.success === 'true') {
+        setSuccess(true)
+        toast.success(data.message)
+
+        setTimeout(() => {
+          navigate('/')
+        }, 1000)
+
+        return
+      }
+
+      if (data.success === 'unverifed') {
+        setSuccess('unverifed')
+        toast.info(data.message)
+        return
+      }
+
+      toast.error(data.message || 'Login failed.')
+    } catch (err) {
+      const message =
+        err.response?.data?.message || 'Something went wrong. Please try again.'
+
+      setError(message)
+      toast.error(message)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  if (!email.includes('@')) {
-    setError('Please enter a valid email address.')
-    return
-  }
+  const handleVerifyOtp = async (event) => {
+    event.preventDefault()
 
-  if (!password.trim()) {
-    setError('Please enter your password.')
-    return
-  }
+    setError('')
 
-  setIsLoading(true)
- 
-  setTimeout(() => {
-    setIsLoading(false)
-  }, 1500)
-}
+    if (!otp.trim()) {
+      setError('Please enter the OTP.')
+      return
+    }
+
+    try {
+      setIsLoading(true)
+
+      const response = await axios.post(
+        `${API_URL}/verifyEmail`,
+        {
+          email,
+          code: otp,
+        },
+        {
+          withCredentials: true,
+        }
+      )
+
+      const data = response.data
+
+      if (data.success === true) {
+        setSuccess(true)
+        toast.success(data.message)
+
+        setTimeout(() => {
+          navigate('/')
+        }, 1000)
+
+        return
+      }
+
+      toast.error(data.message || 'OTP verification failed.')
+    } catch (err) {
+      const message =
+        err.response?.data?.message || 'OTP verification failed.'
+
+      setError(message)
+      toast.error(message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="h-screen overflow-hidden bg-[#f7fbf8] text-[#173f2a] font-[Arial] flex flex-col animate-[pageFadeIn_0.7s_ease]">
@@ -73,158 +181,169 @@ function Login() {
       >
         <div className="w-full max-w-[460px] px-10 py-[27px] bg-white border border-[#e3eee6] rounded-[18px] shadow-[0_18px_45px_rgba(33,78,50,0.09)] animate-[slideUp_0.7s_ease-out]">
 
-          <div className="text-center mb-[19px]">
-            <p className="mb-2 text-[#27834d] text-xs font-bold tracking-[2px]">
-              WELCOME BACK
-            </p>
+          {success === false && (
+            <>
+              <div className="text-center mb-[19px]">
+                <p className="mb-2 text-[#27834d] text-xs font-bold tracking-[2px]">
+                  WELCOME BACK
+                </p>
 
-            <h1 className="mb-[7px] text-[#173f2a] text-[30px] leading-[1.2] font-bold">
-              Login to{' '}
-              <span className="text-[#27834d]">
-                EcoTrack
-              </span>
-            </h1>
+                <h1 className="mb-[7px] text-[#173f2a] text-[30px] leading-[1.2] font-bold">
+                  Login to{' '}
+                  <span className="text-[#27834d]">
+                    EcoTrack
+                  </span>
+                </h1>
 
-            <p className="text-[#718277] text-sm leading-[1.5]">
-              Continue your journey toward a greener future.
-            </p>
-          </div>
+                <p className="text-[#718277] text-sm leading-[1.5]">
+                  Continue your journey toward a greener future.
+                </p>
+              </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-[13px]"
-          >
-            <div className="flex flex-col gap-[7px]">
-              <label
-                htmlFor="email"
-                className="text-[#294a36] text-sm font-semibold"
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col gap-[13px]"
               >
-                Email Address
-              </label>
+                <div className="flex flex-col gap-[7px]">
+                  <label
+                    htmlFor="email"
+                    className="text-[#294a36] text-sm font-semibold"
+                  >
+                    Email Address
+                  </label>
 
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="Enter your email"
-                autoComplete="email"
-                required
-                className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
-              />
-            </div>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="Enter your email"
+                    autoComplete="email"
+                    className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+                  />
+                </div>
 
-            <div className="flex flex-col gap-[7px]">
-              <label
-                htmlFor="password"
-                className="text-[#294a36] text-sm font-semibold"
-              >
-                Password
-              </label>
+                <div className="flex flex-col gap-[7px]">
+                  <label
+                    htmlFor="password"
+                    className="text-[#294a36] text-sm font-semibold"
+                  >
+                    Password
+                  </label>
 
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                  required
-                  className="w-full h-[45px] px-[15px] pr-16 border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
-                />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      id="password"
+                      name="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                      className="w-full h-[45px] px-[15px] pr-16 border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#27834d] text-xs font-semibold bg-transparent border-0 cursor-pointer"
+                    >
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+
+                  <a
+                    href="/forgot-password"
+                    className="self-end mt-px text-[#27834d] text-xs font-semibold no-underline hover:underline"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+
+                {error && (
+                  <div className="px-4 py-3 rounded-[9px] bg-[#fff1f1] border border-[#f2caca] text-[#c53b3b] text-[13px] text-center">
+                    {error}
+                  </div>
+                )}
 
                 <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#27834d] text-xs font-semibold bg-transparent border-0 cursor-pointer"
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-[45px] mt-0.5 border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {showPassword ? 'Hide' : 'Show'}
+                  {isLoading ? 'Logging in...' : 'Login'}
                 </button>
+              </form>
+
+              <p className="mt-[14px] text-center text-[#718277] text-[13px]">
+                Don't have an account?{' '}
+                <a
+                  href="/register"
+                  className="text-[#27834d] font-semibold no-underline hover:underline"
+                >
+                  Create an account
+                </a>
+              </p>
+            </>
+          )}
+
+          {success === 'unverifed' && (
+            <>
+              <div className="text-center mb-[22px]">
+                <p className="mb-2 text-[#27834d] text-xs font-bold tracking-[2px]">
+                  EMAIL VERIFICATION
+                </p>
+
+                <h1 className="mb-[7px] text-[#173f2a] text-[30px] leading-[1.2] font-bold">
+                  Verify your email
+                </h1>
+
+                <p className="text-[#718277] text-sm leading-[1.5]">
+                  Enter the OTP sent to your email address.
+                </p>
               </div>
 
-              <a
-                href="/forgot-password"
-                className="self-end mt-px text-[#27834d] text-xs font-semibold no-underline hover:underline"
+              <form
+                onSubmit={handleVerifyOtp}
+                className="flex flex-col gap-[13px]"
               >
-                Forgot password?
-              </a>
-            </div>
+                <div className="flex flex-col gap-[7px]">
+                  <label
+                    htmlFor="otp"
+                    className="text-[#294a36] text-sm font-semibold"
+                  >
+                    OTP
+                  </label>
 
-            {error && (
-              <div className="px-4 py-3 rounded-[9px] bg-[#fff1f1] border border-[#f2caca] text-[#c53b3b] text-[13px] text-center">
-                {error}
-              </div>
-            )}
+                  <input
+                    type="text"
+                    id="otp"
+                    value={otp}
+                    onChange={(event) => setOtp(event.target.value)}
+                    placeholder="Enter OTP"
+                    className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+                  />
+                </div>
 
-            <button
-              type="submit"
-              className="w-full h-[45px] mt-0.5 border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px"
-            >
-              {isLoading ? 'Logging in...' : 'Login'}
-            </button>
-          </form>
+                {error && (
+                  <div className="px-4 py-3 rounded-[9px] bg-[#fff1f1] border border-[#f2caca] text-[#c53b3b] text-[13px] text-center">
+                    {error}
+                  </div>
+                )}
 
-          <div className="flex items-center gap-[14px] my-[15px] text-[#9aa99f] text-xs font-semibold">
-            <div className="flex-1 h-px bg-[#e1eae4]" />
-
-            <span>OR</span>
-
-            <div className="flex-1 h-px bg-[#e1eae4]" />
-          </div>
-
-          <button
-            type="button"
-            className="w-full h-[45px] flex items-center justify-center gap-[11px] border border-[#d8e5dc] rounded-[9px] bg-white text-[#294a36] text-sm font-semibold cursor-pointer transition duration-200 hover:bg-[#f7fbf8] hover:border-[#b9cfbf]"
-          >
-            <span className="w-5 h-5 flex items-center justify-center shrink-0">
-              <svg
-                className="w-5 h-5 block"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fill="#4285F4"
-                  d="M21.35 12.27c0-.71-.06-1.4-.18-2.05H12v3.88h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.22z"
-                />
-
-                <path
-                  fill="#34A853"
-                  d="M12 21.75c2.63 0 4.84-.87 6.45-2.36l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.72-5.46-4.03H3.3v2.53A9.75 9.75 0 0 0 12 21.75z"
-                />
-
-                <path
-                  fill="#FBBC05"
-                  d="M6.54 13.83A5.86 5.86 0 0 1 6.23 12c0-.64.11-1.26.31-1.83V7.64H3.3A9.75 9.75 0 0 0 2.25 12c0 1.57.38 3.06 1.05 4.36l3.24-2.53z"
-                />
-
-                <path
-                  fill="#EA4335"
-                  d="M12 6.14c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.83 3.17 14.63 2.25 12 2.25A9.75 9.75 0 0 0 3.3 7.64l3.24 2.53C7.31 7.86 9.46 6.14 12 6.14z"
-                />
-              </svg>
-            </span>
-
-            <span>
-              Continue with Google
-            </span>
-          </button>
-
-          <p className="mt-[14px] text-center text-[#718277] text-[13px]">
-            Don't have an account?{' '}
-            <a
-              href="/register"
-              className="text-[#27834d] font-semibold no-underline hover:underline"
-            >
-              Create an account
-            </a>
-          </p>
-
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Verifying...' : 'Verify OTP'}
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </main>
-
     </div>
   )
 }
