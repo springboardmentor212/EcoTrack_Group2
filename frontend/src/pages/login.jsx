@@ -157,7 +157,7 @@ function Login() {
 
         <div className="flex items-center gap-[18px]">
           <a
-            href="/"
+            href="/login"
             className="text-[#27834d] text-[15px] font-semibold no-underline hover:text-[#1e6e40]"
           >
             Login
