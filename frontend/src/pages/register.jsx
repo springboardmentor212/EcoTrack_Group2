@@ -223,10 +223,7 @@ function Register() {
                 htmlFor="terms"
                 className="text-[15px] text-[#55695c] leading-snug cursor-pointer select-none"
               >
-                I agree to the{" "}
-                <span className="text-[#27834d] font-semibold hover:underline">Terms & Conditions</span>
-                {" "}and{" "}
-                <span className="text-[#27834d] font-semibold hover:underline">Privacy Policy</span>
+                I agree to the Terms & Conditions and Privacy Policy
               </label>
             </div>
 
