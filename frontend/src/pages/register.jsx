@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 function Register() {
@@ -11,9 +13,15 @@ function Register() {
   const [isLoading, setIsLoading] = useState(false)
   const [name, setName] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [location, setLocation] = useState('')
   const [acceptTerms, setAcceptTerms] = useState(false)
+  const emailPattern =
+    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/
 
-  
+  const passwordPattern =
+    /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{8,}$/
+
+  const API_URL = import.meta.env.VITE_API_URL;
   
   
   const handleSubmit = (event) => {
@@ -205,6 +213,27 @@ function Register() {
   </div>
 </div>
               
+            </div>
+
+            <div className="flex flex-col gap-[7px]">
+              <label
+                htmlFor="location"
+                className="text-[#294a36] text-sm font-semibold"
+              >
+                Location
+              </label>
+
+              <input
+                type="text"
+                id="location"
+                name="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Enter your location"
+                autoComplete="address-level2"
+                required
+                className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+              />
             </div>
 
             {error && (
