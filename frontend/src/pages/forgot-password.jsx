@@ -16,7 +16,8 @@ function ForgotPassword() {
 
   const navigate = useNavigate();
 
-  const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+.[A-Za-z]{2,}$/;
+  const emailPattern =
+    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
   const passwordPattern =
     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/;
@@ -54,6 +55,7 @@ function ForgotPassword() {
       const data = response.data;
 
       if (data.success === true) {
+        setOtp("");
         toast.success(data.message);
         setStep("otp");
         return;
@@ -62,7 +64,8 @@ function ForgotPassword() {
       toast.error(data.message || "Failed to send OTP.");
     } catch (err) {
       const message =
-        err.response?.data?.message || "Failed to send OTP. Please try again.";
+        err.response?.data?.message ||
+        "Failed to send OTP. Please try again.";
 
       setError(message);
       toast.error(message);
@@ -73,6 +76,7 @@ function ForgotPassword() {
 
   const handleVerifyOtp = async (event) => {
     event.preventDefault();
+
     setError("");
 
     if (!otp.trim()) {
@@ -104,7 +108,46 @@ function ForgotPassword() {
 
       toast.error(data.message || "OTP verification failed.");
     } catch (err) {
-      const message = err.response?.data?.message || "OTP verification failed.";
+      const message =
+        err.response?.data?.message ||
+        "OTP verification failed.";
+
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError("");
+
+    try {
+      setIsLoading(true);
+
+      const response = await axios.post(
+        `${API_URL}/resendOtp`,
+        {
+          email,
+        },
+        {
+          withCredentials: true,
+        },
+      );
+
+      const data = response.data;
+
+      if (data.success === true) {
+        setOtp("");
+        toast.success(data.message);
+        return;
+      }
+
+      toast.error(data.message || "Failed to resend OTP.");
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        "Failed to resend OTP. Please try again.";
 
       setError(message);
       toast.error(message);
@@ -115,6 +158,7 @@ function ForgotPassword() {
 
   const handleResetPassword = async (event) => {
     event.preventDefault();
+
     setError("");
 
     if (!newPassword.trim() || !confirmPassword.trim()) {
@@ -210,6 +254,7 @@ function ForgotPassword() {
         }}
       >
         <div className="w-full max-w-[460px] px-10 py-8 bg-white border border-[#e3eee6] rounded-[18px] shadow-[0_18px_45px_rgba(33,78,50,0.09)] animate-[slideUp_0.7s_ease-out]">
+
           {step === "forgot" && (
             <>
               <div className="text-center mb-7">
@@ -218,17 +263,17 @@ function ForgotPassword() {
                 </p>
 
                 <h1 className="mb-3 text-[#173f2a] text-[30px] leading-[1.2] font-bold">
-                  Forgot your <span className="text-[#27834d]">password?</span>
+                  Forgot your{" "}
+                  <span className="text-[#27834d]">password?</span>
                 </h1>
 
                 <p className="text-[#718277] text-sm leading-[1.6]">
                   Enter your registered email address and we'll send you an OTP.
                 </p>
 
-                <p className="text-[#718277] text-sm leading-[1.5]">
-                  The OTP may take 30 seconds or longer to arrive in your email.
-                  Please wait a moment and check your Spam/Junk folder as well,
-                  as the email may have been filtered there
+                <p className="mt-2 text-[#718277] text-sm leading-[1.5]">
+                  The OTP may take 30 seconds or longer to arrive. Please check
+                  your Spam/Junk folder as well.
                 </p>
               </div>
 
@@ -287,8 +332,8 @@ function ForgotPassword() {
                   Enter the OTP sent to your email address.
                 </p>
 
-                <p className="text-[#718277] text-sm leading-[1.5]">
-                  The OTP will remain valid for 5 minutes after it is generated.
+                <p className="mt-2 text-[#718277] text-sm leading-[1.5]">
+                  The OTP will remain valid for 5 minutes.
                 </p>
               </div>
 
@@ -327,6 +372,15 @@ function ForgotPassword() {
                 >
                   {isLoading ? "Verifying..." : "Verify OTP"}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={isLoading}
+                  className="text-[#27834d] text-[13px] font-semibold bg-transparent border-0 cursor-pointer hover:underline disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Please wait..." : "Resend OTP"}
+                </button>
               </form>
             </>
           )}
@@ -339,7 +393,8 @@ function ForgotPassword() {
                 </p>
 
                 <h1 className="mb-2 text-[#173f2a] text-[30px] leading-[1.2] font-bold">
-                  Reset your <span className="text-[#27834d]">password</span>
+                  Reset your{" "}
+                  <span className="text-[#27834d]">password</span>
                 </h1>
 
                 <p className="text-[#718277] text-sm leading-[1.5]">
@@ -447,6 +502,7 @@ function ForgotPassword() {
           </div>
         </div>
       </main>
+
       <ToastContainer />
     </div>
   );

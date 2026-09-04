@@ -14,7 +14,8 @@ function Login() {
 
   const navigate = useNavigate();
 
-  const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const emailPattern =
+    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
   const passwordPattern =
     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/;
@@ -43,7 +44,7 @@ function Login() {
 
     if (!passwordPattern.test(password)) {
       setError(
-        "Password must contain uppercase, lowercase, number, special character and follow the required format.",
+        "Password must contain uppercase, lowercase, number and special character.",
       );
       return;
     }
@@ -65,18 +66,18 @@ function Login() {
       const data = response.data;
 
       if (data.success === "true") {
-        setSuccess(true);
         toast.success(data.message);
 
         setTimeout(() => {
           navigate("/");
-        }, 6000);
+        }, 1500);
 
         return;
       }
 
       if (data.success === "unverifed") {
         setSuccess("unverifed");
+        setOtp("");
         toast.info(data.message);
         return;
       }
@@ -121,19 +122,57 @@ function Login() {
       const data = response.data;
 
       if (data.success === true) {
-        setSuccess(true);
         toast.success(data.message);
 
         setTimeout(() => {
           navigate("/");
-        }, 6000);
+        }, 1500);
 
         return;
       }
 
       toast.error(data.message || "OTP verification failed.");
     } catch (err) {
-      const message = err.response?.data?.message || "OTP verification failed.";
+      const message =
+        err.response?.data?.message ||
+        "OTP verification failed.";
+
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError("");
+
+    try {
+      setIsLoading(true);
+
+      const response = await axios.post(
+        `${API_URL}/resendOtp`,
+        {
+          email,
+        },
+        {
+          withCredentials: true,
+        },
+      );
+
+      const data = response.data;
+
+      if (data.success === true) {
+        setOtp("");
+        toast.success(data.message);
+        return;
+      }
+
+      toast.error(data.message || "Failed to resend OTP.");
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        "Failed to resend OTP. Please try again.";
 
       setError(message);
       toast.error(message);
@@ -178,6 +217,7 @@ function Login() {
         }}
       >
         <div className="w-full max-w-[460px] px-10 py-[27px] bg-white border border-[#e3eee6] rounded-[18px] shadow-[0_18px_45px_rgba(33,78,50,0.09)] animate-[slideUp_0.7s_ease-out]">
+
           {success === false && (
             <>
               <div className="text-center mb-[19px]">
@@ -209,9 +249,11 @@ function Login() {
                   <input
                     type="email"
                     id="email"
-                    name="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      setError("");
+                    }}
                     placeholder="Enter your email"
                     autoComplete="email"
                     className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
@@ -230,9 +272,11 @@ function Login() {
                     <input
                       type={showPassword ? "text" : "password"}
                       id="password"
-                      name="password"
                       value={password}
-                      onChange={(event) => setPassword(event.target.value)}
+                      onChange={(event) => {
+                        setPassword(event.target.value);
+                        setError("");
+                      }}
                       placeholder="Enter your password"
                       autoComplete="current-password"
                       className="w-full h-[45px] px-[15px] pr-16 border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
@@ -290,21 +334,20 @@ function Login() {
                 </p>
 
                 <h1 className="mb-[7px] text-[#173f2a] text-[30px] leading-[1.2] font-bold">
-                  Verify your email
+                  Verify your <span className="text-[#27834d]">email</span>
                 </h1>
 
                 <p className="text-[#718277] text-sm leading-[1.5]">
                   Enter the OTP sent to your email address.
                 </p>
 
-                <p className="text-[#718277] text-sm leading-[1.5]">
-                  The OTP may take 30 seconds or longer to arrive in your email.
-                  Please wait a moment and check your Spam/Junk folder as well,
-                  as the email may have been filtered there
+                <p className="mt-2 text-[#718277] text-sm leading-[1.5]">
+                  The OTP may take 30 seconds or longer to arrive. Please check
+                  your Spam/Junk folder as well.
                 </p>
 
-                <p className="text-[#718277] text-sm leading-[1.5]">
-                  The OTP will remain valid for 5 minutes after it is generated.
+                <p className="mt-2 text-[#718277] text-sm leading-[1.5]">
+                  The OTP will remain valid for 5 minutes.
                 </p>
               </div>
 
@@ -324,7 +367,10 @@ function Login() {
                     type="text"
                     id="otp"
                     value={otp}
-                    onChange={(event) => setOtp(event.target.value)}
+                    onChange={(event) => {
+                      setOtp(event.target.value);
+                      setError("");
+                    }}
                     placeholder="Enter OTP"
                     className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
                   />
@@ -343,11 +389,21 @@ function Login() {
                 >
                   {isLoading ? "Verifying..." : "Verify OTP"}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={isLoading}
+                  className="text-[#27834d] text-[13px] font-semibold bg-transparent border-0 cursor-pointer hover:underline disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Please wait..." : "Resend OTP"}
+                </button>
               </form>
             </>
           )}
         </div>
       </main>
+
       <ToastContainer />
     </div>
   );
