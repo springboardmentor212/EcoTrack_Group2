@@ -96,6 +96,24 @@ module.exports.verifyEmail = async(req,res) => {
     } 
 };
 
+module.exports.verifyEmailForResetPassword = async(req,res) => { 
+    const {email,code} = req.body;
+    const verificationCode = await verificationCodeModel.findOne({email});
+    const isMatch = await bcrypt.compare(code,verificationCode.code);
+    
+    if(!isMatch){
+        return res.status(400).json({success : false , message : "please Enter valid code"});
+    }
+
+    if(verificationCode.expries.getTime() > Date.now()){
+        await verificationCodeModel.deleteMany({email});
+        return res.status(200).json({success : true, message : "Email verifiy successfully"});
+    }else{
+        await verificationCodeModel.deleteMany({email});
+        return res.status(400).json({success : false, message : "Verification code is Expried"});
+    } 
+};
+
 module.exports.resendOtp = async(req,res) => {
   try{
     const {email} = req.body;
