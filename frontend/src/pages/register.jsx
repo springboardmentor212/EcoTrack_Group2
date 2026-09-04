@@ -8,11 +8,9 @@ function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [name, setName] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [location, setLocation] = useState('')
   const [acceptTerms, setAcceptTerms] = useState(false)
   const emailPattern =
@@ -22,61 +20,61 @@ function Register() {
     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{8,}$/
 
   const API_URL = import.meta.env.VITE_API_URL;
-  
-  
+
+
   const handleSubmit = (event) => {
-  event.preventDefault()
+    event.preventDefault()
 
-  setError('')
+    setError('')
 
-  if (!email.trim()) {
-    setError('Please enter your email address.')
-    return
+    if (!email.trim()) {
+      setError('Please enter your email address.')
+      return
+    }
+
+    if (!email.includes('@')) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    if (!password.trim()) {
+      setError('Please enter your password.')
+      return
+    }
+    if (!acceptTerms) {
+      setError('Please accept the Terms & Conditions.')
+      return
+    }
+    setIsLoading(true)
+
+    setTimeout(() => {
+      setIsLoading(false)
+    }, 1500)
   }
-
-  if (!email.includes('@')) {
-    setError('Please enter a valid email address.')
-    return
-  }
-
-  if (!password.trim()) {
-    setError('Please enter your password.')
-    return
-  }
-  if (!acceptTerms) {
-  setError('Please accept the Terms & Conditions.')
-  return
-}
-  setIsLoading(true)
- 
-  setTimeout(() => {
-    setIsLoading(false)
-  }, 1500)
-}
 
   return (
-    <div className="h-screen overflow-hidden bg-[#f7fbf8] text-[#173f2a] font-[Arial] flex flex-col animate-[pageFadeIn_0.7s_ease]">
+    <div className="min-h-screen overflow-y-auto bg-[#f7fbf8] text-[#173f2a] font-[Arial] flex flex-col animate-[pageFadeIn_0.7s_ease]">
 
-      <header className="w-full min-h-[90px] px-[7%] flex items-center justify-between bg-white border-b border-[#e5eee8] relative z-10 shrink-0">
+      <header className="w-full min-h-[96px] px-[8%] flex items-center justify-between bg-white border-b border-[#e5eee8] relative z-10 shrink-0 shadow-sm">
         <a href="/" className="flex items-center no-underline text-inherit">
           <img
             src="/assets/Ecotrack1.png"
             alt="EcoTrack"
-            className="w-[145px] h-auto block"
+            className="w-[170px] h-auto block transition-transform hover:scale-105"
           />
         </a>
 
-        <div className="flex items-center gap-[18px]">
+        <div className="flex items-center gap-5">
           <a
             href="/"
-            className="text-[#27834d] text-[15px] font-semibold no-underline hover:text-[#1e6e40]"
+            className="text-[#27834d] text-base font-semibold no-underline hover:text-[#1e6e40] px-4 py-2 rounded-lg hover:bg-[#f0f7f2] transition duration-200"
           >
             Login
           </a>
 
           <a
             href="/register"
-            className="px-[22px] py-[11px] bg-[#27834d] text-white rounded-lg text-sm font-semibold no-underline transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px"
+            className="px-7 py-3 bg-[#27834d] text-white rounded-xl text-base font-semibold no-underline shadow-md transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-0.5 hover:shadow-lg"
           >
             Register
           </a>
@@ -84,40 +82,40 @@ function Register() {
       </header>
 
       <main
-        className="flex-1 min-h-0 flex items-center justify-center px-5 py-[18px]"
+        className="flex-1 flex items-center justify-center px-6 py-10"
         style={{
           background:
             'radial-gradient(circle at 15% 30%, rgba(78, 160, 105, 0.08), transparent 25%), radial-gradient(circle at 85% 70%, rgba(78, 160, 105, 0.07), transparent 25%), #f7fbf8',
         }}
       >
-        <div className="w-full max-w-[460px] px-10 py-[27px] bg-white border border-[#e3eee6] rounded-[18px] shadow-[0_18px_45px_rgba(33,78,50,0.09)] animate-[slideUp_0.7s_ease-out]">
+        <div className="w-full max-w-[540px] px-10 py-10 bg-white border border-[#e3eee6] rounded-[24px] shadow-[0_20px_50px_rgba(33,78,50,0.11)] animate-[slideUp_0.7s_ease-out]">
 
-          <div className="text-center mb-[19px]">
-            
+          <div className="text-center mb-7">
 
-            <h1 className="mb-[7px] text-[#173f2a] text-[30px] leading-[1.2] font-bold">
+
+            <h1 className="mb-2 text-[#173f2a] text-[34px] leading-[1.2] font-bold">
               Register for{' '}
               <span className="text-[#27834d]">
                 EcoTrack
               </span>
             </h1>
 
-            <p className="text-[#718277] text-sm leading-[1.5]">
+            <p className="text-[#65786c] text-base leading-relaxed">
               Start your journey toward a greener future.
             </p>
           </div>
 
           <form
             onSubmit={handleSubmit}
-            className="flex flex-col gap-[13px]"
+            className="flex flex-col gap-[18px]"
           >
-            
 
-          
-            <div className="flex flex-col gap-[7px]">
+
+
+            <div className="flex flex-col gap-2">
               <label
                 htmlFor="name"
-                className="text-[#294a36] text-sm font-semibold"
+                className="text-[#294a36] text-[15px] font-semibold"
               >
                 Name
               </label>
@@ -129,35 +127,35 @@ function Register() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your full name"
                 required
-                className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none"
+                className="w-full h-[50px] px-4 border border-[#d2e2d7] rounded-[12px] outline-none text-base text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_4px_rgba(39,131,77,0.12)]"
               />
             </div>
 
-            <div className="flex flex-col gap-[7px]">
-  <label
-    htmlFor="email"
-    className="text-[#294a36] text-sm font-semibold"
-  >
-    Email Address
-  </label>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="email"
+                className="text-[#294a36] text-[15px] font-semibold"
+              >
+                Email Address
+              </label>
 
-  <input
-    type="email"
-    id="email"
-    name="email"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    placeholder="Enter your email"
-    autoComplete="email"
-    required
-    className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
-  />
-</div>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                autoComplete="email"
+                required
+                className="w-full h-[50px] px-4 border border-[#d2e2d7] rounded-[12px] outline-none text-base text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_4px_rgba(39,131,77,0.12)]"
+              />
+            </div>
 
-            <div className="flex flex-col gap-[7px]">
+            <div className="flex flex-col gap-2">
               <label
                 htmlFor="password"
-                className="text-[#294a36] text-sm font-semibold"
+                className="text-[#294a36] text-[15px] font-semibold"
               >
                 Password
               </label>
@@ -172,53 +170,23 @@ function Register() {
                   placeholder="Enter your password"
                   autoComplete="current-password"
                   required
-                  className="w-full h-[45px] px-[15px] pr-16 border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+                  className="w-full h-[50px] px-4 pr-12 border border-[#d2e2d7] rounded-[12px] outline-none text-base text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_4px_rgba(39,131,77,0.12)]"
                 />
 
                 <button
-  type="button"
-  onClick={() => setShowPassword(!showPassword)}
-  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#27834d] text-lg bg-transparent border-0 cursor-pointer"
->
-  {showPassword ? <FaEyeSlash /> : <FaEye />}
-</button>
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#27834d] text-xl bg-transparent border-0 cursor-pointer p-1 hover:text-[#1e6e40] transition-colors"
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
               </div>
-
-              <div className="flex flex-col gap-[7px]">
-  <label
-    htmlFor="confirmPassword"
-    className="text-[#294a36] text-sm font-semibold"
-  >
-    Confirm Password
-  </label>
-
-  <div className="relative">
-    <input
-      type={showConfirmPassword ? 'text' : 'password'}
-      id="confirmPassword"
-      value={confirmPassword}
-      onChange={(e) => setConfirmPassword(e.target.value)}
-      placeholder="Confirm your password"
-      required
-      className="w-full h-[45px] px-[15px] pr-16 border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white"
-    />
-
-    <button
-      type="button"
-      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#27834d] text-lg bg-transparent border-0 cursor-pointer"
-    >
-      {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-    </button>
-  </div>
-</div>
-              
             </div>
 
-            <div className="flex flex-col gap-[7px]">
+            <div className="flex flex-col gap-2">
               <label
                 htmlFor="location"
-                className="text-[#294a36] text-sm font-semibold"
+                className="text-[#294a36] text-[15px] font-semibold"
               >
                 Location
               </label>
@@ -232,53 +200,53 @@ function Register() {
                 placeholder="Enter your location"
                 autoComplete="address-level2"
                 required
-                className="w-full h-[45px] px-[15px] border border-[#d8e5dc] rounded-[9px] outline-none text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_3px_rgba(39,131,77,0.1)]"
+                className="w-full h-[50px] px-4 border border-[#d2e2d7] rounded-[12px] outline-none text-base text-[#173f2a] bg-white placeholder:text-[#9aa99f] transition duration-200 focus:border-[#27834d] focus:shadow-[0_0_0_4px_rgba(39,131,77,0.12)]"
               />
             </div>
 
             {error && (
-              <div className="px-4 py-3 rounded-[9px] bg-[#fff1f1] border border-[#f2caca] text-[#c53b3b] text-[13px] text-center">
+              <div className="px-4 py-3 rounded-[12px] bg-[#fff1f1] border border-[#f2caca] text-[#c53b3b] text-sm text-center font-medium">
                 {error}
               </div>
             )}
-            <div className="flex items-start gap-3">
-  <input
-    type="checkbox"
-    id="terms"
-    checked={acceptTerms}
-    onChange={(e) => setAcceptTerms(e.target.checked)}
-    className="mt-1 h-4 w-4 accent-[#27834d] cursor-pointer"
-  />
 
-  <label
-    htmlFor="terms"
-    className="text-sm text-[#718277] leading-5"
-  >
-    I agree to the{" "}
-      Terms & Conditions
-    and{" "}
-      Privacy Policy
-  </label>
-</div>
+            <div className="flex items-center gap-3 pt-1">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="h-5 w-5 accent-[#27834d] cursor-pointer rounded border-gray-300"
+              />
+
+              <label
+                htmlFor="terms"
+                className="text-[15px] text-[#55695c] leading-snug cursor-pointer select-none"
+              >
+                I agree to the{" "}
+                <span className="text-[#27834d] font-semibold hover:underline">Terms & Conditions</span>
+                {" "}and{" "}
+                <span className="text-[#27834d] font-semibold hover:underline">Privacy Policy</span>
+              </label>
+            </div>
+
             <button
               type="submit"
-              className="w-full h-[45px] mt-0.5 border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px"
+              className="w-full h-[52px] mt-2 border-0 rounded-[12px] bg-[#27834d] text-white text-[16px] font-semibold cursor-pointer shadow-md transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-0.5 hover:shadow-lg"
             >
               {isLoading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 
-          <div className="flex items-center gap-[14px] my-[15px] text-[#9aa99f] text-xs font-semibold">
+          <div className="flex items-center gap-[14px] my-5 text-[#9aa99f] text-xs font-semibold">
             <div className="flex-1 h-px bg-[#e1eae4]" />
           </div>
 
-          
-
-          <p className="mt-[14px] text-center text-[#718277] text-[13px]">
+          <p className="text-center text-[#65786c] text-[15px]">
             Already have an account?{' '}
             <a
               href="/login"
-              className="text-[#27834d] font-semibold no-underline hover:underline"
+              className="text-[#27834d] font-semibold no-underline hover:underline ml-1"
             >
               Log in
             </a>
