@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -16,8 +16,7 @@ function ForgotPassword() {
 
   const navigate = useNavigate();
 
-  const emailPattern =
-    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
   const passwordPattern =
     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/;
@@ -64,8 +63,7 @@ function ForgotPassword() {
       toast.error(data.message || "Failed to send OTP.");
     } catch (err) {
       const message =
-        err.response?.data?.message ||
-        "Failed to send OTP. Please try again.";
+        err.response?.data?.message || "Failed to send OTP. Please try again.";
 
       setError(message);
       toast.error(message);
@@ -108,9 +106,7 @@ function ForgotPassword() {
 
       toast.error(data.message || "OTP verification failed.");
     } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        "OTP verification failed.";
+      const message = err.response?.data?.message || "OTP verification failed.";
 
       setError(message);
       toast.error(message);
@@ -254,7 +250,6 @@ function ForgotPassword() {
         }}
       >
         <div className="w-full max-w-[460px] px-10 py-8 bg-white border border-[#e3eee6] rounded-[18px] shadow-[0_18px_45px_rgba(33,78,50,0.09)] animate-[slideUp_0.7s_ease-out]">
-
           {step === "forgot" && (
             <>
               <div className="text-center mb-7">
@@ -263,8 +258,7 @@ function ForgotPassword() {
                 </p>
 
                 <h1 className="mb-3 text-[#173f2a] text-[30px] leading-[1.2] font-bold">
-                  Forgot your{" "}
-                  <span className="text-[#27834d]">password?</span>
+                  Forgot your <span className="text-[#27834d]">password?</span>
                 </h1>
 
                 <p className="text-[#718277] text-sm leading-[1.6]">
@@ -393,8 +387,7 @@ function ForgotPassword() {
                 </p>
 
                 <h1 className="mb-2 text-[#173f2a] text-[30px] leading-[1.2] font-bold">
-                  Reset your{" "}
-                  <span className="text-[#27834d]">password</span>
+                  Reset your <span className="text-[#27834d]">password</span>
                 </h1>
 
                 <p className="text-[#718277] text-sm leading-[1.5]">
@@ -502,8 +495,6 @@ function ForgotPassword() {
           </div>
         </div>
       </main>
-
-      <ToastContainer />
     </div>
   );
 }

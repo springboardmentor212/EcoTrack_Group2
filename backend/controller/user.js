@@ -21,6 +21,7 @@ module.exports.register = async(req,res) => {
     const user = new userModel({name,email,password,location,verified : false});
     await user.save();
 
+    await verificationCodeModel.deleteMany({email});
     let otp = generateOtp();
     sendVerificationMail(user.email,otp);
    
@@ -41,6 +42,9 @@ module.exports.login = async(req,res) => {
    }
 
    const user = await userModel.findOne({email});
+   if(!user){
+        return res.status(400).json({success : "false", message : "please Enter your registered email"});
+   }
    const isMatch = await bcrypt.compare(password,user.password);
    if(!isMatch){
         return res.status(400).json({success : "false", message : "Email or password is wrong"}); 
@@ -56,6 +60,7 @@ module.exports.login = async(req,res) => {
         });
         return res.status(200).json({success : "true", message : "Log in successfully"});
    }else{
+        await verificationCodeModel.deleteMany({email});
         let otp = generateOtp();
         sendVerificationMail(user.email,otp);
         
@@ -72,6 +77,14 @@ module.exports.login = async(req,res) => {
 module.exports.verifyEmail = async(req,res) => { 
     const {email,code} = req.body;
     const verificationCode = await verificationCodeModel.findOne({email});
+
+     if (!verificationCode) {
+            return res.status(400).json({
+                success: false,
+                message: "Verification code not found or expired"
+            });
+        }
+
     const isMatch = await bcrypt.compare(code,verificationCode.code);
     
     if(!isMatch){
@@ -99,6 +112,14 @@ module.exports.verifyEmail = async(req,res) => {
 module.exports.verifyEmailForResetPassword = async(req,res) => { 
     const {email,code} = req.body;
     const verificationCode = await verificationCodeModel.findOne({email});
+
+     if (!verificationCode) {
+            return res.status(400).json({
+                success: false,
+                message: "Verification code not found or expired"
+            });
+        }
+
     const isMatch = await bcrypt.compare(code,verificationCode.code);
     
     if(!isMatch){
