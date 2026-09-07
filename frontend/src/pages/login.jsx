@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -11,6 +11,7 @@ function Login() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [otpExpired, setOtpExpired] = useState(false);
 
   const navigate = useNavigate();
 
@@ -20,6 +21,16 @@ function Login() {
     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/;
 
   const API_URL = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    if (success === "unverifed") {
+      const timer = setTimeout(() => {
+        setOtpExpired(true);
+      }, 300000); // 300 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [success, setOtpExpired]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -129,9 +140,10 @@ function Login() {
 
         return;
       }
-
+      setOtpExpired(true);
       toast.error(data.message || "OTP verification failed.");
     } catch (err) {
+      setOtpExpired(true);
       const message = err.response?.data?.message || "OTP verification failed.";
 
       setError(message);
@@ -146,7 +158,6 @@ function Login() {
 
     try {
       setIsLoading(true);
-
       const response = await axios.post(
         `${API_URL}/resendOtp`,
         {
@@ -160,18 +171,21 @@ function Login() {
       const data = response.data;
 
       if (data.success === true) {
+        setOtpExpired(false);
         setOtp("");
         toast.success(data.message);
         return;
+      } else {
+        setOtpExpired(true);
+        toast.error(data.message || "Failed to resend OTP.");
       }
-
-      toast.error(data.message || "Failed to resend OTP.");
     } catch (err) {
       const message =
         err.response?.data?.message ||
         "Failed to resend OTP. Please try again.";
 
       setError(message);
+      setOtpExpired(true);
       toast.error(message);
     } finally {
       setIsLoading(false);
@@ -334,16 +348,7 @@ function Login() {
                 </h1>
 
                 <p className="text-[#718277] text-sm leading-[1.5]">
-                  Enter the OTP sent to your email address.
-                </p>
-
-                <p className="mt-2 text-[#718277] text-sm leading-[1.5]">
-                  The OTP may take 30 seconds or longer to arrive. Please check
-                  your Spam/Junk folder as well.
-                </p>
-
-                <p className="mt-2 text-[#718277] text-sm leading-[1.5]">
-                  The OTP will remain valid for 5 minutes.
+                  Enter the OTP sent to {email}.
                 </p>
               </div>
 
@@ -378,22 +383,24 @@ function Login() {
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? "Verifying..." : "Verify OTP"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={isLoading}
-                  className="text-[#27834d] text-[13px] font-semibold bg-transparent border-0 cursor-pointer hover:underline disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? "Please wait..." : "Resend OTP"}
-                </button>
+                {!otpExpired ? (
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? "Verifying..." : "Verify OTP"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={isLoading}
+                    className="text-[#27834d] text-[13px] font-semibold bg-transparent border-0 cursor-pointer hover:underline disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? "Please wait..." : "Resend OTP"}
+                  </button>
+                )}
               </form>
             </>
           )}

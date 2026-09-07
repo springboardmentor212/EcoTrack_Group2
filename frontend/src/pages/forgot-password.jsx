@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -13,7 +13,7 @@ function ForgotPassword() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState("forgot");
-
+  const [otpExpired, setOtpExpired] = useState(false);
   const navigate = useNavigate();
 
   const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -22,6 +22,16 @@ function ForgotPassword() {
     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/;
 
   const API_URL = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    if (step === "otp") {
+      const timer = setTimeout(() => {
+        setOtpExpired(true);
+      }, 300000); // 300 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [step, setOtpExpired]);
 
   const handleSendOtp = async (event) => {
     event.preventDefault();
@@ -104,10 +114,11 @@ function ForgotPassword() {
         return;
       }
 
+      setOtpExpired(true);
       toast.error(data.message || "OTP verification failed.");
     } catch (err) {
       const message = err.response?.data?.message || "OTP verification failed.";
-
+      setOtpExpired(true);
       setError(message);
       toast.error(message);
     } finally {
@@ -135,16 +146,19 @@ function ForgotPassword() {
 
       if (data.success === true) {
         setOtp("");
+        setOtpExpired(false);
         toast.success(data.message);
         return;
       }
 
+      setOtpExpired(true);
       toast.error(data.message || "Failed to resend OTP.");
     } catch (err) {
       const message =
         err.response?.data?.message ||
         "Failed to resend OTP. Please try again.";
 
+      setOtpExpired(true);
       setError(message);
       toast.error(message);
     } finally {
@@ -262,12 +276,8 @@ function ForgotPassword() {
                 </h1>
 
                 <p className="text-[#718277] text-sm leading-[1.6]">
-                  Enter your registered email address and we'll send you an OTP.
-                </p>
-
-                <p className="mt-2 text-[#718277] text-sm leading-[1.5]">
-                  The OTP may take 30 seconds or longer to arrive. Please check
-                  your Spam/Junk folder as well.
+                  Enter the your email address so we send otp on you email to
+                  verify your email.
                 </p>
               </div>
 
@@ -323,11 +333,7 @@ function ForgotPassword() {
                 </h1>
 
                 <p className="text-[#718277] text-sm leading-[1.6]">
-                  Enter the OTP sent to your email address.
-                </p>
-
-                <p className="mt-2 text-[#718277] text-sm leading-[1.5]">
-                  The OTP will remain valid for 5 minutes.
+                  Enter the OTP sent to your {email}.
                 </p>
               </div>
 
@@ -359,22 +365,24 @@ function ForgotPassword() {
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? "Verifying..." : "Verify OTP"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={isLoading}
-                  className="text-[#27834d] text-[13px] font-semibold bg-transparent border-0 cursor-pointer hover:underline disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? "Please wait..." : "Resend OTP"}
-                </button>
+                {!otpExpired ? (
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? "Verifying..." : "Verify OTP"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={isLoading}
+                    className="text-[#27834d] text-[13px] font-semibold bg-transparent border-0 cursor-pointer hover:underline disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? "Please wait..." : "Resend OTP"}
+                  </button>
+                )}
               </form>
             </>
           )}

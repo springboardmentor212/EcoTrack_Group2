@@ -18,7 +18,7 @@ module.exports.register = async(req,res) => {
         return res.status(400).json({success : false , message : "your is already existing please login"});
     }
 
-    const user = new userModel({name,email,password,location,verified : false});
+    const user = new userModel({name,email,password,location,verified : false,role : "user"});
     await user.save();
 
     await verificationCodeModel.deleteMany({email});
@@ -146,8 +146,6 @@ module.exports.resendOtp = async(req,res) => {
 
     await verificationCodeModel.deleteMany({email});
     let otp = generateOtp();
-    await new Promise(resolve => setTimeout(resolve,30000)); // 30 second delay
-
     sendVerificationMail(existUser.email,otp);
     const verificationCode = new verificationCodeModel({email : existUser.email,code : otp});
     await verificationCode.save();
