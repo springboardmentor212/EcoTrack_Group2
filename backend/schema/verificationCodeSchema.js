@@ -13,7 +13,7 @@ const verificationCodeSchema = new Schema({
       },
       expries : {
         type : Date,
-        default : Date.now() + 5 * 60 * 1000, // 5 minutes
+        default : () => new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
       }
 });
 
