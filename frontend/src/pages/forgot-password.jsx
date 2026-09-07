@@ -230,32 +230,6 @@ function ForgotPassword() {
 
   return (
     <div className="h-screen overflow-hidden bg-[#f7fbf8] text-[#173f2a] font-[Arial] flex flex-col animate-[pageFadeIn_0.7s_ease]">
-      <header className="w-full h-[76px] px-[7%] flex items-center justify-between bg-white border-b border-[#e5eee8] shrink-0">
-        <Link to="/login" className="flex items-center no-underline">
-          <img
-            src="/assets/Ecotrack1.png"
-            alt="EcoTrack"
-            className="w-[145px] h-auto block"
-          />
-        </Link>
-
-        <div className="flex items-center gap-[18px]">
-          <Link
-            to="/login"
-            className="text-[#27834d] text-[15px] font-semibold no-underline hover:text-[#1e6e40]"
-          >
-            Login
-          </Link>
-
-          <Link
-            to="/register"
-            className="px-[22px] py-[11px] bg-[#27834d] text-white rounded-lg text-sm font-semibold no-underline transition duration-200 hover:bg-[#1e6e40]"
-          >
-            Register
-          </Link>
-        </div>
-      </header>
-
       <main
         className="flex-1 min-h-0 flex items-center justify-center px-5 py-[18px]"
         style={{
