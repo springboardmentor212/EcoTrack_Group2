@@ -15,7 +15,7 @@ const navItems = [
     ["Profile", "/profile"],
 ];
 
-export default function TrackingDetailLayout({ title, subtitle, breadcrumbLabel }) {
+export default function TrackingDetailLayout({ title, subtitle, breadcrumbLabel,children  }) {
     const navigate = useNavigate();
     const [profileOpen, setProfileOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
@@ -99,8 +99,8 @@ export default function TrackingDetailLayout({ title, subtitle, breadcrumbLabel 
                         <p className="mt-3 max-w-2xl text-base leading-7 text-[#5c7064] sm:text-lg">{subtitle}</p>
                     </section>
 
-                    <section className="min-h-[280px] rounded-3xl border border-[#d7eadf] bg-white p-8 shadow-[0_10px_30px_rgba(33,78,50,0.05)] sm:p-10">
-                        <p className="text-base text-[#718277]">Tracking form will be implemented here.</p>
+                    <section className="rounded-3xl border border-[#d7eadf] bg-white p-8 shadow-[0_10px_30px_rgba(33,78,50,0.05)] sm:p-10">
+                       {children}
                     </section>
                 </main>
             </div>

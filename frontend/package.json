@@ -14,12 +14,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mantine/core": "^9.6.1",
+    "@mantine/dates": "^9.6.1",
     "@tailwindcss/vite": "^4.3.3",
     "axios": "^1.20.0",
     "bootstrap": "^5.3.8",
     "lucide-react": "^1.45.0",
     "react": "^19.2.8",
     "react-cookie": "^8.1.2",
+    "react-datepicker": "^9.1.0",
+    "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.8",
     "react-icons": "^5.7.0",
     "react-router-dom": "^7.18.3",
