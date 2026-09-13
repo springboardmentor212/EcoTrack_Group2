@@ -71,9 +71,14 @@ export default function Electricity() {
   };
 
   const handleSave = () => {
+    console.log("startDate", startDate);
+console.log("endDate", endDate);
+console.log("formatted endDate", formatDate(endDate));
     const numericConsumption = Number(consumption);
     if (!startDate || !endDate || numericConsumption <= 0 || !usageType) {
       window.alert("Please complete all fields with valid values.");
+      console.log("startDate:", startDate);
+console.log("endDate:", endDate);
       return;
     }
 
@@ -155,8 +160,10 @@ export default function Electricity() {
                         Billing End Date
                     </label>
                     <DateInput
-  value={endDate}
-  onChange={setEndDate}
+  value={formatInputDate(endDate)}
+  onChange={(value) =>
+    setEndDate(value ? parseInputDate(value) : null)
+  }
   valueFormat="DD/MM/YYYY"
   placeholder="Select end date"
   styles={inputStyles}
@@ -228,7 +235,7 @@ export default function Electricity() {
     <button
         type="button"
       onClick={handleSave}
-        className="rounded-xl bg-[#27834D] px-6 py-3 font-medium text-white transition hover:bg-[#1F6A3D]"
+        className="rounded-xl border border-[#27834D] bg-white px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white"
     >
       {editingId === null ? "Add Entry" : "Update Entry"}
     </button>
@@ -236,7 +243,7 @@ export default function Electricity() {
     <button
         type="button"
       onClick={resetForm}
-        className="rounded-xl border border-[#27834D] px-6 py-3 font-medium text-[#27834D]"
+        className="rounded-xl border border-[#27834D] bg-white px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white"
     >
         Clear Form
     </button>
