@@ -1,5 +1,7 @@
 const {Schema} = require('mongoose');
 const bcrypt = require("bcrypt");
+const {carbonActivityModel} = require("../model/carbonActivityModel");
+
 const userSchema = new Schema({
     name : {
         type : String,
@@ -25,16 +27,6 @@ const userSchema = new Schema({
         trim : true,
         lowercase : true,
     },
-    image : {
-        url : {
-            type : String,
-            Default : '../utills/user.png',
-        },
-        filename :{
-           type : String,
-           Default : 'profile',
-        },
-    },
     verified : {
         type : Boolean,
         default : false,
@@ -42,8 +34,45 @@ const userSchema = new Schema({
     role : {
         type : String,
         enum : ['user','administrator '],
-    }
-});
+    },
+
+    profilePhoto: {
+      type: String,
+      default : '../utills/user.png'
+    },
+
+  sustainabilityPreferences: [{
+    type: String,
+    enum: [
+      "renewable energy",
+      "recycling",
+      "waste reduction",
+      "sustainable living",
+      "green transportation"
+    ]
+  }],
+
+  environmentalInterests: [{
+    type: String,
+    enum: [
+      "renewable energy",
+      "recycling",
+      "waste reduction"
+    ]
+  }],
+
+  personalGoalPreferences: [{
+    type: String,
+    enum: [
+      "reduce carbon",
+      "reduce electricity",
+      "increase recycling",
+      "reduce plastic",
+      "use public transport",
+      "plant trees"
+    ]
+  }],
+} , { timestamps: true });
 
 userSchema.pre("save",async function(){
     this.password = await bcrypt.hash(this.password,12);
@@ -56,4 +85,8 @@ userSchema.pre("findOneAndUpdate",async function(){
     }
 });
 
+userSchema.pre("findOneAndDelete",async function(){
+    const userId = this.getQuery()._id; 
+    await carbonActivityModel.deleteMany({userId});
+});
 module.exports = {userSchema};

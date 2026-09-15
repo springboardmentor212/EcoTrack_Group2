@@ -75,6 +75,7 @@ module.exports.login = async(req,res) => {
 };
 
 module.exports.verifyEmail = async(req,res) => { 
+  try{
     const {email,code} = req.body;
     const verificationCode = await verificationCodeModel.findOne({email});
 
@@ -107,9 +108,13 @@ module.exports.verifyEmail = async(req,res) => {
         await verificationCodeModel.deleteMany({email});
         return res.status(400).json({success : false, message : "Verification code is Expried"});
     } 
+  }catch(error){
+    return res.status(500).json({success : false , message : "internal server error"}); 
+  }
 };
 
 module.exports.verifyEmailForResetPassword = async(req,res) => { 
+  try{
     const {email,code} = req.body;
     const verificationCode = await verificationCodeModel.findOne({email});
 
@@ -133,6 +138,9 @@ module.exports.verifyEmailForResetPassword = async(req,res) => {
         await verificationCodeModel.deleteMany({email});
         return res.status(400).json({success : false, message : "Verification code is Expried"});
     } 
+  }catch(error){
+    return res.status(500).json({success : false , message : "internal server error"}); 
+  }
 };
 
 module.exports.resendOtp = async(req,res) => {
@@ -184,4 +192,14 @@ module.exports.resetPassword = async(req,res)=>{
  }catch(err){
     return res.status(500).json({success : false , message : "internal server error"});
  }
+};
+
+module.exports.deleteAccount = async(req,res)=>{
+   const userId = req.currUser;
+    if(!userId){
+        return res.status(400).json({success : false, message : "login first to update profile"});
+    }
+
+    await userModel.findOneAndDelete({_id : userId});
+    return res.status(200).json({success : true, message : "user account delete successfully"});
 };
