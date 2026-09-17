@@ -169,15 +169,13 @@ export default function Transportation() {
       onChange={setFuelType}
       placeholder="Select fuel type"
       disabled={
-        transportMode !== "Car" &&
-        transportMode !== "Motorcycle"
+        transportMode !== "2 wheeler" && transportMode !== "4 wheeler" && transportMode !== "auto rickshaw"
       }
       data={[
         "Petrol",
         "Diesel",
         "CNG",
         "Electric",
-        "Hybrid",
       ]}
       styles={inputStyles}
     />
