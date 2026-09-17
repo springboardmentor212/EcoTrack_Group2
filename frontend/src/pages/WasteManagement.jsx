@@ -9,11 +9,17 @@ import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 export default function WasteManagement() {
   const [wasteAmount, setWasteAmount] = useState(null);
-  const [unit, setUnit] = useState("");
-  const [disposalMethod, setDisposalMethod] = useState("");
+  const [disposalMethod, setDisposalMethod] = useState(null);
+ 
   const [wasteDate, setWasteDate] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [wasteType, setWasteType] = useState("");
+  const [wasteType, setWasteType] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState("All");
+const [selectedYear, setSelectedYear] = useState("All");
+const [error, setError] = useState("");
+const [currentPage, setCurrentPage] = useState(1);
+
+const recordsPerPage = 5;
   const disposalOptions =
   wasteType === "Wet Waste"
     ? ["Composting", "Landfill"]
@@ -32,6 +38,17 @@ export default function WasteManagement() {
   },
 ]);//this is a sample previous entry, you can replace it with your actual data or fetch it from an API.
 const handleAddEntry = () => {
+  if (
+    wasteAmount === null ||
+    wasteAmount === "" ||
+    !wasteType ||
+    !disposalMethod ||
+    !wasteDate
+  ) {
+    setError("Please fill all fields");
+    return;
+  }
+  setError("");
   const newEntry = {
   id: editingId || Date.now(),
   amount: wasteAmount,
@@ -67,11 +84,37 @@ const handleAddEntry = () => {
     },
   };
 const clearForm = () => {
-  setWasteAmount("");
-  setWasteType("");
-  setDisposalMethod("");
+  console.log("clearForm called");
+  setWasteAmount(undefined);
+  setWasteType(null);
+  setDisposalMethod(null);
   setWasteDate(null);
+  setEditingId(null);
+  setError("");
 };
+const filteredEntries = previousEntries.filter((entry) => {
+  const monthMatch =
+    selectedMonth === "All" ||
+    entry.date.split("/")[1] === selectedMonth;
+
+  const yearMatch =
+    selectedYear === "All" ||
+    entry.date.split("/")[2] === selectedYear;
+
+  return monthMatch && yearMatch;
+});
+const totalPages = Math.ceil(
+  filteredEntries.length / recordsPerPage
+);
+
+const startIndex =
+  (currentPage - 1) * recordsPerPage;
+
+const currentEntries =
+  filteredEntries.slice(
+    startIndex,
+    startIndex + recordsPerPage
+  );
   return (
     <TrackingDetailLayout
       breadcrumbLabel="Waste Management"
@@ -140,6 +183,12 @@ const clearForm = () => {
     />
   </div>
 </div>
+{error && (
+  <p className="mb-4 text-sm font-medium text-red-500">
+    {error}
+  </p>
+)}
+
 <div className="mt-8 flex gap-4">
   <button
   type="button"
@@ -159,7 +208,8 @@ const clearForm = () => {
   
 </div>
 <div className="mt-12">
-  <div className="mb-6 flex items-center justify-between">
+  <div className="mb-6 flex items-end justify-between">
+  <div>
     <h2 className="text-xl font-semibold text-[#173F2A]">
       Previous Entries
     </h2>
@@ -169,8 +219,56 @@ const clearForm = () => {
     </span>
   </div>
 
+  <div className="flex gap-4">
+    <div>
+      <label className="mb-1 block text-sm font-medium text-[#173F2A]">
+        Month
+      </label>
+
+      <Select
+        value={selectedMonth}
+        onChange={(value) => {
+          setSelectedMonth(value);
+          setCurrentPage(1);
+        }}
+        placeholder="All"
+        w={120}
+        data={[
+          "All","01","02","03","04","05","06",
+          "07","08","09","10","11","12",
+        ]}
+      />
+    </div>
+
+    <div>
+      <label className="mb-1 block text-sm font-medium text-[#173F2A]">
+        Year
+      </label>
+
+      <Select
+        value={selectedYear}
+        onChange={(value) => {
+          setSelectedYear(value);
+          setCurrentPage(1);
+        }}
+        placeholder="All"
+        w={120}
+        data={[
+          "All",
+          "2024",
+          "2025",
+          "2026",
+        ]}
+      />
+    </div>
+  </div>
+</div>
+
+<table className="w-full"></table>
   <div className="overflow-hidden rounded-2xl border border-[#D7EADF]">
+    
     <table className="w-full">
+      
       <thead className="bg-[#EEF7F0]">
         <tr>
           <th className="px-6 py-4 text-left text-sm font-semibold">
@@ -192,10 +290,11 @@ const clearForm = () => {
   Actions
 </th>
         </tr>
+        
       </thead>
 
       <tbody>
-        {previousEntries.map((entry) => (
+        {currentEntries.map((entry) => (
           <tr
             key={entry.id}
             className="border-t border-[#D7EADF]"
@@ -220,11 +319,13 @@ const clearForm = () => {
     <button
       type="button"
       onClick={() => {
+        const [day, month, year] = entry.date.split("/");
         setEditingId(entry.id);
         setWasteAmount(entry.amount);
-        setUnit(entry.unit);
         setDisposalMethod(entry.disposalMethod);
-        setWasteDate(entry.date);
+        setWasteDate(
+  new Date(year, month - 1, day)
+);
         setWasteType(entry.wasteType);
       }}
       className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EEF7F0] text-[#27834D] transition hover:bg-[#DFF3E6]"
@@ -252,6 +353,63 @@ const clearForm = () => {
         ))}
       </tbody>
     </table>
+    {totalPages > 1 && (
+  <div className="mt-6 flex justify-center gap-2">
+    {currentPage > 1 && (
+      <button
+        onClick={() =>
+          setCurrentPage(currentPage - 1)
+        }
+        className="rounded border px-3 py-1"
+      >
+        {"<"}
+      </button>
+    )}
+
+    {Array.from(
+      {
+        length: Math.min(5, totalPages),
+      },
+      (_, index) => {
+        const pageNumber =
+          Math.max(
+            1,
+            Math.min(
+              currentPage - 2,
+              totalPages - 4
+            )
+          ) + index;
+
+        return (
+          <button
+            key={pageNumber}
+            onClick={() =>
+              setCurrentPage(pageNumber)
+            }
+            className={`rounded px-3 py-1 ${
+              currentPage === pageNumber
+                ? "bg-[#27834D] text-white"
+                : "border"
+            }`}
+          >
+            {pageNumber}
+          </button>
+        );
+      }
+    )}
+
+    {currentPage < totalPages && (
+      <button
+        onClick={() =>
+          setCurrentPage(currentPage + 1)
+        }
+        className="rounded border px-3 py-1"
+      >
+        {">"}
+      </button>
+    )}
+  </div>
+)}
   </div>
 </div>
     </TrackingDetailLayout>
