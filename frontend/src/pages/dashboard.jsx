@@ -34,7 +34,7 @@ const overviewData = {
 
 const navItems = [
     ["Dashboard", "/dashboard"],
-    ["Tracking System", "/tracking"],
+    ["Carbon Tracking System", "/tracking"],
     ["Sustainability Goals", "/sustainability-goals"],
     ["Community Challenges", "/community-challenges"],
     ["AI Insights", "/ai-insights"],

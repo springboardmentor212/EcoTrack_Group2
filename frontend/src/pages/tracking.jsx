@@ -15,7 +15,7 @@ import wasteImage from "../assets/waste.svg";
 
 const navItems = [
     ["Dashboard", "/dashboard"],
-    ["Tracking System", "/tracking"],
+    ["Carbon Tracking System", "/tracking"],
     ["Sustainability Goals", "/sustainability-goals"],
     ["Community Challenges", "/community-challenges"],
     ["AI Insights", "/ai-insights"],
@@ -107,7 +107,7 @@ const unreadNotifications = notifications.filter(
                                 <Link
                                     key={label}
                                     to={href}
-                                    className={`rounded-lg px-3.5 py-3 text-sm font-medium transition-all duration-200 hover:translate-x-[3px] hover:bg-[#f1f8f3] hover:text-[#27834d] ${label === "Tracking System" ? "bg-[#eaf5ed] font-semibold text-[#27834d]" : "text-[#5c7064]"}`}
+                                    className={`rounded-lg px-3.5 py-3 text-sm font-medium transition-all duration-200 hover:translate-x-[3px] hover:bg-[#f1f8f3] hover:text-[#27834d] ${label === "Carbon Tracking System" ? "bg-[#eaf5ed] font-semibold text-[#27834d]" : "text-[#5c7064]"}`}
                                 >
                                     {label}
                                 </Link>
@@ -129,7 +129,7 @@ const unreadNotifications = notifications.filter(
 
                 <div className="w-full lg:ml-[250px] lg:w-[calc(100%-250px)] max-lg:ml-[220px] max-lg:w-[calc(100%-220px)] max-md:ml-[190px] max-md:w-[calc(100%-190px)] max-sm:ml-0 max-sm:w-full">
                     <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-[#e2ece5] bg-white px-[4%] animate-[topbarReveal_.6s_ease_.12s_both]">
-                        <div className="text-lg font-semibold text-[#173f2a]">Tracking System</div>
+                        <div className="text-lg font-semibold text-[#173f2a]">Carbon Tracking System</div>
                         <div className="flex items-center gap-3.5">
                             <div className="notification-wrapper relative">
                                 <button
