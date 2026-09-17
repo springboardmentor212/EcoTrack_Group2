@@ -236,12 +236,8 @@ export default function Transportation() {
     placeholder="Select trip purpose"
     data={[
       "Work",
-      "Education",
-      "Shopping",
-      "Business",
-      "Leisure",
-      "Medical",
       "Personal",
+      "Leisure",
       "Other",
     ]}
     styles={inputStyles}

@@ -13,25 +13,34 @@ export default function WasteManagement() {
   const [disposalMethod, setDisposalMethod] = useState("");
   const [wasteDate, setWasteDate] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [wasteType, setWasteType] = useState("");
+  const disposalOptions =
+  wasteType === "Wet Waste"
+    ? ["Composting", "Landfill"]
+    : wasteType === "Dry Waste"
+    ? ["Recycling", "Burned", "Landfill"]
+    : wasteType === "E-waste"
+    ? ["Recycling", "Burned", "Landfill"]
+    : [];
   const [previousEntries, setPreviousEntries] = useState([
   {
     id: 1,
     amount: 5,
-    unit: "kg",
+    wasteType: "Wet Waste",
     disposalMethod: "Recycling",
     date: "12/09/2025",
   },
 ]);//this is a sample previous entry, you can replace it with your actual data or fetch it from an API.
 const handleAddEntry = () => {
   const newEntry = {
-    id: editingId || Date.now(),
-    amount: wasteAmount,
-    unit,
-    disposalMethod,
-    date: wasteDate
-      ? new Date(wasteDate).toLocaleDateString("en-GB")
-      : "N/A",
-  };
+  id: editingId || Date.now(),
+  amount: wasteAmount,
+  wasteType,
+  disposalMethod,
+  date: wasteDate
+    ? new Date(wasteDate).toLocaleDateString("en-GB")
+    : "N/A",
+};
 
   if (editingId) {
     setPreviousEntries(
@@ -59,7 +68,7 @@ const handleAddEntry = () => {
   };
 const clearForm = () => {
   setWasteAmount("");
-  setUnit("");
+  setWasteType("");
   setDisposalMethod("");
   setWasteDate(null);
 };
@@ -78,7 +87,7 @@ const clearForm = () => {
     <NumberInput
       value={wasteAmount}
       onChange={setWasteAmount}
-      placeholder="Enter waste amount"
+      placeholder="Enter waste amount (in Kg)"
       hideControls
       styles={inputStyles}
     />
@@ -86,14 +95,18 @@ const clearForm = () => {
 
   <div>
     <label className="mb-2 block text-sm font-medium text-[#173F2A]">
-      Unit
+      Waste type
     </label>
 
     <Select
-      value={unit}
-      onChange={setUnit}
-      placeholder="Select unit"
-      data={["kg", "grams"]}
+      value={wasteType}
+      onChange={setWasteType}
+      placeholder="Select waste type"
+      data={[
+      "Wet Waste",
+      "Dry Waste",
+      "E-waste"
+      ]}
       styles={inputStyles}
     />
   </div>
@@ -104,19 +117,12 @@ const clearForm = () => {
     </label>
 
     <Select
-      value={disposalMethod}
-      onChange={setDisposalMethod}
-      placeholder="Select disposal method"
-      data={[
-        "Recycling",
-        "Composting",
-        "Reuse",
-        "Landfill",
-        "Incineration",
-        "Other",
-      ]}
-      styles={inputStyles}
-    />
+  value={disposalMethod}
+  onChange={setDisposalMethod}
+  placeholder="Select disposal method"
+  data={disposalOptions}
+  styles={inputStyles}
+/>
   </div>
 
   <div>
@@ -176,7 +182,7 @@ const clearForm = () => {
           </th>
 
           <th className="px-6 py-4 text-left text-sm font-semibold">
-            Unit
+            Waste Type
           </th>
 
           <th className="px-6 py-4 text-left text-sm font-semibold">
@@ -201,7 +207,7 @@ const clearForm = () => {
             </td>
 
             <td className="px-6 py-4">
-              {entry.unit}
+              {entry.wasteType}
             </td>
 
             <td className="px-6 py-4">
@@ -219,6 +225,7 @@ const clearForm = () => {
         setUnit(entry.unit);
         setDisposalMethod(entry.disposalMethod);
         setWasteDate(entry.date);
+        setWasteType(entry.wasteType);
       }}
       className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EEF7F0] text-[#27834D] transition hover:bg-[#DFF3E6]"
     >
