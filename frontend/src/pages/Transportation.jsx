@@ -148,14 +148,11 @@ export default function Transportation() {
       onChange={setTransportMode}
       placeholder="Select transport mode"
       data={[
-        "Car",
-        "Motorcycle",
-        "Bus",
-        "Train",
-        "Metro",
-        "Flight",
-        "Bicycle",
-        "Walking",
+        "2 wheeler",
+        "4 wheeler",
+        "auto rickshaw",
+        "bus",
+        "train"
       ]}
       styles={inputStyles}
     />
