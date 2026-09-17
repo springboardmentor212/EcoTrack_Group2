@@ -1,55 +1,28 @@
 import TrackingDetailLayout from "./tracking-detail-layout";
 import { FaBolt, FaHome, FaBuilding } from "react-icons/fa";
-import { DateInput } from "@mantine/dates";
+import { MonthPickerInput } from "@mantine/dates";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import { NumberInput } from "@mantine/core";
 import { useRef, useState } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
-const parseDate = (value) => {
-  const [day, month, year] = value.split("/").map(Number);
-  return new Date(year, month - 1, day);
-};
-
-const parseInputDate = (value) => {
-  const [year, month, day] = value.split("-").map(Number);
-  return new Date(year, month - 1, day);
-};
-
-const formatInputDate = (date) => {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return null;
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const formatDate = (date) => {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  return `${day}/${month}/${date.getFullYear()}`;
-};
 
 export default function Electricity() {
-    const [usageType, setUsageType] = useState("");
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
+  const [usageType, setUsageType] = useState("");
+  const [billingMonth, setBillingMonth] = useState(null);
   const [consumption, setConsumption] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [previousEntries, setPreviousEntries] = useState([
-    {
-      id: 1,
-      startDate: parseDate("01/08/2025"),
-      endDate: parseDate("31/08/2025"),
+    { id : 1,
+      month: "June",
+      year: 2025,
       consumption: 245,
       usageType: "Home",
     },
-    {
-      id: 2,
-      startDate: parseDate("01/07/2025"),
-      endDate: parseDate("31/07/2025"),
+    { id : 2,
+      month: "July",
+      year: 2025,
       consumption: 280,
       usageType: "Business",
     },
@@ -63,31 +36,31 @@ export default function Electricity() {
   };
 
   const resetForm = () => {
-    setStartDate(null);
-    setEndDate(null);
-    setConsumption("");
-    setUsageType("");
-    setEditingId(null);
-  };
+  setBillingMonth(null);
+  setConsumption("");
+  setUsageType("");
+  setEditingId(null);
+};
 
   const handleSave = () => {
-    console.log("startDate", startDate);
-console.log("endDate", endDate);
-console.log("formatted endDate", formatDate(endDate));
     const numericConsumption = Number(consumption);
-    if (!startDate || !endDate || numericConsumption <= 0 || !usageType) {
-      window.alert("Please complete all fields with valid values.");
-      console.log("startDate:", startDate);
-console.log("endDate:", endDate);
-      return;
+    if (!billingMonth || numericConsumption <= 0 || !usageType) {
+     window.alert("Please complete all fields.");
+     return;
+    
     }
-
+      const monthDate = new Date(billingMonth);
     const entry = {
-      startDate,
-      endDate,
-      consumption: numericConsumption,
-      usageType: usageType === "home" ? "Home" : "Business",
-    };
+  id: editingId || Date.now(),
+  month: monthDate.toLocaleString("en-US", {
+    month: "long",
+  }),
+  year: monthDate.getFullYear(),
+  consumption: numericConsumption,
+  usageType:
+    usageType.charAt(0).toUpperCase() +
+    usageType.slice(1),
+};
 
     if (editingId === null) {
       setPreviousEntries((entries) => [
@@ -107,8 +80,10 @@ console.log("endDate:", endDate);
 
   const handleEdit = (entry) => {
     setEditingId(entry.id);
-    setStartDate(entry.startDate);
-    setEndDate(entry.endDate);
+    setBillingMonth(
+  `${entry.year}-${String(monthIndex + 1).padStart(2, "0")}-01`
+);
+
     setConsumption(entry.consumption);
     setUsageType(entry.usageType.toLowerCase());
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -143,34 +118,17 @@ console.log("endDate:", endDate);
             <div ref={formRef} className="grid gap-6 md:grid-cols-3">
                 <div>
                     <label className="mb-2 block text-sm font-medium text-[#173F2A]">
-                        Billing Start Date
+                        Billing Month and Year
                     </label>
-                    <DateInput
-                        value={formatInputDate(startDate)}
-                        onChange={(value) => setStartDate(value ? parseInputDate(value) : null)}
-                        valueFormat="DD/MM/YYYY"
-                        styles={inputStyles}
-                        placeholder="Select start date"
-                        color="green"
-                    />
+                    <MonthPickerInput
+                      value={billingMonth}
+                      onChange={setBillingMonth}
+                      valueFormat="MMMM YYYY"
+                      placeholder="Select billing month"
+                      color="green"
+                      styles={inputStyles}
+                      />
                 </div>
-
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-[#173F2A]">
-                        Billing End Date
-                    </label>
-                    <DateInput
-  value={formatInputDate(endDate)}
-  onChange={(value) =>
-    setEndDate(value ? parseInputDate(value) : null)
-  }
-  valueFormat="DD/MM/YYYY"
-  placeholder="Select end date"
-  styles={inputStyles}
-  color="green"
-/>
-                </div>
-
                 <div>
                     <label className="mb-2 block text-sm font-medium text-[#173F2A]">
                         Consumption (kWh)
@@ -264,7 +222,7 @@ console.log("endDate:", endDate);
       <thead className="bg-[#EEF7F0]">
         <tr>
           <th className="px-6 py-4 text-left text-sm font-semibold">
-            Period
+            Billing Month and Year
           </th>
           <th className="px-6 py-4 text-left text-sm font-semibold">
             Consumption
@@ -285,7 +243,7 @@ console.log("endDate:", endDate);
             className="border-t border-[#D7EADF]"
           >
             <td className="px-6 py-4">
-              {formatDate(entry.startDate)} - {formatDate(entry.endDate)}
+              {entry.month} {entry.year}
             </td>
 
             <td className="px-6 py-4">
