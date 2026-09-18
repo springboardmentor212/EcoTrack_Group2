@@ -1,6 +1,6 @@
 import TrackingDetailLayout from "./tracking-detail-layout";
 import { FaBolt, FaHome, FaBuilding } from "react-icons/fa";
-import { MonthPickerInput } from "@mantine/dates";
+import { MonthPickerInput,YearPickerInput } from "@mantine/dates";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import { NumberInput, Select} from "@mantine/core";
@@ -9,11 +9,13 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 
 
 export default function Electricity() {
+
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState(null);
   const [usageType, setUsageType] = useState("");
   const [billingMonth, setBillingMonth] = useState(null);
   const [consumption, setConsumption] = useState("");
   const [editingId, setEditingId] = useState(null);
-  const [selectedYear, setSelectedYear] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
 
   const recordsPerPage = 5;
@@ -79,19 +81,26 @@ export default function Electricity() {
     setUsageType(entry.usageType.toLowerCase());
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const filteredEntries = previousEntries.filter((entry) => {
-  return (
-    selectedYear === "All" ||
-    String(entry.year) === selectedYear
-  );
+ const filteredEntries = previousEntries.filter((entry) => {
+  const yearMatch =
+    !selectedYear ||
+    entry.year === new Date(selectedYear).getFullYear();
+
+  const monthMatch =
+    !selectedMonth ||
+    entry.month === selectedMonth;
+
+  return yearMatch && monthMatch;
 });
 const totalPages = Math.ceil(
   filteredEntries.length / recordsPerPage
 );
 
+const safePage = Math.min(currentPage, Math.max(totalPages, 1));
+
 const currentEntries = filteredEntries.slice(
-  (currentPage - 1) * recordsPerPage,
-  currentPage * recordsPerPage
+  (safePage - 1) * recordsPerPage,
+  safePage * recordsPerPage
 );
 
   const handleDelete = (entryId) => {
@@ -194,29 +203,54 @@ const currentEntries = filteredEntries.slice(
     </span>
   </div>
 
-  <div>
-    <label className="mb-1 block text-sm font-medium text-[#173F2A]">
-  Year
-</label>
+<div className="flex items-end gap-2">
+  <YearPickerInput
+    value={selectedYear}
+    onChange={(value) => {
+      setSelectedYear(value);
+      setCurrentPage(1);
+    }}
+    placeholder="Year"
+    clearable
+    styles={{
+      input: {
+        minHeight: "40px",
+        width: "120px",
+      },
+    }}
+  />
 
-<Select
-  value={selectedYear}
-  onChange={(value) => {
-    setSelectedYear(value);
-    setCurrentPage(1);
-  }}
-  placeholder="All"
-  w={120}
-  data={[
-    "All",
-    "2024",
-    "2025",
-    "2026",
-  ]}
-/>
-
-  </div>
-
+  <Select
+    value={selectedMonth}
+    onChange={(value) => {
+      setSelectedMonth(value || "");
+      setCurrentPage(1);
+    }}
+    placeholder="Month"
+    clearable={!!selectedMonth}
+    
+    data={[
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ]}
+    styles={{
+      input: {
+        minHeight: "40px",
+        width: "140px",
+      },
+    }}
+  />
+</div>
   </div>
 
   <div className="overflow-hidden rounded-2xl border border-[#D7EADF]">
@@ -291,9 +325,9 @@ const currentEntries = filteredEntries.slice(
 
     {totalPages > 1 && (
       <div className="mt-6 flex justify-center gap-2">
-        {currentPage > 1 && (
+        {safePage > 1 && (
           <button
-            onClick={() => setCurrentPage(currentPage - 1)}
+            onClick={() => setCurrentPage(safePage - 1)}
             className="rounded border px-3 py-1"
           >
             {"<"}
@@ -306,7 +340,7 @@ const currentEntries = filteredEntries.slice(
             const pageNumber =
               Math.max(
                 1,
-                Math.min(currentPage - 2, totalPages - 4)
+                Math.min(safePage - 2, totalPages - 4)
               ) + index;
 
             return (
@@ -314,7 +348,7 @@ const currentEntries = filteredEntries.slice(
                 key={pageNumber}
                 onClick={() => setCurrentPage(pageNumber)}
                 className={`rounded px-3 py-1 ${
-                  currentPage === pageNumber
+                  safePage === pageNumber
                     ? "bg-[#27834D] text-white"
                     : "border"
                 }`}
@@ -325,9 +359,9 @@ const currentEntries = filteredEntries.slice(
           }
         )}
 
-        {currentPage < totalPages && (
+        {safePage < totalPages && (
           <button
-            onClick={() => setCurrentPage(currentPage + 1)}
+            onClick={() => setCurrentPage(safePage + 1)}
             className="rounded border px-3 py-1"
           >
             {">"}
