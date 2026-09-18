@@ -200,7 +200,7 @@ const unreadNotifications = notifications.filter(
                         </div>
                     </header>
 
-                    <main className="px-[4%] pb-12 pt-8">
+                    <main className="px-[4%] pb-8 pt-4">
 
   {/* Hero */}
   <section className="mb-8 rounded-3xl border border-[#e2ece5] bg-[#eef7f0] p-8">
