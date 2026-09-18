@@ -3,7 +3,7 @@ import { FaBolt, FaHome, FaBuilding } from "react-icons/fa";
 import { MonthPickerInput } from "@mantine/dates";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
-import { NumberInput } from "@mantine/core";
+import { NumberInput, Select} from "@mantine/core";
 import { useRef, useState } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 
@@ -13,6 +13,10 @@ export default function Electricity() {
   const [billingMonth, setBillingMonth] = useState(null);
   const [consumption, setConsumption] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [selectedYear, setSelectedYear] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const recordsPerPage = 5;
   const [previousEntries, setPreviousEntries] = useState([
     { id : 1,
       month: "June",
@@ -80,14 +84,27 @@ export default function Electricity() {
 
   const handleEdit = (entry) => {
     setEditingId(entry.id);
-    setBillingMonth(
-  `${entry.year}-${String(monthIndex + 1).padStart(2, "0")}-01`
-);
+    const monthIndex = new Date(`${entry.month} 1, ${entry.year}`).getMonth();
+    setBillingMonth(new Date(entry.year, monthIndex, 1));
 
     setConsumption(entry.consumption);
     setUsageType(entry.usageType.toLowerCase());
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  const filteredEntries = previousEntries.filter((entry) => {
+  return (
+    selectedYear === "All" ||
+    String(entry.year) === selectedYear
+  );
+});
+const totalPages = Math.ceil(
+  filteredEntries.length / recordsPerPage
+);
+
+const currentEntries = filteredEntries.slice(
+  (currentPage - 1) * recordsPerPage,
+  currentPage * recordsPerPage
+);
 
   const handleDelete = (entryId) => {
     setPreviousEntries((entries) => entries.filter((item) => item.id !== entryId));
@@ -207,14 +224,40 @@ export default function Electricity() {
     </button>
 </div>
 <div className="mt-12">
-  <div className="mb-6 flex items-center justify-between">
+  <div className="mb-6 flex items-end justify-between">
+  <div>
     <h2 className="text-xl font-semibold text-[#173F2A]">
       Previous Entries
     </h2>
 
     <span className="text-sm text-[#5C7064]">
-      {previousEntries.length} Records
+      {filteredEntries.length} Records
     </span>
+  </div>
+
+  <div>
+    <label className="mb-1 block text-sm font-medium text-[#173F2A]">
+  Year
+</label>
+
+<Select
+  value={selectedYear}
+  onChange={(value) => {
+    setSelectedYear(value);
+    setCurrentPage(1);
+  }}
+  placeholder="All"
+  w={120}
+  data={[
+    "All",
+    "2024",
+    "2025",
+    "2026",
+  ]}
+/>
+
+  </div>
+
   </div>
 
   <div className="overflow-hidden rounded-2xl border border-[#D7EADF]">
@@ -222,40 +265,34 @@ export default function Electricity() {
       <thead className="bg-[#EEF7F0]">
         <tr>
           <th className="px-6 py-4 text-left text-sm font-semibold">
-            Billing Month and Year
+            Month
           </th>
           <th className="px-6 py-4 text-left text-sm font-semibold">
-            Consumption
+            Year
+          </th>
+          <th className="px-6 py-4 text-left text-sm font-semibold">
+            Consumption (kWh)
           </th>
           <th className="px-6 py-4 text-left text-sm font-semibold">
             Usage Type
           </th>
           <th className="px-6 py-4 text-left text-sm font-semibold">
-  Actions
-</th>
+            Actions
+          </th>
         </tr>
       </thead>
 
       <tbody>
-        {previousEntries.map((entry) => (
-          <tr
-            key={entry.id}
-            className="border-t border-[#D7EADF]"
-          >
-            <td className="px-6 py-4">
-              {entry.month} {entry.year}
-            </td>
-
-            <td className="px-6 py-4">
-              {entry.consumption} kWh
-            </td>
-
+        {currentEntries.map((entry) => (
+          <tr key={entry.id} className="border-t border-[#D7EADF]">
+            <td className="px-6 py-4">{entry.month}</td>
+            <td className="px-6 py-4">{entry.year}</td>
+            <td className="px-6 py-4">{entry.consumption}</td>
             <td className="px-6 py-4">
               <span className="rounded-full bg-[#EEF7F0] px-3 py-1 text-sm text-[#27834D]">
                 {entry.usageType}
               </span>
             </td>
-
             <td className="px-6 py-4">
               <div className="flex gap-3">
                 <button
@@ -268,8 +305,8 @@ export default function Electricity() {
 
                 <button
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FDF2F2] text-[#B34B4B] transition hover:bg-[#FBE5E5]"
                   onClick={() => handleDelete(entry.id)}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FDF2F2] text-[#B34B4B] transition hover:bg-[#FBE5E5]"
                 >
                   <FaTrash />
                 </button>
@@ -279,8 +316,57 @@ export default function Electricity() {
         ))}
       </tbody>
     </table>
+
+    {totalPages > 1 && (
+      <div className="mt-6 flex justify-center gap-2">
+        {currentPage > 1 && (
+          <button
+            onClick={() => setCurrentPage(currentPage - 1)}
+            className="rounded border px-3 py-1"
+          >
+            {"<"}
+          </button>
+        )}
+
+        {Array.from(
+          { length: Math.min(5, totalPages) },
+          (_, index) => {
+            const pageNumber =
+              Math.max(
+                1,
+                Math.min(currentPage - 2, totalPages - 4)
+              ) + index;
+
+            return (
+              <button
+                key={pageNumber}
+                onClick={() => setCurrentPage(pageNumber)}
+                className={`rounded px-3 py-1 ${
+                  currentPage === pageNumber
+                    ? "bg-[#27834D] text-white"
+                    : "border"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            );
+          }
+        )}
+
+        {currentPage < totalPages && (
+          <button
+            onClick={() => setCurrentPage(currentPage + 1)}
+            className="rounded border px-3 py-1"
+          >
+            {">"}
+          </button>
+        )}
+      </div>
+    )}
   </div>
+
   </div>
+  
       </TrackingDetailLayout>
     );
   }
