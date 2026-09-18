@@ -17,20 +17,7 @@ export default function Electricity() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const recordsPerPage = 5;
-  const [previousEntries, setPreviousEntries] = useState([
-    { id : 1,
-      month: "June",
-      year: 2025,
-      consumption: 245,
-      usageType: "Home",
-    },
-    { id : 2,
-      month: "July",
-      year: 2025,
-      consumption: 280,
-      usageType: "Business",
-    },
-  ]);
+  const [previousEntries, setPreviousEntries] = useState([]);
   const formRef = useRef(null);
     const inputStyles = {
     input: {
@@ -261,7 +248,20 @@ const currentEntries = filteredEntries.slice(
   </div>
 
   <div className="overflow-hidden rounded-2xl border border-[#D7EADF]">
-    <table className="w-full">
+
+  {filteredEntries.length === 0 ? (
+    <div className="py-12 text-center">
+      <p className="text-lg font-medium text-[#173F2A]">
+        No entries found
+      </p>
+
+      <p className="mt-2 text-sm text-[#5C7064]">
+        Add your first electricity record to get started.
+      </p>
+    </div>
+  ) : (
+    <>
+      <table className="w-full">
       <thead className="bg-[#EEF7F0]">
         <tr>
           <th className="px-6 py-4 text-left text-sm font-semibold">
@@ -363,9 +363,11 @@ const currentEntries = filteredEntries.slice(
         )}
       </div>
     )}
+      </>
+  )}
   </div>
 
-  </div>
+</div>
   
       </TrackingDetailLayout>
     );

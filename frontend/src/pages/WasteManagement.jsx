@@ -28,15 +28,7 @@ const recordsPerPage = 5;
     : wasteType === "E-waste"
     ? ["Recycling", "Burned", "Landfill"]
     : [];
-  const [previousEntries, setPreviousEntries] = useState([
-  {
-    id: 1,
-    amount: 5,
-    wasteType: "Wet Waste",
-    disposalMethod: "Recycling",
-    date: "12/09/2025",
-  },
-]);//this is a sample previous entry, you can replace it with your actual data or fetch it from an API.
+  const [previousEntries, setPreviousEntries] = useState([]);
 const handleAddEntry = () => {
   if (
     wasteAmount === null ||
@@ -229,7 +221,7 @@ const currentEntries =
     </h2>
 
     <span className="text-sm text-[#5C7064]">
-      {previousEntries.length} Records
+      {filteredEntries.length} Records
     </span>
   </div>
 
@@ -278,7 +270,17 @@ const currentEntries =
   </div>
 </div>
 
-<table className="w-full"></table>
+{currentEntries.length === 0 ? (
+  <div className="rounded-2xl border border-[#D7EADF] p-8 text-center">
+    <p className="text-lg font-medium text-[#173F2A]">
+        No entries found
+      </p>
+
+      <p className="mt-2 text-sm text-[#5C7064]">
+        Add your first record to get started.
+      </p>
+  </div>
+) : (
   <div className="overflow-hidden rounded-2xl border border-[#D7EADF]">
     
     <table className="w-full">
@@ -414,6 +416,7 @@ const currentEntries =
   </div>
 )}
   </div>
+)}
 </div>
     </TrackingDetailLayout>
   );

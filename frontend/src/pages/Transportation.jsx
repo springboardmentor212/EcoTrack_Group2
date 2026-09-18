@@ -37,31 +37,9 @@ export default function Transportation() {
   const recordsPerPage = 5;
   const fuelRequiredModes = ["2 wheeler", "4 wheeler", "auto rickshaw"];
 
-  const [previousTrips, setPreviousTrips] = useState([
-    {
-      id: 1,
-      date: "12/09/2025",
-      mode: "4 wheeler",
-      fuelType: "Petrol",
-      fromLocation: "Hyderabad",
-      toLocation: "Gachibowli",
-      distance: 18,
-      purpose: "Work",
-    },
-    {
-      id: 2,
-      date: "10/09/2025",
-      mode: "train",
-      fuelType: "",
-      fromLocation: "Mumbai",
-      toLocation: "Pune",
-      distance: 30,
-      purpose: "Education",
-    },
-  
-  ]);
+  const [previousEntries, setPreviousEntries] = useState([]);
 
-  const filteredTrips = previousTrips.filter((trip) => {
+  const filteredTrips = previousEntries.filter((trip) => {
     const tripDateParts = trip.date.split("/");
     const monthMatch =
       selectedMonth === "All" || tripDateParts[1] === selectedMonth;
@@ -139,9 +117,9 @@ export default function Transportation() {
     };
 
     if (editingId === null) {
-      setPreviousTrips((prevTrips) => [
+      setPreviousEntries((prevEntries) => [
         { ...tripData, id: Date.now() },
-        ...prevTrips,
+        ...prevEntries,
       ]);
     } else {
       setPreviousTrips((prevTrips) =>
@@ -359,62 +337,74 @@ export default function Transportation() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-[#D7EADF]">
-          <table className="w-full">
-            <thead className="bg-[#EEF7F0]">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold">Mode</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold">Distance</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold">Purpose</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
-              </tr>
-            </thead>
+        {currentTrips.length === 0 ? (
+          <div className="rounded-2xl border border-[#D7EADF] p-8 text-center">
+            <p className="text-lg font-medium text-[#173F2A]">
+        No entries found
+      </p>
 
-            <tbody>
-              {currentTrips.map((trip) => (
-                <tr key={trip.id} className="border-t border-[#D7EADF]">
-                  <td className="px-6 py-4">{displayDate(trip.date)}</td>
-                  <td className="px-6 py-4">{trip.mode}</td>
-                  <td className="px-6 py-4">{trip.distance} km</td>
-                  <td className="px-6 py-4">
-                    <span className="rounded-full bg-[#EEF7F0] px-3 py-1 text-sm text-[#27834D]">
-                      {trip.purpose}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleEditTrip(trip)}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EEF7F0] text-[#27834D] transition hover:bg-[#DFF3E6]"
-                      >
-                        <FaEdit />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPreviousTrips((prevTrips) =>
-                            prevTrips.filter((item) => item.id !== trip.id),
-                          );
-                          if (editingId === trip.id) {
-                            clearForm();
-                          }
-                        }}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FDF2F2] text-[#B34B4B] transition hover:bg-[#FBE5E5]"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
-                  </td>
+      <p className="mt-2 text-sm text-[#5C7064]">
+        Add your first trip record to get started.
+      </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-[#D7EADF]">
+            <table className="w-full">
+              <thead className="bg-[#EEF7F0]">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Mode</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Distance</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Purpose</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
 
-        {totalPages > 1 && (
+              <tbody>
+                {currentTrips.map((trip) => (
+                  <tr key={trip.id} className="border-t border-[#D7EADF]">
+                    <td className="px-6 py-4">{displayDate(trip.date)}</td>
+                    <td className="px-6 py-4">{trip.mode}</td>
+                    <td className="px-6 py-4">{trip.distance} km</td>
+                    <td className="px-6 py-4">
+                      <span className="rounded-full bg-[#EEF7F0] px-3 py-1 text-sm text-[#27834D]">
+                        {trip.purpose}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleEditTrip(trip)}
+                          className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EEF7F0] text-[#27834D] transition hover:bg-[#DFF3E6]"
+                        >
+                          <FaEdit />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviousTrips((prevTrips) =>
+                              prevTrips.filter((item) => item.id !== trip.id),
+                            );
+                            if (editingId === trip.id) {
+                              clearForm();
+                            }
+                          }}
+                          className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FDF2F2] text-[#B34B4B] transition hover:bg-[#FBE5E5]"
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {currentTrips.length > 0 && totalPages > 1 && (
           <div className="mt-6 flex justify-center gap-2">
             {currentPage > 1 && (
               <button
