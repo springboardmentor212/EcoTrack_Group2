@@ -27,7 +27,6 @@ export default function Transportation() {
   const [fromLocation, setFromLocation] = useState("");
   const [toLocation, setToLocation] = useState("");
   const [fuelType, setFuelType] = useState("");
-  const [tripPurpose, setTripPurpose] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("All");
@@ -35,17 +34,29 @@ export default function Transportation() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const recordsPerPage = 5;
-  const fuelRequiredModes = ["2 wheeler", "4 wheeler", "auto rickshaw"];
+const fuelOptions =
+  transportMode === "2 wheeler"
+    ? ["Petrol", "Electric"]
+    : transportMode === "4 wheeler"
+    ? ["Petrol", "Diesel", "CNG", "Electric"]
+    : transportMode === "auto rickshaw"
+    ? ["Petrol", "CNG","Diesel", "Electric"]
+    : transportMode === "bus"
+    ? ["Diesel", "Electric"]
+    : transportMode === "train"
+    ? ["Electric"]
+    : [];
+
 
   const [previousEntries, setPreviousEntries] = useState([]);
-
+  
   const filteredTrips = previousEntries.filter((trip) => {
     const tripDateParts = trip.date.split("/");
     const monthMatch =
       selectedMonth === "All" || tripDateParts[1] === selectedMonth;
     const yearMatch =
       selectedYear === "All" || tripDateParts[2] === selectedYear;
-
+    
     return monthMatch && yearMatch;
   });
 
@@ -64,24 +75,33 @@ export default function Transportation() {
   const clearForm = () => {
     setTravelDate(null);
     setTransportMode(null);
-    setFuelType("");
+    setFuelType(null);
     setFromLocation("");
     setToLocation("");
     setDistance("");
-    setTripPurpose("");
     setEditingId(null);
     setError("");
   };
 
   const handleEditTrip = (trip) => {
+    console.log({
+  travelDate,
+  transportMode,
+  fuelType,
+  fromLocation,
+  toLocation,
+  distance
+});
     setEditingId(trip.id);
-    setTravelDate(toInputDate(trip.date));
+    const [day, month, year] = trip.date.split("/");
+    setTravelDate(
+  new Date(`${year}-${month}-${day}`)
+      );
     setTransportMode(trip.mode);
     setFuelType(trip.fuelType || "");
     setFromLocation(trip.fromLocation || "");
     setToLocation(trip.toLocation || "");
     setDistance(trip.distance);
-    setTripPurpose(trip.purpose);
     setError("");
   };
 
@@ -95,10 +115,10 @@ export default function Transportation() {
       !transportMode ||
       !trimmedFrom ||
       !trimmedTo ||
-      !tripPurpose ||
       !distance ||
-      numericDistance <= 0 ||
-      (fuelRequiredModes.includes(transportMode) && !fuelType)
+      !fuelType ||
+  numericDistance <= 0
+      
     ) {
       setError("Please fill all required fields.");
       return;
@@ -107,14 +127,13 @@ export default function Transportation() {
     setError("");
 
     const tripData = {
-      date: new Date(travelDate).toLocaleDateString("en-GB"),
-      mode: transportMode,
-      fuelType: fuelRequiredModes.includes(transportMode) ? fuelType : "",
-      fromLocation: trimmedFrom,
-      toLocation: trimmedTo,
-      distance: numericDistance,
-      purpose: tripPurpose,
-    };
+  date: new Date(travelDate).toLocaleDateString("en-GB"),
+  mode: transportMode,
+  fuelType,
+  fromLocation: trimmedFrom,
+  toLocation: trimmedTo,
+  distance: numericDistance,
+};
 
     if (editingId === null) {
       setPreviousEntries((prevEntries) => [
@@ -122,9 +141,9 @@ export default function Transportation() {
         ...prevEntries,
       ]);
     } else {
-      setPreviousTrips((prevTrips) =>
-        prevTrips.map((trip) =>
-          trip.id === editingId ? { ...trip, ...tripData } : trip,
+      setPreviousEntries((prevEntries) =>
+        prevEntries.map((entry) =>
+          entry.id === editingId ? { ...entry, ...tripData } : entry,
         ),
       );
     }
@@ -160,18 +179,20 @@ export default function Transportation() {
           </label>
 
           <Select
-            value={transportMode}
-            onChange={(value) => {
-              setTransportMode(value || "");
-              if (value && !fuelRequiredModes.includes(value)) {
-                setFuelType("");
-              }
-              setError("");
-            }}
-            placeholder="Select transport mode"
-            data={["2 wheeler", "4 wheeler", "auto rickshaw", "bus", "train"]}
-            styles={inputStyles}
-          />
+  value={transportMode}
+  onChange={(value) => {
+    setTransportMode(value);
+  }}
+  placeholder="Select transport mode"
+  data={[
+    "2 wheeler",
+    "4 wheeler",
+    "auto rickshaw",
+    "bus",
+    "train",
+  ]}
+  styles={inputStyles}
+/>
         </div>
 
         <div>
@@ -186,8 +207,7 @@ export default function Transportation() {
               setError("");
             }}
             placeholder="Select fuel type"
-            disabled={!fuelRequiredModes.includes(transportMode)}
-            data={["Petrol", "Diesel", "CNG", "Electric"]}
+            data={fuelOptions}
             styles={inputStyles}
           />
         </div>
@@ -233,23 +253,6 @@ export default function Transportation() {
             styles={inputStyles}
           />
         </div>
-      </div>
-
-      <div className="mt-6">
-        <label className="mb-2 block text-sm font-medium text-[#173F2A]">
-          Trip Purpose
-        </label>
-
-        <Select
-          value={tripPurpose}
-          onChange={(value) => {
-            setTripPurpose(value || "");
-            setError("");
-          }}
-          placeholder="Select trip purpose"
-          data={["Work", "Personal", "Leisure", "Other"]}
-          styles={inputStyles}
-        />
       </div>
 
       {error && (
@@ -355,7 +358,7 @@ export default function Transportation() {
                   <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Mode</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Distance</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">Purpose</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Fuel Type</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
                 </tr>
               </thead>
@@ -366,11 +369,7 @@ export default function Transportation() {
                     <td className="px-6 py-4">{displayDate(trip.date)}</td>
                     <td className="px-6 py-4">{trip.mode}</td>
                     <td className="px-6 py-4">{trip.distance} km</td>
-                    <td className="px-6 py-4">
-                      <span className="rounded-full bg-[#EEF7F0] px-3 py-1 text-sm text-[#27834D]">
-                        {trip.purpose}
-                      </span>
-                    </td>
+                    <td className="px-6 py-4">{trip.fuelType || "N/A"}</td>
                     <td className="px-6 py-4">
                       <div className="flex gap-3">
                         <button
@@ -384,8 +383,8 @@ export default function Transportation() {
                         <button
                           type="button"
                           onClick={() => {
-                            setPreviousTrips((prevTrips) =>
-                              prevTrips.filter((item) => item.id !== trip.id),
+                            setPreviousEntries((prevEntries) =>
+                              prevEntries.filter((item) => item.id !== trip.id),
                             );
                             if (editingId === trip.id) {
                               clearForm();
