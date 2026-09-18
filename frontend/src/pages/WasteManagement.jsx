@@ -58,10 +58,24 @@ const handleAddEntry = () => {
     ? new Date(wasteDate).toLocaleDateString("en-GB")
     : "N/A",
 };
+const filteredEntries = previousEntries.filter((entry) => {
+  return (
+    selectedMonth === "All" ||
+    entry.date.split("/")[1] === selectedMonth
+  );
+});
+const totalPages = Math.ceil(
+  filteredEntries.length / recordsPerPage
+);
+
+const currentEntries = filteredEntries.slice(
+  (currentPage - 1) * recordsPerPage,
+  currentPage * recordsPerPage
+);
 
   if (editingId) {
     setPreviousEntries(
-      previousEntries.map((item) =>
+      currentEntries.map((item) =>
         item.id === editingId ? newEntry : item
       )
     );
@@ -357,9 +371,7 @@ const currentEntries =
   <div className="mt-6 flex justify-center gap-2">
     {currentPage > 1 && (
       <button
-        onClick={() =>
-          setCurrentPage(currentPage - 1)
-        }
+        onClick={() => setCurrentPage(currentPage - 1)}
         className="rounded border px-3 py-1"
       >
         {"<"}
@@ -367,25 +379,18 @@ const currentEntries =
     )}
 
     {Array.from(
-      {
-        length: Math.min(5, totalPages),
-      },
+      { length: Math.min(5, totalPages) },
       (_, index) => {
         const pageNumber =
           Math.max(
             1,
-            Math.min(
-              currentPage - 2,
-              totalPages - 4
-            )
+            Math.min(currentPage - 2, totalPages - 4)
           ) + index;
 
         return (
           <button
             key={pageNumber}
-            onClick={() =>
-              setCurrentPage(pageNumber)
-            }
+            onClick={() => setCurrentPage(pageNumber)}
             className={`rounded px-3 py-1 ${
               currentPage === pageNumber
                 ? "bg-[#27834D] text-white"
@@ -400,9 +405,7 @@ const currentEntries =
 
     {currentPage < totalPages && (
       <button
-        onClick={() =>
-          setCurrentPage(currentPage + 1)
-        }
+        onClick={() => setCurrentPage(currentPage + 1)}
         className="rounded border px-3 py-1"
       >
         {">"}
