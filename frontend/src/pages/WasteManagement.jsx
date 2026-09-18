@@ -18,6 +18,7 @@ export default function WasteManagement() {
 const [selectedYear, setSelectedYear] = useState("All");
 const [error, setError] = useState("");
 const [currentPage, setCurrentPage] = useState(1);
+const [formKey, setFormKey] = useState(0);
 
 const recordsPerPage = 5;
   const disposalOptions =
@@ -31,19 +32,18 @@ const recordsPerPage = 5;
   const [previousEntries, setPreviousEntries] = useState([]);
 const handleAddEntry = () => {
   if (
-    wasteAmount === null ||
-    wasteAmount === "" ||
-    !wasteType ||
-    !disposalMethod ||
-    !wasteDate
-  ) {
-    setError("Please fill all fields");
-    return;
-  }
+  wasteAmount === "" ||
+  Number(wasteAmount) <= 0 ||
+  !wasteType ||
+  !disposalMethod ||
+  !wasteDate
+) {
+  return;
+}
   setError("");
   const newEntry = {
   id: editingId || Date.now(),
-  amount: wasteAmount,
+  amount: Number(wasteAmount),
   wasteType,
   disposalMethod,
   date: wasteDate
@@ -90,13 +90,13 @@ const currentEntries = filteredEntries.slice(
     },
   };
 const clearForm = () => {
-  console.log("clearForm called");
-  setWasteAmount(undefined);
+  setWasteAmount("");
   setWasteType(null);
   setDisposalMethod(null);
   setWasteDate(null);
   setEditingId(null);
   setError("");
+  setFormKey((prev) => prev + 1);
 };
 const filteredEntries = previousEntries.filter((entry) => {
   const monthMatch =
@@ -148,6 +148,7 @@ const currentEntries =
     </label>
 
     <Select
+      key={`waste-type-${formKey}`}
       value={wasteType}
       onChange={setWasteType}
       placeholder="Select waste type"
@@ -166,6 +167,7 @@ const currentEntries =
     </label>
 
     <Select
+  key={`disposal-method-${formKey}`}
   value={disposalMethod}
   onChange={setDisposalMethod}
   placeholder="Select disposal method"
