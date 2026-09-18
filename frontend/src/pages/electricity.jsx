@@ -29,7 +29,7 @@ export default function Electricity() {
   const resetForm = () => {
   setBillingMonth(null);
   setConsumption("");
-  setUsageType("");
+  setUsageType(null);
   setEditingId(null);
 };
 
@@ -55,8 +55,9 @@ export default function Electricity() {
 
     if (editingId === null) {
       setPreviousEntries((entries) => [
-        ...entries,
         { ...entry, id: Date.now() },
+        ...entries,
+        
       ]);
     } else {
       setPreviousEntries((entries) =>
@@ -120,79 +121,50 @@ const currentEntries = filteredEntries.slice(
                 </div>
             </div>
             <div ref={formRef} className="grid gap-6 md:grid-cols-3">
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-[#173F2A]">
-                        Billing Month and Year
-                    </label>
-                    <MonthPickerInput
-                      value={billingMonth}
-                      onChange={setBillingMonth}
-                      valueFormat="MMMM YYYY"
-                      placeholder="Select billing month"
-                      color="green"
-                      styles={inputStyles}
-                      />
-                </div>
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-[#173F2A]">
-                        Consumption (kWh)
-                    </label>
-                    <NumberInput
-                      value={consumption}
-                      onChange={setConsumption}
-                      placeholder="Enter consumption"
-                      hideControls
-                      styles={inputStyles}
-/>
-                </div>
-            </div>
-<div className="mt-8">
-    <label className="mb-4 block text-sm font-medium text-[#173F2A]">
-        Usage Type
+  <div>
+    <label className="mb-2 block text-sm font-medium text-[#173F2A]">
+      Billing Month and Year
     </label>
 
-    <div className="grid gap-4 md:grid-cols-2">
+    <MonthPickerInput
+      value={billingMonth}
+      onChange={setBillingMonth}
+      valueFormat="MMMM YYYY"
+      placeholder="Select billing month"
+      color="green"
+      styles={inputStyles}
+    />
+  </div>
 
-        <button
-    type="button"
-    onClick={() => setUsageType("home")}
-    className={`flex items-center gap-4 rounded-2xl p-5 text-left transition ${
-        usageType === "home"
-            ? "border-2 border-[#27834D] bg-[#EEF7F0]"
-            : "border border-[#D7EADF] hover:border-[#27834D] hover:bg-[#EEF7F0]"
-    }`}
->
-            <FaHome className="text-2xl text-[#27834D]" />
+  <div>
+    <label className="mb-2 block text-sm font-medium text-[#173F2A]">
+      Consumption (kWh)
+    </label>
 
-            <div>
-                <h3 className="font-semibold">Home</h3>
-                <p className="text-sm text-[#5C7064]">
-                    Residential electricity usage
-                </p>
-            </div>
-        </button>
+    <NumberInput
+      value={consumption}
+      onChange={setConsumption}
+      placeholder="Enter consumption"
+      hideControls
+      styles={inputStyles}
+    />
+  </div>
 
-        <button
-    type="button"
-    onClick={() => setUsageType("business")}
-    className={`flex items-center gap-4 rounded-2xl p-5 text-left transition ${
-        usageType === "business"
-            ? "border-2 border-[#27834D] bg-[#EEF7F0]"
-            : "border border-[#D7EADF] hover:border-[#27834D] hover:bg-[#EEF7F0]"
-    }`}
->
-            <FaBuilding className="text-2xl text-[#27834D]" />
+  <div>
+    <label className="mb-2 block text-sm font-medium text-[#173F2A]">
+      Usage Type
+    </label>
 
-            <div>
-                <h3 className="font-semibold">Business</h3>
-                <p className="text-sm text-[#5C7064]">
-                    Commercial electricity usage
-                </p>
-            </div>
-        </button>
-
-    </div>
+    <Select
+      value={usageType}
+      onChange={setUsageType}
+      placeholder="Select usage type"
+      data={["home", "business"]}
+      styles={inputStyles}
+    />
+  </div>
 </div>
+
         <div className="mt-8 flex gap-4">
     <button
         type="button"
