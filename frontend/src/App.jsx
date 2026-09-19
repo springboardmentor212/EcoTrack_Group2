@@ -6,7 +6,7 @@ import ForgotPassword from "./pages/forgot-password";
 import Dashboard from "./pages/dashboard";
 import Tracking from "./pages/tracking";
 import Transportation from "./pages/Transportation";
-import WasteManagement from "./pages/WasteManagement";
+import WasteManagement from "./pages/waste-management";
 import Electricity from "./pages/Electricity";
 
 function App() {
