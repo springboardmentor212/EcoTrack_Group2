@@ -388,7 +388,9 @@ const yearMatch =
                   <th className="px-6 py-4 text-left text-sm font-semibold">Mode</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Distance</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Fuel Type</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Carbon emission</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
+              
                 </tr>
               </thead>
 
@@ -399,6 +401,7 @@ const yearMatch =
                     <td className="px-6 py-4">{trip.mode}</td>
                     <td className="px-6 py-4">{trip.distance} km</td>
                     <td className="px-6 py-4">{trip.fuelType || "N/A"}</td>
+                    <td className="px-6 py-4"></td>
                     <td className="px-6 py-4">
                       <div className="flex gap-3">
                         <button

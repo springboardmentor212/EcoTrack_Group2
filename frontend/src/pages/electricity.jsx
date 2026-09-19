@@ -78,7 +78,7 @@ export default function Electricity() {
     setBillingMonth(new Date(entry.year, monthIndex, 1));
 
     setConsumption(entry.consumption);
-    setUsageType(entry.usageType.toLowerCase());
+    setUsageType(entry.usageType);
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
  const filteredEntries = previousEntries.filter((entry) => {
