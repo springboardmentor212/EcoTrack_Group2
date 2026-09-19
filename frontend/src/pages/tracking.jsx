@@ -95,7 +95,7 @@ const unreadNotifications = notifications.filter(
                 @keyframes barGrow { from { transform: scaleY(0); transform-origin: bottom; } to { transform: scaleY(1); transform-origin: bottom; } }
             `}</style>
 
-            <div className="min-h-screen bg-[#f7fbf8] text-[#173f2a] animate-[pageFadeIn_.7s_ease_both] lg:flex">
+            <div className="h-screen overflow-hidden bg-[#f7fbf8] text-[#173f2a] animate-[pageFadeIn_.7s_ease_both] lg:flex">
                 <aside className="fixed inset-y-0 left-0 z-40 flex w-[250px] shrink-0 flex-col overflow-hidden border-r border-[#e2ece5] bg-white px-[18px] py-5 animate-[sidebarReveal_.6s_ease_.05s_both] max-lg:w-[220px] max-md:w-[190px] max-sm:relative max-sm:w-full max-sm:border-b max-sm:border-r-0 max-sm:py-5">
                     <Link to="/" className="flex shrink-0 items-center border-b border-[#e2ece5] px-3 pb-4">
                         <img src="/assets/Ecotrack1.png" alt="EcoTrack" className="block h-auto w-[160px] max-w-full transition-transform duration-200 hover:scale-[1.02] max-md:w-[150px] max-sm:w-[180px]" />
@@ -200,10 +200,10 @@ const unreadNotifications = notifications.filter(
                         </div>
                     </header>
 
-                    <main className="px-[4%] pb-8 pt-4">
+                    <main className="h-[calc(100vh-76px)] overflow-hidden px-[4%] py-4">
 
   {/* Hero */}
-  <section className="mb-8 rounded-3xl border border-[#e2ece5] bg-[#eef7f0] p-8">
+  <section className="mb-8 rounded-3xl border border-[#e2ece5] bg-[#eef7f0] px-8 py-5">
     <div className="flex items-center justify-between">
       <div>
 
@@ -211,12 +211,12 @@ const unreadNotifications = notifications.filter(
           Choose a Tracking Type
         </h1>
 
-        <p className="mt-4 max-w-xl text-lg text-[#5c7064]">
+        <p className="mt-4 max-w-xl text-base text-[#5c7064]">
           Select a category below to log your activities and help build a more sustainable future.
         </p>
       </div>
 
-      <div className="h-48 w-64 shrink-0">
+      <div className="h-32 w-48 shrink-0">
         <img
           src={earth}
           alt="earth"
@@ -231,24 +231,24 @@ const unreadNotifications = notifications.filter(
     <div
       key={card.title}
       className="
-rounded-3xl
-border border-[#e2ece5]
-bg-white
+rounded-3xl 
+border border-[#e2ece5] 
+bg-white 
 p-8
-transition-all
-duration-300
-hover:-translate-y-2
-hover:shadow-[0_20px_40px_rgba(23,63,42,0.12)]
+transition-all 
+duration-300 
+hover:-translate-y-2 
+hover:shadow-[0_20px_40px_rgba(23,63,42,0.12)] 
 "
     >
-        <div className="mb-6 flex h-36 items-center justify-center rounded-2xl bg-[#eef7f0] p-4">
+        <div className="mb-6 flex h-38 items-center justify-center rounded-2xl bg-[#eef7f0] p-4">
           <img src={card.image} alt={`${card.title} illustration`} className="h-full w-full object-contain" />
     </div>
-      <h3 className="mb-4 text-3xl font-bold">
+      <h3 className="mb-6 text-2xl font-bold">
         {card.title}
       </h3>
 
-      <p className="mb-8 text-[#5c7064]">
+      <p className="mb-8 text-sm text-[#5c7064]">
         {card.description}
       </p>
 
