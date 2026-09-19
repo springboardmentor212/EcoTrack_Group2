@@ -168,7 +168,7 @@ const currentEntries = filteredEntries.slice(
       value={usageType}
       onChange={setUsageType}
       placeholder="Select usage type"
-      data={["home", "business"]}
+      data={["Home", "Business"]}
       styles={inputStyles}
     />
   </div>
