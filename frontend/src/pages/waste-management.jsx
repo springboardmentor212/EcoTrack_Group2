@@ -333,6 +333,13 @@ const currentEntries =
             Disposal Method
           </th>
           <th className="px-6 py-4 text-left text-sm font-semibold">
+            Carbon emission
+          </th>
+          <th className="px-6 py-4 text-left text-sm font-semibold">
+            Carbon saved
+          </th>
+
+          <th className="px-6 py-4 text-left text-sm font-semibold">
   Actions
 </th>
         </tr>
@@ -360,6 +367,8 @@ const currentEntries =
                 {entry.disposalMethod}
               </span>
             </td>
+            <td></td>
+            <td></td>
             <td className="px-6 py-4">
   <div className="flex gap-3">
     <button
