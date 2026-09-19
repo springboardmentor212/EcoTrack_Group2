@@ -211,7 +211,7 @@ const currentEntries = filteredEntries.slice(
       setCurrentPage(1);
     }}
     placeholder="Year"
-    clearable
+    clearable={!!selectedYear}
     styles={{
       input: {
         minHeight: "40px",

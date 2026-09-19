@@ -3,7 +3,7 @@ import { useState } from "react";
 import { FaTrash,FaEdit } from "react-icons/fa";
 
 import { NumberInput, Select } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
+import { DateInput,YearPickerInput} from "@mantine/dates";
 
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
@@ -14,8 +14,8 @@ export default function WasteManagement() {
   const [wasteDate, setWasteDate] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [wasteType, setWasteType] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState("All");
-const [selectedYear, setSelectedYear] = useState("All");
+  const [selectedMonth, setSelectedMonth] = useState("");
+const [selectedYear, setSelectedYear] = useState(null);
 const [error, setError] = useState("");
 const [currentPage, setCurrentPage] = useState(1);
 const [formKey, setFormKey] = useState(0);
@@ -65,19 +65,21 @@ const currentEntries = filteredEntries.slice(
   currentPage * recordsPerPage
 );
 
-  if (editingId) {
-    setPreviousEntries(
-      currentEntries.map((item) =>
-        item.id === editingId ? newEntry : item
-      )
-    );
+  if (editingId !== null) {
+  setPreviousEntries((prevEntries) =>
+    prevEntries.map((item) =>
+      item.id === editingId
+        ? { ...item, ...newEntry }
+        : item
+    )
+  );
 
     setEditingId(null);
   } else {
-    setPreviousEntries((prev) => [
-      newEntry,
-      ...prev,
-    ]);
+  setPreviousEntries((prevEntries) => [
+    newEntry,
+    ...prevEntries,
+  ]);
   }
 
   clearForm();
@@ -99,13 +101,35 @@ const clearForm = () => {
   setFormKey((prev) => prev + 1);
 };
 const filteredEntries = previousEntries.filter((entry) => {
+  const [, month, year] = entry.date.split("/");
+
+  const selectedMonthNumber =
+    [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ].indexOf(selectedMonth) + 1;
+
   const monthMatch =
-    selectedMonth === "All" ||
-    entry.date.split("/")[1] === selectedMonth;
+    !selectedMonth ||
+    Number(month) === selectedMonthNumber;
+
+  const selectedYearValue = selectedYear
+    ? new Date(selectedYear).getFullYear()
+    : null;
 
   const yearMatch =
-    selectedYear === "All" ||
-    entry.date.split("/")[2] === selectedYear;
+    !selectedYear ||
+    Number(year) === selectedYearValue;
 
   return monthMatch && yearMatch;
 });
@@ -227,49 +251,53 @@ const currentEntries =
     </span>
   </div>
 
-  <div className="flex gap-4">
-    <div>
-      <label className="mb-1 block text-sm font-medium text-[#173F2A]">
-        Month
-      </label>
+  <div className="flex items-end gap-2">
+  <YearPickerInput
+    value={selectedYear}
+    onChange={(value) => {
+      setSelectedYear(value);
+      setCurrentPage(1);
+    }}
+    placeholder="Year"
+    clearable={!!selectedYear}
+    styles={{
+      input: {
+        minHeight: "40px",
+        width: "120px",
+      },
+    }}
+  />
 
-      <Select
-        value={selectedMonth}
-        onChange={(value) => {
-          setSelectedMonth(value);
-          setCurrentPage(1);
-        }}
-        placeholder="All"
-        w={120}
-        data={[
-          "All","01","02","03","04","05","06",
-          "07","08","09","10","11","12",
-        ]}
-      />
-    </div>
-
-    <div>
-      <label className="mb-1 block text-sm font-medium text-[#173F2A]">
-        Year
-      </label>
-
-      <Select
-        value={selectedYear}
-        onChange={(value) => {
-          setSelectedYear(value);
-          setCurrentPage(1);
-        }}
-        placeholder="All"
-        w={120}
-        data={[
-          "All",
-          "2024",
-          "2025",
-          "2026",
-        ]}
-      />
-    </div>
-  </div>
+  <Select
+    value={selectedMonth}
+    onChange={(value) => {
+      setSelectedMonth(value || "");
+      setCurrentPage(1);
+    }}
+    placeholder="Month"
+    clearable={!!selectedMonth}
+    data={[
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ]}
+    styles={{
+      input: {
+        minHeight: "40px",
+        width: "140px",
+      },
+    }}
+  />
+</div>
 </div>
 
 {currentEntries.length === 0 ? (

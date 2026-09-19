@@ -1,7 +1,7 @@
 import TrackingDetailLayout from "./tracking-detail-layout";
 import { useState } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import { DateInput } from "@mantine/dates";
+import { DateInput,YearPickerInput} from "@mantine/dates";
 import { Select, TextInput, NumberInput } from "@mantine/core";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
@@ -29,21 +29,21 @@ export default function Transportation() {
   const [fuelType, setFuelType] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("All");
-  const [selectedYear, setSelectedYear] = useState("All");
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const recordsPerPage = 5;
 const fuelOptions =
-  transportMode === "2 wheeler"
+  transportMode === "2 Wheeler"
     ? ["Petrol", "Electric"]
-    : transportMode === "4 wheeler"
+    : transportMode === "4 Wheeler"
     ? ["Petrol", "Diesel", "CNG", "Electric"]
-    : transportMode === "auto rickshaw"
+    : transportMode === "Auto rickshaw"
     ? ["Petrol", "CNG","Diesel", "Electric"]
-    : transportMode === "bus"
+    : transportMode === "Bus"
     ? ["Diesel", "Electric"]
-    : transportMode === "train"
+    : transportMode === "Train"
     ? ["Electric"]
     : [];
 
@@ -51,15 +51,40 @@ const fuelOptions =
   const [previousEntries, setPreviousEntries] = useState([]);
   
   const filteredTrips = previousEntries.filter((trip) => {
-    const tripDateParts = trip.date.split("/");
-    const monthMatch =
-      selectedMonth === "All" || tripDateParts[1] === selectedMonth;
-    const yearMatch =
-      selectedYear === "All" || tripDateParts[2] === selectedYear;
-    
-    return monthMatch && yearMatch;
-  });
+  if (!trip.date) return false;
+    console.log(selectedYear, typeof selectedYear);
+  const [day, month, year] = trip.date.split("/");
 
+  const selectedMonthNumber =
+    [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ].indexOf(selectedMonth) + 1;
+
+  const monthMatch =
+    !selectedMonth ||
+    Number(month) === selectedMonthNumber;
+
+  const selectedYearValue = selectedYear
+  ? new Date(selectedYear).getFullYear()
+  : null;
+
+const yearMatch =
+  !selectedYear ||
+  Number(year) === selectedYearValue;
+
+  return monthMatch && yearMatch;
+});
   const totalPages = Math.ceil(filteredTrips.length / recordsPerPage);
   const pageCount = totalPages || 1;
   const startIndex = (currentPage - 1) * recordsPerPage;
@@ -185,11 +210,11 @@ const fuelOptions =
   }}
   placeholder="Select transport mode"
   data={[
-    "2 wheeler",
-    "4 wheeler",
-    "auto rickshaw",
-    "bus",
-    "train",
+    "2 Wheeler",
+    "4 Wheeler",
+    "Auto rickshaw",
+    "Bus",
+    "Train",
   ]}
   styles={inputStyles}
 />
@@ -291,51 +316,55 @@ const fuelOptions =
 
           <div className="flex gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#173F2A]">
-                Month
-              </label>
+              
 
-              <Select
-                value={selectedMonth}
-                onChange={(value) => {
-                  setSelectedMonth(value || "All");
-                  setCurrentPage(1);
-                }}
-                placeholder="All"
-                w={120}
-                data={[
-                  "All",
-                  "01",
-                  "02",
-                  "03",
-                  "04",
-                  "05",
-                  "06",
-                  "07",
-                  "08",
-                  "09",
-                  "10",
-                  "11",
-                  "12",
-                ]}
-              />
-            </div>
+              <div className="flex items-end gap-2">
+  <YearPickerInput
+    value={selectedYear}
+    onChange={(value) => {
+      setSelectedYear(value);
+      setCurrentPage(1);
+    }}
+    placeholder="Year"
+    clearable={!!selectedYear}
+    styles={{
+      input: {
+        minHeight: "40px",
+        width: "120px",
+      },
+    }}
+  />
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[#173F2A]">
-                Year
-              </label>
-
-              <Select
-                value={selectedYear}
-                onChange={(value) => {
-                  setSelectedYear(value || "All");
-                  setCurrentPage(1);
-                }}
-                placeholder="All"
-                w={120}
-                data={["All", "2024", "2025", "2026"]}
-              />
+  <Select
+    value={selectedMonth}
+    onChange={(value) => {
+      setSelectedMonth(value || "");
+      setCurrentPage(1);
+    }}
+    placeholder="Month"
+    clearable={!!selectedMonth}
+    data={[
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ]}
+    styles={{
+      input: {
+        minHeight: "40px",
+        width: "140px",
+      },
+    }}
+  />
+</div>
             </div>
           </div>
         </div>
