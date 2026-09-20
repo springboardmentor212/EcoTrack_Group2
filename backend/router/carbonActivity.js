@@ -6,10 +6,13 @@ const {validateTransportation,validateElectricity,validateWaste} = require("../m
 const {createTransporatationActivity,createElectricityActivity,createWasteActivity,
        getTransporatationActivity,getElectricityActivity,getWasteActivity,getActivity,
        updateTransporatationActivity,updateElectricityActivity,updateWasteActivity,
-       deleteActivity
+       deleteActivity,summaryActivity
       } = require("../controller/carbonActivity")
 
 router.use(userCheck);
+
+router.route("/summary")
+      .get(summaryActivity);
 
 router.route("/transportation")
       .get(getTransporatationActivity)

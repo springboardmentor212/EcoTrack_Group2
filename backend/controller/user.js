@@ -133,6 +133,8 @@ module.exports.verifyEmailForResetPassword = async(req,res) => {
 
     if(verificationCode.expries.getTime() > Date.now()){
         await verificationCodeModel.deleteMany({email});
+        const user = await userModel.findOne({email});
+        await userModel.findByIdAndUpdate(user._id,{verified : true});
         return res.status(200).json({success : true, message : "Email verifiy successfully"});
     }else{
         await verificationCodeModel.deleteMany({email});

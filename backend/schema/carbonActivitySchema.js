@@ -3,8 +3,10 @@ const {Schema} = require("mongoose");
 const transportationSchema = new Schema({
     transportMode: {
         type: String,
-        enum : ["car","bike","public transport"],
-        required: true
+        enum : ["2 wheeler","4 wheeler","auto rickshaw","bus","train"],
+        required: true,
+        lowercase :true,
+        trim : true,
     },
 
     distance: {
@@ -15,32 +17,50 @@ const transportationSchema = new Schema({
     tripPurpose: {
         type: String,
         minLength : "3",
+        lowercase :true,
+        trim : true,
     },
 
     fuelType: {
         type: String,
         enum : ["petrol","diesel","cng","electric"],
-        required: true
+        required: true,
+        lowercase :true,
+        trim : true,
     }
 }, { _id: false });
 
 
 const electricitySchema = new Schema({
-    usagePeriod: {
-        type: String,
-        enum : ["day"],
-        required: true
+    month : {
+        type : String,
+        enum : ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"],
+        lowercase : true,
+        trim : true,
+        required : true,
     },
-
+    year : {
+        type : Number,
+        min : 2000,
+        required : true,
+        validate: {
+          validator: function(value) {
+           return value <= new Date().getFullYear();
+         }
+        }
+    },
     consumption: {
         type: Number,
+        min : 0,
         required: true
     },
 
     usageType: {
         type: String,
         enum: ["home","business"],
-        required: true
+        required: true,
+        lowercase :true,
+        trim : true,
     }
 }, { _id: false });
 
@@ -49,15 +69,13 @@ const wasteSchema = new Schema({
     wasteType: {
         type: String,
         enum: [
-             "organic",
-             "plastic",
-             "paper",
-             "glass",
-             "metal",
-             "e_waste",
-             "other"
+             "wet waste",
+             "dry waste",
+             "e waste",
         ],
-        required: true
+        required: true,
+        lowercase : true,
+        trim : true,
     },
 
     wasteAmount: {
@@ -65,23 +83,17 @@ const wasteSchema = new Schema({
         required: true
     },
 
-    unit: {
-        type: String,
-        enum: ["kg"],
-        required: true
-    },
-
     disposalMethod: {
         type: String,
         enum: [
-            "recycling",
-            "composting",
-            "reuser",
+            "recycled",
+            "burned",
             "landfill",
-            "incineration",
-            "other"
+            "composting"
         ],
-        required: true
+        required: true,
+        lowercase : true,
+        trim : true,
     }
 }, { _id: false });
 
@@ -97,7 +109,9 @@ const carbonActivitySchema = new Schema({
     category: {
         type: String,
         enum: [ "transportation","electricity","waste"],
-        required: true
+        required: true,
+        lowercase : true,
+        trim : true,
     },
 
     date: {

@@ -1,17 +1,25 @@
 const {carbonActivityModel} = require("../model/carbonActivityModel");
-
+const {monthMap} = require("../utills/getMonth");
+const {transportationEmission,electricityEmission,wasteEmission} = require("../service/emissionCalculationService");
+const {getSummary} = require("../service/summaryCalculationService");
 
 //Create Activity
 module.exports.createTransporatationActivity = async(req,res)=>{
- try{
+  try{
     const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to update profile"});
     }
 
     const {category,date,transportation} = req.body;
-    const emission = 5;
 
+    if((transportation.transportMode==="2 wheeler" && transportation.fuelType==="diesel") ||
+       (transportation.transportMode==="bus" && transportation.fuelType==="petrol") || 
+       (transportation.transportMode==="train" && transportation.fuelType!=="electric")){
+       return res.status(400).json({success : false, message : "wrong transport mode or fuel type"});
+    }
+
+    const emission = transportationEmission(transportation.transportMode,transportation.fuelType,transportation.distance,date);
     const activity = new carbonActivityModel({userId,category,date,transportation,emission});
     await activity.save();
     return res.status(200).json({success : true , message : "activity save successfully"});
@@ -27,10 +35,19 @@ module.exports.createElectricityActivity = async(req,res)=>{
         return res.status(400).json({success : false, message : "login first to update profile"});
     }
 
-    const {category,date,electricity} = req.body;
-    const emission = 5;
+    const {category,electricity} = req.body;
+    const monthIndex = monthMap[electricity.month];
+    const date = new Date(Date.UTC(electricity.year,monthIndex,2));
 
-    const activity = new carbonActivityModel({userId,category,date,electricity,emission});
+    const emission = electricityEmission(electricity.consumption,date);
+    const activity = new carbonActivityModel(
+      {
+        userId,
+        category,
+        date,
+        electricity,
+        emission
+      });
     await activity.save();
     return res.status(200).json({success : true , message : "activity save successfully"});
   }catch(error){
@@ -46,8 +63,13 @@ module.exports.createWasteActivity = async(req,res)=>{
     }
 
     const {category,date,waste} = req.body;
-    const emission = 5;
 
+    if((waste.wasteType==="wet waste" && (waste.disposalMethod === "burned" || waste.disposalMethod === "recycled")) || 
+       (waste.wasteType!=="wet waste" && waste.disposalMethod === "composting")){
+        return res.status(400).json({success : false,message : "wrong waste type or disposal method"});
+    }
+
+    const emission = wasteEmission(waste.wasteType,waste.disposalMethod,waste.wasteAmount);
     const activity = new carbonActivityModel({userId,category,date,waste,emission});
     await activity.save();
     return res.status(200).json({success : true , message : "activity save successfully"});
@@ -58,13 +80,27 @@ module.exports.createWasteActivity = async(req,res)=>{
 
 //Read Activity
 module.exports.getTransporatationActivity = async(req,res)=>{
-  try{
+ try{
     const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to update profile"});
     }
     
-    const transporatationActivity = await carbonActivityModel.find({userId,category : "transportation"}).sort({date : 'desc'});
+    const {month,year} = req.query;
+    const monthIndex = monthMap[month];
+
+    const startDate = new Date(Date.UTC(year,monthIndex,1));
+    const endDate = new Date(Date.UTC(year,monthIndex + 1,1));
+
+    const transporatationActivity = await carbonActivityModel.find(
+      { 
+       userId,
+       category : "transportation",
+       date : {
+         $gte : startDate,
+         $lt : endDate
+       }
+      }).sort({date : 'desc'});
     if(transporatationActivity){
         res.status(200).json({success : true , transporatationActivity });
     }else{
@@ -82,7 +118,19 @@ module.exports.getElectricityActivity = async(req,res)=>{
         return res.status(400).json({success : false, message : "login first to update profile"});
     }
     
-    const electricityActivity = await carbonActivityModel.find({userId,category : "electricity"}).sort({date : 'desc'});
+    const year = parseInt(req.query.year);
+    const startDate = new Date(Date.UTC(year,0,1));
+    const endDate = new Date(Date.UTC(year+1,0,1));
+
+    const electricityActivity = await carbonActivityModel.find(
+      {
+        userId,
+        category : "electricity",
+        date : {
+         $gte : startDate,
+         $lt : endDate
+       }
+      }).sort({date : 'desc'});
     if(electricityActivity){
         res.status(200).json({success : true , electricityActivity });
     }else{
@@ -100,7 +148,21 @@ module.exports.getWasteActivity = async(req,res)=>{
         return res.status(400).json({success : false, message : "login first to update profile"});
     }
     
-    const wasteActivity = await carbonActivityModel.find({userId,category : "waste"}).sort({date : 'desc'});
+    const {month,year} = req.query;
+    const monthIndex = monthMap[month];
+
+    const startDate = new Date(Date.UTC(year,monthIndex,1));
+    const endDate = new Date(Date.UTC(year,monthIndex + 1,1));
+
+    const wasteActivity = await carbonActivityModel.find(
+      {
+        userId,
+        category : "waste",
+        date : {
+         $gte : startDate,
+         $lt : endDate
+       } 
+      }).sort({date : 'desc'});
     if(wasteActivity){
         res.status(200).json({success : true , wasteActivity});
     }else{
@@ -138,15 +200,20 @@ module.exports.getActivity = async(req,res)=>{
 
 //update Activity
 module.exports.updateTransporatationActivity = async(req,res)=>{
-  try{
+ try{
     const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to update profile"});
     }
 
     const {id,date,transportation} = req.body;
-    const emission = 10;
+    if((transportation.transportMode==="2 wheeler" && transportation.fuelType==="diesel") ||
+       (transportation.transportMode==="bus" && transportation.fuelType==="petrol") || 
+       (transportation.transportMode==="train" && transportation.fuelType!=="electric")){
+       return res.status(400).json({success : false, message : "wrong transport mode or fuel type"});
+    }
 
+    const emission = transportationEmission(transportation.transportMode,transportation.fuelType,transportation.distance,date);
     const newActivity = await carbonActivityModel.findByIdAndUpdate(id,
         {
             date,
@@ -172,9 +239,11 @@ module.exports.updateElectricityActivity = async(req,res)=>{
         return res.status(400).json({success : false, message : "login first to update profile"});
     }
 
-    const {id,date,electricity} = req.body;
-    const emission = 10;
-
+    const {id,electricity} = req.body;
+    const monthIndex = monthMap[electricity.month];
+    const date = new Date(Date.UTC(electricity.year,monthIndex,2));
+    
+    const emission = electricityEmission(electricity.consumption,date);
     const newActivity = await carbonActivityModel.findByIdAndUpdate(id,
         {
             date,
@@ -201,8 +270,13 @@ module.exports.updateWasteActivity = async(req,res)=>{
     }
 
     const {id,date,waste} = req.body;
-    const emission = 10;
 
+   if((waste.wasteType==="wet waste" && (waste.disposalMethod === "burned" || waste.disposalMethod === "recycled")) || 
+      (waste.wasteType!=="wet waste" && waste.disposalMethod === "composting")){
+        return res.status(400).json({success : false,message : "wrong waste type or disposal method"});
+    }
+
+    const emission = wasteEmission(waste.wasteType,waste.disposalMethod,waste.wasteAmount);
     const newActivity = await carbonActivityModel.findByIdAndUpdate(id,
         {
             date,
@@ -236,4 +310,23 @@ module.exports.deleteActivity = async(req,res)=>{
   }catch(error){
     return res.status(500).json({success : false , message : "internal server error"}); 
   }
+};
+
+
+//summmary
+module.exports.summaryActivity = async(req,res)=>{
+    const userId = req.currUser;
+    if(!userId){
+        return res.status(400).json({success : false, message : "login first to update profile"});
+    }
+
+    const {type,duration} = req.query;
+    console.log(req.query);
+    const result = await getSummary(type,duration,userId);
+    console.log(result);
+    if(result.typeSummary && result.durationSummary){
+        return res.status(200).json({success : true , message : `summary of ${type} activity basis of duration type ${duration}`,result});
+    }else{
+        return res.status(400).json({success : false, message : "summary of activity is not get"});
+    }
 };

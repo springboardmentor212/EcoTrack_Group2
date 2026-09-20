@@ -15,17 +15,20 @@ const userSchema = new Schema({
         type : String,
         required : [true,'email is required'],
         unique : true,
+        trim : true,
     },
     password : {
         type : String,
         required : [true,'password is required'],
         minLength : [8,'your password must be at have least 8 character'],
+        trim : true,
     },
     location : {
         type : String,
         minlength :[3,'your password must be at have least 3 character'],
         trim : true,
         lowercase : true,
+        trim : true,
     },
     verified : {
         type : Boolean,
@@ -34,6 +37,8 @@ const userSchema = new Schema({
     role : {
         type : String,
         enum : ['user','administrator '],
+        lowercase : true,
+        trim : true,
     },
 
     profilePhoto: {
@@ -49,7 +54,9 @@ const userSchema = new Schema({
       "waste reduction",
       "sustainable living",
       "green transportation"
-    ]
+    ],
+    lowercase : true,
+    trim : true,
   }],
 
   environmentalInterests: [{
@@ -58,7 +65,9 @@ const userSchema = new Schema({
       "renewable energy",
       "recycling",
       "waste reduction"
-    ]
+    ],
+    lowercase : true,
+    trim : true,
   }],
 
   personalGoalPreferences: [{
@@ -70,7 +79,9 @@ const userSchema = new Schema({
       "reduce plastic",
       "use public transport",
       "plant trees"
-    ]
+    ],
+    lowercase : true,
+    trim : true,
   }],
 } , { timestamps: true });
 
