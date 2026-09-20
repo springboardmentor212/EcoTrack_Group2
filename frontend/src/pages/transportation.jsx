@@ -32,8 +32,7 @@ export default function Transportation() {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  // CHANGE: kept the existing loading state declaration (was already present but unused/misplaced) —
-  // this is now the single source of truth for the submit-in-progress state.
+  
   const [loading, setLoading] = useState(false);
 
   const recordsPerPage = 5;
@@ -301,24 +300,21 @@ const yearMatch =
         <button
           type="button"
           onClick={handleAddTrip}
-          // CHANGE: disable the submit button while a save is in progress.
+          
           disabled={loading}
-          // CHANGE: appended loading-state classes (reduced opacity + not-allowed
-          // cursor) without touching the existing classes.
+          
           className={`rounded-xl border border-[#27834D] px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white ${
             loading ? "cursor-not-allowed opacity-50" : ""
           }`}
         >
-          {/* CHANGE: button label shows "Saving..." while loading, otherwise
-              falls back to the original Add/Update Entry logic. */}
+          
           {loading ? "Saving..." : editingId === null ? "Add Entry" : "Update Entry"}
         </button>
 
         <button
           type="button"
           onClick={clearForm}
-          // CHANGE: disable the clear/reset button while a save is in progress
-          // to prevent the form being wiped mid-submission.
+          
           disabled={loading}
           className={`rounded-xl border border-[#27834D] px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white ${
             loading ? "cursor-not-allowed opacity-50" : ""
@@ -412,9 +408,9 @@ const yearMatch =
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Mode</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">Distance</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Distance (km)</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Fuel Type</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">Carbon Emission</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Carbon Emission (kg CO₂e)</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
               
                 </tr>

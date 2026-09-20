@@ -19,7 +19,7 @@ const [selectedYear, setSelectedYear] = useState(null);
 const [error, setError] = useState("");
 const [currentPage, setCurrentPage] = useState(1);
 const [formKey, setFormKey] = useState(0);
-// CHANGE: loading state for the submit-in-progress flag (matches Transportation.jsx).
+
 const [loading, setLoading] = useState(false);
 
 const recordsPerPage = 5;
@@ -33,10 +33,10 @@ const recordsPerPage = 5;
     : [];
   const [previousEntries, setPreviousEntries] = useState([]);
 const handleAddEntry = async() => {
-  // CHANGE: guard against duplicate submissions while a save is in progress.
+  
   if (loading) return;
 
-  // CHANGE: set loading to true before any processing begins.
+  
   setLoading(true);
   await new Promise((resolve) => setTimeout(resolve, 3000)); //remove this after connecting backend
 
@@ -48,7 +48,7 @@ const handleAddEntry = async() => {
     !disposalMethod ||
     !wasteDate
   ) {
-    // CHANGE: early return still runs the finally block below.
+    
     return;
   }
     setError("");
@@ -95,7 +95,7 @@ const handleAddEntry = async() => {
 
     clearForm();
   } finally {
-    // CHANGE: loading is always reset, regardless of outcome.
+    
     setLoading(false);
   }
 };
@@ -169,13 +169,13 @@ const currentEntries =
       <div className="grid gap-6 md:grid-cols-4">
   <div>
     <label className="mb-2 block text-sm font-medium text-[#173F2A]">
-      Waste Amount
+      Waste Amount (kg)
     </label>
 
     <NumberInput
       value={wasteAmount}
       onChange={setWasteAmount}
-      placeholder="Enter waste amount (in Kg)"
+      placeholder="Enter waste amount"
       hideControls
       styles={inputStyles}
     />
@@ -240,22 +240,21 @@ const currentEntries =
   <button
   type="button"
   onClick={handleAddEntry}
-  // CHANGE: disable submit button while saving.
+  
   disabled={loading}
-  // CHANGE: appended loading-state classes (reduced opacity + not-allowed
-  // cursor) without touching the existing classes.
+  
   className={`rounded-xl border border-[#27834D] px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white ${
     loading ? "cursor-not-allowed opacity-50" : ""
   }`}
 >
-  {/* CHANGE: label shows "Saving..." while loading. */}
+  
   {loading ? "Saving..." : editingId ? "Update Entry" : "Add Entry"}
 </button>
 
   <button
   type="button"
   onClick={clearForm}
-  // CHANGE: disable clear button while saving.
+  
   disabled={loading}
   className={`rounded-xl border border-[#27834D] px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white ${
     loading ? "cursor-not-allowed opacity-50" : ""
@@ -343,29 +342,34 @@ const currentEntries =
       
       <thead className="bg-[#EEF7F0]">
         <tr>
-          <th className="px-6 py-4 text-left text-sm font-semibold">
+          <th className="px-6 py-3 text-left text-sm font-semibold">
             Date
           </th>
 
-          <th className="px-6 py-4 text-left text-sm font-semibold">
-            Amount
+          <th className="px-6 py-3 text-left text-sm font-semibold">
+            Waste Amount
+            <br></br>
+             (kg)
           </th>
 
-          <th className="px-6 py-4 text-left text-sm font-semibold">
+          <th className="px-6 py-3 text-left text-sm font-semibold">
             Waste Type
           </th>
 
-          <th className="px-6 py-4 text-left text-sm font-semibold">
+          <th className="px-6 py-3 text-left text-sm font-semibold">
             Disposal Method
           </th>
-          <th className="px-6 py-4 text-left text-sm font-semibold">
-            Carbon emission
+          <th className="px-6 py-3 text-left text-sm font-semibold">
+            Carbon Emission 
+            <br></br>
+            (kg CO₂e)
           </th>
-          <th className="px-6 py-4 text-left text-sm font-semibold">
-            Carbon saved
+          <th className="px-6 py-3 text-left text-sm font-semibold">
+            Carbon Saved 
+            <br></br>(kg CO₂e)
           </th>
 
-          <th className="px-6 py-4 text-left text-sm font-semibold">
+          <th className="px-3 py-3 text-left text-sm font-semibold">
   Actions
 </th>
         </tr>

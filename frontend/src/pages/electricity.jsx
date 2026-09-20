@@ -193,10 +193,9 @@ const currentEntries = filteredEntries.slice(
     <button
         type="button"
       onClick={handleSave}
-        // CHANGE: disable submit button while saving.
+        
         disabled={loading}
-        // CHANGE: appended loading-state classes (reduced opacity + not-allowed
-        // cursor) without touching the existing classes.
+        
         className={`rounded-xl border border-[#27834D] bg-white px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white ${
           loading ? "cursor-not-allowed opacity-50" : ""
         }`}
@@ -208,7 +207,7 @@ const currentEntries = filteredEntries.slice(
     <button
         type="button"
       onClick={resetForm}
-        // CHANGE: disable clear button while saving.
+        
         disabled={loading}
         className={`rounded-xl border border-[#27834D] bg-white px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white ${
           loading ? "cursor-not-allowed opacity-50" : ""
@@ -309,7 +308,7 @@ const currentEntries = filteredEntries.slice(
             Usage Type
           </th>
           <th className="px-6 py-4 text-left text-sm font-semibold">
-            Carbon emission
+            Carbon Emission (kg CO₂e)
           </th>
           <th className="px-6 py-4 text-left text-sm font-semibold">
             Actions
