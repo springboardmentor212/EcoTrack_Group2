@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const PROFILE_URL = import.meta.env.VITE_PROFILE_URL;
 
 const emptyProfile = {
   name: "",
@@ -44,19 +44,18 @@ export default function Profile() {
       setLoading(true);
       setError("");
 
-      const response = await fetch(`${API_URL}/profile`, {
-        credentials: "include",
-      });
-
+      const response = await fetch(`${PROFILE_URL}/`, {
+       credentials: "include",
+  });
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Unable to load profile");
-      }
+      if (!response.ok) {
+       throw new Error(data.message || "Unable to load profile");
+  }
 
       const profileData = {
         ...emptyProfile,
-        ...data.profile,
+        ...data,
       };
 
       setProfile(profileData);
@@ -143,34 +142,42 @@ export default function Profile() {
       setError("");
       setMessage("");
 
-      const body = {
-        name: formData.name,
-        location: formData.location,
-        profilePhoto: formData.profilePhoto || "",
-        sustainabilityPreferences: formData.sustainabilityPreferences || [],
-        environmentalInterests: formData.environmentalInterests || [],
-        personalGoalPreferences: formData.personalGoalPreferences || [],
-      };
+      const body = new FormData();
 
-      const response = await fetch(`${API_URL}/profile`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
+      body.append("name", formData.name || "");
+      body.append("location", formData.location || "");
+      body.append(
+       "sustainabilityPreferences",
+       JSON.stringify(formData.sustainabilityPreferences || [])
+      );
+      body.append(
+       "environmentalInterests",
+       JSON.stringify(formData.environmentalInterests || [])
+     );
+    body.append(
+      "personalGoalPreferences",
+      JSON.stringify(formData.personalGoalPreferences || [])
+    );
+
+    if (selectedPhoto) {
+     body.append("profilePhoto", selectedPhoto);
+    }
+
+      const response = await fetch(`${PROFILE_URL}/`, {
+       method: "PATCH",
+       credentials: "include",
+       body,
       });
 
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
+      if (!response.ok) {
         throw new Error(data.message || "Unable to update profile");
       }
 
       const updatedProfile = {
-        ...profile,
-        ...formData,
-        profilePhoto: formData.profilePhoto || "",
+        ...emptyProfile,
+        ...data,
       };
 
       setProfile(updatedProfile);
