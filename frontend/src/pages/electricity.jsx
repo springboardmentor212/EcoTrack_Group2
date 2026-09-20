@@ -17,6 +17,8 @@ export default function Electricity() {
   const [consumption, setConsumption] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  // CHANGE: loading state for the submit-in-progress flag (matches Transportation.jsx).
+  const [loading, setLoading] = useState(false);
 
   const recordsPerPage = 5;
   const [previousEntries, setPreviousEntries] = useState([]);
@@ -35,41 +37,54 @@ export default function Electricity() {
   setEditingId(null);
 };
 
-  const handleSave = () => {
-    const numericConsumption = Number(consumption);
-    if (!billingMonth || numericConsumption <= 0 || !usageType) {
-     window.alert("Please complete all fields.");
-     return;
-    
-    }
-      const monthDate = new Date(billingMonth);
-    const entry = {
-  id: editingId || Date.now(),
-  month: monthDate.toLocaleString("en-US", {
-    month: "long",
-  }),
-  year: monthDate.getFullYear(),
-  consumption: numericConsumption,
-  usageType:
-    usageType.charAt(0).toUpperCase() +
-    usageType.slice(1),
-};
+  const handleSave = async() => {
+    // CHANGE: guard against duplicate submissions while a save is in progress.
+    if (loading) return;
 
-    if (editingId === null) {
-      setPreviousEntries((entries) => [
-        { ...entry, id: Date.now() },
-        ...entries,
-        
-      ]);
-    } else {
-      setPreviousEntries((entries) =>
-        entries.map((item) =>
-          item.id === editingId ? { ...item, ...entry } : item,
-        ),
-      );
-    }
+    // CHANGE: set loading to true before any processing begins.
+    setLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 3000)); //remove this after connecting backend
 
-    resetForm();
+    try {
+      const numericConsumption = Number(consumption);
+      if (!billingMonth || numericConsumption <= 0 || !usageType) {
+       window.alert("Please complete all fields.");
+       // CHANGE: early return still runs the finally block below.
+       return;
+
+      }
+        const monthDate = new Date(billingMonth);
+      const entry = {
+    id: editingId || Date.now(),
+    month: monthDate.toLocaleString("en-US", {
+      month: "long",
+    }),
+    year: monthDate.getFullYear(),
+    consumption: numericConsumption,
+    usageType:
+      usageType.charAt(0).toUpperCase() +
+      usageType.slice(1),
+  };
+
+      if (editingId === null) {
+        setPreviousEntries((entries) => [
+          { ...entry, id: Date.now() },
+          ...entries,
+          
+        ]);
+      } else {
+        setPreviousEntries((entries) =>
+          entries.map((item) =>
+            item.id === editingId ? { ...item, ...entry } : item,
+          ),
+        );
+      }
+
+      resetForm();
+    } finally {
+      // CHANGE: loading is always reset, regardless of outcome.
+      setLoading(false);
+    }
   };
 
   const handleEdit = (entry) => {
@@ -178,15 +193,26 @@ const currentEntries = filteredEntries.slice(
     <button
         type="button"
       onClick={handleSave}
-        className="rounded-xl border border-[#27834D] bg-white px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white"
+        // CHANGE: disable submit button while saving.
+        disabled={loading}
+        // CHANGE: appended loading-state classes (reduced opacity + not-allowed
+        // cursor) without touching the existing classes.
+        className={`rounded-xl border border-[#27834D] bg-white px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white ${
+          loading ? "cursor-not-allowed opacity-50" : ""
+        }`}
     >
-      {editingId === null ? "Add Entry" : "Update Entry"}
+      {/* CHANGE: label shows "Saving..." while loading. */}
+      {loading ? "Saving..." : editingId === null ? "Add Entry" : "Update Entry"}
     </button>
 
     <button
         type="button"
       onClick={resetForm}
-        className="rounded-xl border border-[#27834D] bg-white px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white"
+        // CHANGE: disable clear button while saving.
+        disabled={loading}
+        className={`rounded-xl border border-[#27834D] bg-white px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white ${
+          loading ? "cursor-not-allowed opacity-50" : ""
+        }`}
     >
         Clear Form
     </button>

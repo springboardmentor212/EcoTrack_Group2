@@ -32,6 +32,9 @@ export default function Transportation() {
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  // CHANGE: kept the existing loading state declaration (was already present but unused/misplaced) —
+  // this is now the single source of truth for the submit-in-progress state.
+  const [loading, setLoading] = useState(false);
 
   const recordsPerPage = 5;
 const fuelOptions =
@@ -39,7 +42,7 @@ const fuelOptions =
     ? ["Petrol", "Electric"]
     : transportMode === "4 Wheeler"
     ? ["Petrol", "Diesel", "CNG", "Electric"]
-    : transportMode === "Auto rickshaw"
+    : transportMode === "Auto Rickshaw"
     ? ["Petrol", "CNG","Diesel", "Electric"]
     : transportMode === "Bus"
     ? ["Diesel", "Electric"]
@@ -52,7 +55,7 @@ const fuelOptions =
   
   const filteredTrips = previousEntries.filter((trip) => {
   if (!trip.date) return false;
-    console.log(selectedYear, typeof selectedYear);
+    
   const [day, month, year] = trip.date.split("/");
 
   const selectedMonthNumber =
@@ -109,14 +112,6 @@ const yearMatch =
   };
 
   const handleEditTrip = (trip) => {
-    console.log({
-  travelDate,
-  transportMode,
-  fuelType,
-  fromLocation,
-  toLocation,
-  distance
-});
     setEditingId(trip.id);
     const [day, month, year] = trip.date.split("/");
     setTravelDate(
@@ -130,50 +125,68 @@ const yearMatch =
     setError("");
   };
 
-  const handleAddTrip = () => {
-    const trimmedFrom = fromLocation.trim();
-    const trimmedTo = toLocation.trim();
-    const numericDistance = Number(distance);
+  const handleAddTrip = async () => {
 
-    if (
-      !travelDate ||
-      !transportMode ||
-      !trimmedFrom ||
-      !trimmedTo ||
-      !distance ||
-      !fuelType ||
-  numericDistance <= 0
+    
+    
+    if (loading) return;
+
+    
+    setLoading(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 3000)); //remove this after connecting backend
+
+      const trimmedFrom = fromLocation.trim();
+      const trimmedTo = toLocation.trim();
+      const numericDistance = Number(distance);
       
-    ) {
-      setError("Please fill all required fields.");
-      return;
+
+      if (
+        !travelDate ||
+        !transportMode ||
+        !trimmedFrom ||
+        !trimmedTo ||
+        !distance ||
+        !fuelType ||
+    numericDistance <= 0
+
+      ) {
+        
+        setError("Please fill all required fields.");
+        
+        return;
+      }
+
+      setError("");
+      
+
+      const tripData = {
+    date: new Date(travelDate).toLocaleDateString("en-GB"),
+    mode: transportMode,
+    fuelType,
+    fromLocation: trimmedFrom,
+    toLocation: trimmedTo,
+    distance: numericDistance,
+  };
+
+      if (editingId === null) {
+        setPreviousEntries((prevEntries) => [
+          { ...tripData, id: Date.now() },
+          ...prevEntries,
+        ]);
+      } else {
+        setPreviousEntries((prevEntries) =>
+          prevEntries.map((entry) =>
+            entry.id === editingId ? { ...entry, ...tripData } : entry,
+          ),
+        );
+      }
+
+      clearForm();
+    } finally {
+      
+      setLoading(false);
     }
-
-    setError("");
-
-    const tripData = {
-  date: new Date(travelDate).toLocaleDateString("en-GB"),
-  mode: transportMode,
-  fuelType,
-  fromLocation: trimmedFrom,
-  toLocation: trimmedTo,
-  distance: numericDistance,
-};
-
-    if (editingId === null) {
-      setPreviousEntries((prevEntries) => [
-        { ...tripData, id: Date.now() },
-        ...prevEntries,
-      ]);
-    } else {
-      setPreviousEntries((prevEntries) =>
-        prevEntries.map((entry) =>
-          entry.id === editingId ? { ...entry, ...tripData } : entry,
-        ),
-      );
-    }
-
-    clearForm();
   };
 
   return (
@@ -212,7 +225,7 @@ const yearMatch =
   data={[
     "2 Wheeler",
     "4 Wheeler",
-    "Auto rickshaw",
+    "Auto Rickshaw",
     "Bus",
     "Train",
   ]}
@@ -288,15 +301,28 @@ const yearMatch =
         <button
           type="button"
           onClick={handleAddTrip}
-          className="rounded-xl border border-[#27834D] px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white"
+          // CHANGE: disable the submit button while a save is in progress.
+          disabled={loading}
+          // CHANGE: appended loading-state classes (reduced opacity + not-allowed
+          // cursor) without touching the existing classes.
+          className={`rounded-xl border border-[#27834D] px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white ${
+            loading ? "cursor-not-allowed opacity-50" : ""
+          }`}
         >
-          {editingId === null ? "Add Entry" : "Update Entry"}
+          {/* CHANGE: button label shows "Saving..." while loading, otherwise
+              falls back to the original Add/Update Entry logic. */}
+          {loading ? "Saving..." : editingId === null ? "Add Entry" : "Update Entry"}
         </button>
 
         <button
           type="button"
           onClick={clearForm}
-          className="rounded-xl border border-[#27834D] px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white"
+          // CHANGE: disable the clear/reset button while a save is in progress
+          // to prevent the form being wiped mid-submission.
+          disabled={loading}
+          className={`rounded-xl border border-[#27834D] px-6 py-3 font-medium text-[#27834D] transition hover:bg-[#27834D] hover:text-white ${
+            loading ? "cursor-not-allowed opacity-50" : ""
+          }`}
         >
           Clear Form
         </button>
@@ -388,8 +414,7 @@ const yearMatch =
                   <th className="px-6 py-4 text-left text-sm font-semibold">Mode</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Distance</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Fuel Type</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">Carbon emission</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold">Carbon saved</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold">Carbon Emission</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
               
                 </tr>
@@ -402,7 +427,6 @@ const yearMatch =
                     <td className="px-6 py-4">{trip.mode}</td>
                     <td className="px-6 py-4">{trip.distance} km</td>
                     <td className="px-6 py-4">{trip.fuelType || "N/A"}</td>
-                    <td className="px-6 py-4"></td>
                     <td className="px-6 py-4"></td>
                     <td className="px-6 py-4">
                       <div className="flex gap-3">
