@@ -12,7 +12,7 @@ import Dashboard from "./pages/dashboard";
 // import Reports from "./pages/reports";
 // import Rewards from "./pages/rewards";
 // import Notifications from "./pages/notifications";
-// import Profile from "./pages/profile";
+import Profile from "./pages/profile";
 // import Settings from "./pages/settings";
 
 function App() {
@@ -23,6 +23,7 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/profile" element={<Profile />} />
     </Routes>
   );
 }
