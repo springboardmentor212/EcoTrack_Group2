@@ -38,34 +38,8 @@ export default function TrackingDetailLayout({ title, subtitle, breadcrumbLabel,
 
     return (
         <div className="min-h-screen bg-[#f7fbf8] text-[#173f2a] animate-[pageFadeIn_.7s_ease_both] lg:flex">
-            <aside className="fixed inset-y-0 left-0 z-40 flex w-[250px] shrink-0 flex-col overflow-hidden border-r border-[#e2ece5] bg-white px-[18px] py-5 animate-[sidebarReveal_.6s_ease_.05s_both] max-lg:w-[220px] max-md:w-[190px] max-sm:relative max-sm:w-full max-sm:border-b max-sm:border-r-0 max-sm:py-5">
-                <Link to="/" className="flex shrink-0 items-center border-b border-[#e2ece5] px-3 pb-4">
-                    <img src="/assets/Ecotrack1.png" alt="EcoTrack" className="block h-auto w-[160px] max-w-full transition-transform duration-200 hover:scale-[1.02] max-md:w-[150px] max-sm:w-[180px]" />
-                </Link>
 
-                <nav className="min-h-0 flex-1 overflow-hidden py-2 pr-1">
-                    <div className="flex flex-col gap-1">
-                        {navItems.map(([label, href]) => (
-                            <Link
-                                key={label}
-                                to={href}
-                                className={`rounded-lg px-3.5 py-3 text-sm font-medium transition-all duration-200 hover:translate-x-[3px] hover:bg-[#f1f8f3] hover:text-[#27834d] ${label === "Carbon Tracking System" ? "bg-[#eaf5ed] font-semibold text-[#27834d]" : "text-[#5c7064]"}`}
-                            >
-                                {label}
-                            </Link>
-                        ))}
-                    </div>
-                </nav>
-
-                <div className="shrink-0 pt-1">
-                    <div className="mx-2 my-2 h-px bg-[#e2ece5]" />
-                    <button type="button" onClick={handleLogout} className="w-full rounded-lg border-0 bg-transparent px-3.5 py-2 text-left text-sm text-[#65766c] transition-all duration-200 hover:translate-x-[3px] hover:bg-[#fdf2f2] hover:text-[#b34b4b]">
-                        Logout
-                    </button>
-                </div>
-            </aside>
-
-            <div className="w-full lg:ml-[250px] lg:w-[calc(100%-250px)] max-lg:ml-[220px] max-lg:w-[calc(100%-220px)] max-md:ml-[190px] max-md:w-[calc(100%-190px)] max-sm:ml-0 max-sm:w-full">
+            <div className="w-full">
                 <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-[#e2ece5] bg-white px-[4%] animate-[topbarReveal_.6s_ease_.12s_both]">
                     <div className="text-lg font-semibold text-[#173f2a]">Carbon Tracking System</div>
                     <div className="flex items-center gap-3.5">
