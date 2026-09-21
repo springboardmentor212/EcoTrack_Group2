@@ -1,10 +1,31 @@
 import TrackingDetailLayout from "./tracking-detail-layout";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { DateInput,YearPickerInput} from "@mantine/dates";
 import { Select, TextInput, NumberInput } from "@mantine/core";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
+import axios from "axios";
+
+const now = new Date();
+
+const currentYear = now.getFullYear();
+
+const currentMonth = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+][now.getMonth()];
+
 
 const toInputDate = (date) => {
   if (!date) return null;
@@ -37,26 +58,64 @@ export default function Transportation() {
 
   const recordsPerPage = 5;
 const fuelOptions =
-  transportMode === "2 Wheeler"
-    ? ["Petrol", "Electric"]
-    : transportMode === "4 Wheeler"
-    ? ["Petrol", "Diesel", "CNG", "Electric"]
-    : transportMode === "Auto Rickshaw"
-    ? ["Petrol", "CNG","Diesel", "Electric"]
-    : transportMode === "Bus"
-    ? ["Diesel", "Electric"]
-    : transportMode === "Train"
-    ? ["Electric"]
+  transportMode === "2 wheeler"
+    ? [
+        { value: "petrol", label: "Petrol" },
+        { value: "electric", label: "Electric" },
+      ]
+    : transportMode === "4 wheeler"
+    ? [
+        { value: "petrol", label: "Petrol" },
+        { value: "diesel", label: "Diesel" },
+        { value: "cng", label: "CNG" },
+        { value: "electric", label: "Electric" },
+      ]
+    : transportMode === "auto rickshaw"
+    ? [
+        { value: "petrol", label: "Petrol" },
+        { value: "diesel", label: "Diesel" },
+        { value: "cng", label: "CNG" },
+        { value: "electric", label: "Electric" },
+      ]
+    : transportMode === "bus"
+    ? [
+        { value: "diesel", label: "Diesel" },
+        { value: "electric", label: "Electric" },
+      ]
+    : transportMode === "train"
+    ? [
+        { value: "electric", label: "Electric" },
+      ]
     : [];
 
 
   const [previousEntries, setPreviousEntries] = useState([]);
-  
+  const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
+  const fetchTransportationActivities = async (
+  month = currentMonth,
+  year = currentYear
+) => {
+  try {
+    const response = await axios.get(
+      `${CARBON_ACTIVITY}/transportation?month=${month}&year=${year}`,
+      {
+        withCredentials: true,
+      }
+    );
+
+    if (response.data.success) {
+      setPreviousEntries(
+        response.data.transporatationActivity || []
+      );
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
   const filteredTrips = previousEntries.filter((trip) => {
   if (!trip.date) return false;
     
-  const [day, month, year] = trip.date.split("/");
-
+const [year, month, day] = trip.date.split("-");
   const selectedMonthNumber =
     [
       "January",
@@ -111,29 +170,49 @@ const yearMatch =
   };
 
   const handleEditTrip = (trip) => {
-    setEditingId(trip.id);
-    const [day, month, year] = trip.date.split("/");
-    setTravelDate(
-  new Date(`${year}-${month}-${day}`)
-      );
-    setTransportMode(trip.mode);
-    setFuelType(trip.fuelType || "");
-    setFromLocation(trip.fromLocation || "");
-    setToLocation(trip.toLocation || "");
-    setDistance(trip.distance);
-    setError("");
-  };
+  setEditingId(trip._id);
 
+  const [year, month, day] = trip.date.split("-");
+
+  setTravelDate(
+    new Date(`${year}-${month}-${day}`)
+  );
+
+  setTransportMode(
+    trip.transportation?.transportMode || ""
+  );
+
+  setFuelType(
+    trip.transportation?.fuelType || ""
+  );
+
+  setFromLocation(
+    trip.transportation?.from || ""
+  );
+
+  setToLocation(
+    trip.transportation?.to || ""
+  );
+
+  setDistance(
+    trip.transportation?.distance || ""
+  );
+
+  setError("");
+};
+useEffect(() => {
+    fetchTransportationActivities();
+  }, []);
+  
   const handleAddTrip = async () => {
 
-    
+    console.log("loading =", loading);
     
     if (loading) return;
 
     
-    setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 3000)); //remove this after connecting backend
+      
 
       const trimmedFrom = fromLocation.trim();
       const trimmedTo = toLocation.trim();
@@ -141,34 +220,77 @@ const yearMatch =
       
 
       if (
-        !travelDate ||
-        !transportMode ||
-        !trimmedFrom ||
-        !trimmedTo ||
-        !distance ||
-        !fuelType ||
-    numericDistance <= 0
-
-      ) {
+  !travelDate ||
+  !transportMode ||
+  !trimmedFrom ||
+  !trimmedTo ||
+  !fuelType ||
+  numericDistance <= 0
+) {
         
         setError("Please fill all required fields.");
         
         return;
       }
+      setLoading(true);
 
       setError("");
       
-
-      const tripData = {
-    date: new Date(travelDate).toLocaleDateString("en-GB"),
-    mode: transportMode,
-    fuelType,
-    fromLocation: trimmedFrom,
-    toLocation: trimmedTo,
+console.log(typeof travelDate);
+console.log(travelDate);
+      const payload = {
+  category: "transportation",
+  date: travelDate.toISOString().split("T")[0],
+  transportation: {
+    transportMode,
     distance: numericDistance,
-  };
+    fuelType,
+    from: trimmedFrom,
+    to: trimmedTo,
+  },
+};
+console.log("About to send POST");
+console.log(payload);
+let response;
 
-      if (editingId === null) {
+if (editingId) {
+  response = await axios.patch(
+    `${CARBON_ACTIVITY}/transportation`,
+    {
+      _id: editingId,
+      ...payload,
+    },
+    {
+      withCredentials: true,
+    }
+  );
+} else {
+  response = await axios.post(
+    `${CARBON_ACTIVITY}/transportation`,
+    payload,
+    {
+      withCredentials: true,
+    }
+  );
+}
+
+if (response.data.success) {
+  clearForm();
+  fetchTransportationActivities();
+}
+
+    }
+catch (error) {
+    setError(
+      error.response?.data?.message ||
+      "Failed to save transportation activity"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+      /*if (editingId === null) {
         setPreviousEntries((prevEntries) => [
           { ...tripData, id: Date.now() },
           ...prevEntries,
@@ -179,15 +301,33 @@ const yearMatch =
             entry.id === editingId ? { ...entry, ...tripData } : entry,
           ),
         );
-      }
+      }*/
 
-      clearForm();
-    } finally {
       
-      setLoading(false);
-    }
-  };
+   
+const handleDeleteTrip = async (tripId) => {
+  try {
+    const response = await axios.delete(
+      `${CARBON_ACTIVITY}/${tripId}`,
+      {
+        withCredentials: true,
+      }
+    );
 
+    if (response.data.success) {
+      fetchTransportationActivities();
+
+      if (editingId === tripId) {
+        clearForm();
+      }
+    }
+  } catch (error) {
+    setError(
+      error.response?.data?.message ||
+        "Failed to delete transportation activity"
+    );
+  }
+};
   return (
     <TrackingDetailLayout
       breadcrumbLabel="Transportation"
@@ -222,12 +362,12 @@ const yearMatch =
   }}
   placeholder="Select transport mode"
   data={[
-    "2 Wheeler",
-    "4 Wheeler",
-    "Auto Rickshaw",
-    "Bus",
-    "Train",
-  ]}
+  { value: "2 wheeler", label: "2 Wheeler" },
+  { value: "4 wheeler", label: "4 Wheeler" },
+  { value: "auto rickshaw", label: "Auto Rickshaw" },
+  { value: "bus", label: "Bus" },
+  { value: "train", label: "Train" },
+]}
   styles={inputStyles}
 />
         </div>
@@ -418,12 +558,12 @@ const yearMatch =
 
               <tbody>
                 {currentTrips.map((trip) => (
-                  <tr key={trip.id} className="border-t border-[#D7EADF]">
+                  <tr key={trip._id} className="border-t border-[#D7EADF]">
                     <td className="px-6 py-4">{displayDate(trip.date)}</td>
-                    <td className="px-6 py-4">{trip.mode}</td>
-                    <td className="px-6 py-4">{trip.distance} km</td>
-                    <td className="px-6 py-4">{trip.fuelType || "N/A"}</td>
-                    <td className="px-6 py-4"></td>
+                    <td className="px-6 py-4">{trip.transportation.transportMode}</td>
+                    <td className="px-6 py-4">{trip.transportation.distance} km</td>
+                    <td className="px-6 py-4">{trip.transportation?.fuelType || "N/A"}</td>
+                    <td className="px-6 py-4"> {trip.emission ?? "N/A"}</td>
                     <td className="px-6 py-4">
                       <div className="flex gap-3">
                         <button
@@ -436,14 +576,7 @@ const yearMatch =
 
                         <button
                           type="button"
-                          onClick={() => {
-                            setPreviousEntries((prevEntries) =>
-                              prevEntries.filter((item) => item.id !== trip.id),
-                            );
-                            if (editingId === trip.id) {
-                              clearForm();
-                            }
-                          }}
+                          onClick={() => handleDeleteTrip(trip._id)}
                           className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FDF2F2] text-[#B34B4B] transition hover:bg-[#FBE5E5]"
                         >
                           <FaTrash />
