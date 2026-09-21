@@ -1,40 +1,46 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiBell, FiChevronDown } from "react-icons/fi";
 
-const periods = ["This Month", "Last Month", "Last 3 Months", "This Year"];
+const trackerPeriods = {
+    All: ["This Month (Day-wise)", "This Month (weekly)", "Last 3 Months", "This Year"],
+    Transportation: ["This Month (Day-wise)", "This Month (weekly)", "Last 3 Months", "This Year"],
+    Electricity: ["This Month", "Last 3 Months", "This Year"],
+    "Waste Management": ["This Month (Day-wise)", "This Month (weekly)", "Last 3 Months", "This Year"],
+};
+
 const trackers = ["All", "Transportation", "Electricity", "Waste Management"];
 
 const overviewData = {
     All: [
-        { title: "Total Tracking Entries", value: 0, unit: "" },
-        { title: "Transportation Trips", value: 0, unit: "trips" },
-        { title: "Electricity Consumption", value: 0, unit: "kWh" },
-        { title: "Waste Generated", value: 0, unit: "kg" },
+        { title: "Total Carbon Emissions", value: 0, unit: "kg CO₂e" },
+        { title: "Transportation Carbon Emissions", value: 0, unit: "kg CO₂e" },
+        { title: "Electricity Carbon Emissions", value: 0, unit: "kg CO₂e" },
+        { title: "Waste Management Carbon Emissions", value: 0, unit: "kg CO₂e" },
     ],
     Transportation: [
-        { title: "Total Distance", value: 0, unit: "km" },
-        { title: "Total Trips", value: 0, unit: "trips" },
+        { title: "Carbon Emissions", value: 0, unit: "kg CO₂e" },
+        { title: "Total Distance Travelled", value: 0, unit: "km" },
         { title: "Most Used Transport Mode", value: "—", unit: "" },
-        { title: "Most Common Trip Purpose", value: "—", unit: "" },
+        { title: "Most Used Fuel Type", value: "—", unit: "" },
     ],
     Electricity: [
+        { title: "Carbon Emissions", value: 0, unit: "kg CO₂e" },
         { title: "Total Consumption", value: 0, unit: "kWh" },
-        { title: "Usage Period", value: "—", unit: "" },
-        { title: "Home Usage", value: 0, unit: "kWh" },
-        { title: "Business Usage", value: 0, unit: "kWh" },
+        { title: "No. of Entries", value: 0, unit: "entries" },
     ],
     "Waste Management": [
+        { title: "Carbon Emissions", value: 0, unit: "kg CO₂e" },
+        { title: "Carbon Saved", value: 0, unit: "kg CO₂e" },
         { title: "Total Waste Generated", value: 0, unit: "kg" },
         { title: "Most Tracked Waste Type", value: "—", unit: "" },
-        { title: "Most Used Disposal Method", value: "—", unit: "" },
-        { title: "Waste Entries", value: 0, unit: "entries" },
+        { title: "Most Used Disposal/Handling Method", value: "—", unit: "" },
     ],
 };
 
 const navItems = [
     ["Dashboard", "/dashboard"],
-    ["Tracking System", "/tracking"],
+    ["Carbon Tracking System", "/tracking"],
     ["Sustainability Goals", "/sustainability-goals"],
     ["Community Challenges", "/community-challenges"],
     ["AI Insights", "/ai-insights"],
@@ -47,13 +53,15 @@ const navItems = [
 
 function Dashboard() {
     const navigate = useNavigate();
-    const [selectedPeriod, setSelectedPeriod] = useState("This Month");
+
+    const [selectedPeriod, setSelectedPeriod] = useState("This Month (Day-wise)");
     const [selectedTracker, setSelectedTracker] = useState("All");
     const [periodOpen, setPeriodOpen] = useState(false);
     const [trackerOpen, setTrackerOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const [notificationOpen, setNotificationOpen] = useState(false);
     const [notifications] = useState([]);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
         const handleDocumentClick = (event) => {
@@ -67,69 +75,204 @@ function Dashboard() {
         return () => document.removeEventListener("click", handleDocumentClick);
     }, []);
 
+    useEffect(() => {
+        setRefreshKey((value) => value + 1);
+    }, [selectedTracker, selectedPeriod]);
+
+    useEffect(() => {
+        const availablePeriods = trackerPeriods[selectedTracker];
+
+        if (!availablePeriods.includes(selectedPeriod)) {
+            setSelectedPeriod(
+                selectedTracker === "Electricity"
+                    ? "This Month"
+                    : "This Month (Day-wise)"
+            );
+        } else if (
+            selectedTracker !== "Electricity" &&
+            selectedPeriod === "This Month"
+        ) {
+            setSelectedPeriod("This Month (Day-wise)");
+        }
+    }, [selectedTracker]);
+
     const stats = overviewData[selectedTracker];
     const overviewTitle = selectedTracker === "All" ? "Tracking Overview" : `${selectedTracker} Overview`;
     const unreadNotifications = notifications.filter((notification) => !notification.read);
+    const periods = trackerPeriods[selectedTracker];
 
     const getLastThreeMonths = () => {
-  const months = [];
-  const date = new Date();
+        const months = [];
+        const date = new Date();
 
-  for (let i = 2; i >= 0; i--) {
-    const monthDate = new Date(date.getFullYear(), date.getMonth() - i, 1);
+        for (let i = 2; i >= 0; i--) {
+            const monthDate = new Date(date.getFullYear(), date.getMonth() - i, 1);
 
-    months.push(
-      monthDate.toLocaleString("en-US", {
-        month: "short"
-      })
-    );
-  }
+            months.push(
+                monthDate.toLocaleString("en-US", {
+                    month: "short",
+                })
+            );
+        }
 
-  return months;
-};
-
-const activityChartData = {
-  "This Month": {
-    title: "Monthly Activity Overview",
-    labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-    values: [0, 0, 0, 0],
-    goalTitle: "Monthly Goal"
-  },
-  "Last Month": {
-    title: "Monthly Activity Overview",
-    labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-    values: [0, 0, 0, 0],
-    goalTitle: "Monthly Goal"
-  },
-  "Last 3 Months": {
-    title: "3-Month Activity Overview",
-    labels: getLastThreeMonths(),
-    values: [0, 0, 0],
-    goalTitle: "3-Month Goal Overview"
-  },
-  "This Year": {
-    title: "Yearly Activity Overview",
-    labels: [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ],
-    values: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    goalTitle: "Yearly Goal"
-  }
-};
-
-    const selectedChart = activityChartData[selectedPeriod];
-    const goalTitle = activityChartData[selectedPeriod].goalTitle;
-
-    const handleLogout = () => {
-        window.location.href = "/";
+        return months;
     };
 
+    const getCurrentMonthDayLabels = () => {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        return Array.from({ length: daysInMonth }, (_, index) => `${index + 1}`);
+    };
+
+    const getCurrentMonthWeekLabels = () => {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        return Array.from(
+            { length: Math.ceil(daysInMonth / 7) },
+            (_, index) => `Week ${index + 1}`
+        );
+    };
+
+    const getYearLabels = () => [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ];
+
+    const getChartData = () => {
+        if (selectedTracker === "Electricity") {
+            if (selectedPeriod === "This Month") {
+                return {
+                    title: "Monthly Carbon Activity Overview",
+                    labels: ["This Month"],
+                    values: [0],
+                    goalTitle: "Monthly Goal",
+                };
+            }
+
+            if (selectedPeriod === "Last 3 Months") {
+                return {
+                    title: "3-Month Carbon Activity Overview",
+                    labels: getLastThreeMonths(),
+                    values: [0, 0, 0],
+                    goalTitle: "3-Month Goal Overview",
+                };
+            }
+
+            return {
+                title: "Yearly Carbon Activity Overview",
+                labels: getYearLabels(),
+                values: Array(12).fill(0),
+                goalTitle: "Yearly Goal",
+            };
+        }
+
+        if (selectedPeriod === "This Month (Day-wise)") {
+            const labels = getCurrentMonthDayLabels();
+
+            return {
+                title: "Daily Carbon Activity Overview",
+                labels,
+                values: Array(labels.length).fill(0),
+                goalTitle: "Monthly Goal",
+            };
+        }
+
+        if (selectedPeriod === "This Month (weekly)") {
+            const labels = getCurrentMonthWeekLabels();
+
+            return {
+                title: "Weekly Carbon Activity Overview",
+                labels,
+                values: Array(labels.length).fill(0),
+                goalTitle: "Monthly Goal",
+            };
+        }
+
+        if (selectedPeriod === "Last 3 Months") {
+            const labels = getLastThreeMonths();
+
+            return {
+                title: "3-Month Carbon Activity Overview",
+                labels,
+                values: Array(labels.length).fill(0),
+                goalTitle: "3-Month Goal Overview",
+            };
+        }
+
+        return {
+            title: "Yearly Carbon Activity Overview",
+            labels: getYearLabels(),
+            values: Array(12).fill(0),
+            goalTitle: "Yearly Goal",
+        };
+    };
+
+    const selectedChart = useMemo(
+        () => getChartData(),
+        [selectedTracker, selectedPeriod]
+    );
+
+    const goalTitle = selectedChart.goalTitle;
+
+    const chartScale = useMemo(() => {
+        const maximum = Math.max(...selectedChart.values, 0);
+
+        if (maximum <= 0) {
+            return {
+                maximum: 10,
+                ticks: [10, 8, 6, 4, 2, 0],
+            };
+        }
+
+        const magnitude = 10 ** Math.floor(Math.log10(maximum));
+        const normalized = maximum / magnitude;
+
+        let step;
+
+        if (normalized <= 1) {
+            step = magnitude / 5;
+        } else if (normalized <= 2) {
+            step = magnitude / 2;
+        } else if (normalized <= 5) {
+            step = magnitude;
+        } else {
+            step = magnitude * 2;
+        }
+
+        const maximumWithPadding = Math.ceil((maximum * 1.15) / step) * step;
+        const tickStep = maximumWithPadding / 5;
+        const ticks = Array.from(
+            { length: 6 },
+            (_, index) => Math.round((maximumWithPadding - index * tickStep) * 100) / 100
+        );
+
+        return {
+            maximum: maximumWithPadding,
+            ticks,
+        };
+    }, [selectedChart.values]);
+
     const getStatRoute = (tracker, title) => {
-        if (tracker === "All" && title === "Total Tracking Entries") return "/analytics";
-        if (tracker === "All" && title === "Transportation Trips") return "/tracking?type=transportation";
-        if (tracker === "All" && title === "Electricity Consumption") return "/tracking?type=electricity";
-        if (tracker === "All" && title === "Waste Generated") return "/tracking?type=waste";
+        if (tracker === "All" && title === "Total Carbon Emissions") return "/analytics";
+        if (tracker === "All" && title === "Transportation Carbon Emissions") return "/tracking?type=transportation";
+        if (tracker === "All" && title === "Electricity Carbon Emissions") return "/tracking?type=electricity";
+        if (tracker === "All" && title === "Waste Management Carbon Emissions") return "/tracking?type=waste";
         if (tracker === "Transportation") return "/tracking?type=transportation";
         if (tracker === "Electricity") return "/tracking?type=electricity";
         if (tracker === "Waste Management") return "/tracking?type=waste";
@@ -138,7 +281,12 @@ const activityChartData = {
 
     const handleStatClick = (tracker, title) => {
         const route = getStatRoute(tracker, title);
+
         if (route) navigate(route);
+    };
+
+    const handleLogout = () => {
+        window.location.href = "/";
     };
 
     return (
@@ -276,41 +424,104 @@ const activityChartData = {
 
                                 <div className="flex items-center gap-2.5 max-sm:w-full max-sm:flex-col max-sm:items-stretch">
                                     <div className="period-dropdown relative">
-                                        <button type="button" onClick={(event) => { event.stopPropagation(); setPeriodOpen(!periodOpen); setTrackerOpen(false); }} className="flex min-w-[145px] items-center justify-between gap-4 rounded-lg border border-[#d8e5dc] bg-white px-3.5 py-2.5 text-xs text-[#365443] shadow-sm transition-all hover:border-[#b9d3c1] hover:shadow-md active:scale-[.98] max-sm:w-full">
-                                            <span>{selectedPeriod}</span><FiChevronDown className={`transition-transform duration-200 ${periodOpen ? "rotate-180" : ""}`} size={13} />
+                                        <button
+                                            type="button"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                setPeriodOpen(!periodOpen);
+                                                setTrackerOpen(false);
+                                            }}
+                                            className="flex min-w-[175px] items-center justify-between gap-4 rounded-lg border border-[#d8e5dc] bg-white px-3.5 py-2.5 text-xs text-[#365443] shadow-sm transition-all hover:border-[#b9d3c1] hover:shadow-md active:scale-[.98] max-sm:w-full"
+                                        >
+                                            <span>{selectedPeriod}</span>
+                                            <FiChevronDown className={`transition-transform duration-200 ${periodOpen ? "rotate-180" : ""}`} size={13} />
                                         </button>
+
                                         {periodOpen && (
-                                            <div className="absolute right-0 top-[calc(100%+7px)] z-30 w-[170px] rounded-xl border border-[#e1ebe4] bg-white p-1.5 shadow-[0_12px_30px_rgba(23,63,42,0.12)] max-sm:w-full">
-                                                {periods.map((period) => <button key={period} type="button" onClick={() => { setSelectedPeriod(period); setPeriodOpen(false); }} className="w-full rounded-lg px-3 py-2.5 text-left text-xs text-[#53685b] hover:bg-[#f1f8f3] hover:text-[#27834d]">{period}</button>)}
+                                            <div className="absolute right-0 top-[calc(100%+7px)] z-30 w-[200px] rounded-xl border border-[#e1ebe4] bg-white p-1.5 shadow-[0_12px_30px_rgba(23,63,42,0.12)] max-sm:w-full">
+                                                {periods.map((period) => (
+                                                    <button
+                                                        key={period}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedPeriod(period);
+                                                            setPeriodOpen(false);
+                                                        }}
+                                                        className="w-full rounded-lg px-3 py-2.5 text-left text-xs text-[#53685b] hover:bg-[#f1f8f3] hover:text-[#27834d]"
+                                                    >
+                                                        {period}
+                                                    </button>
+                                                ))}
                                             </div>
                                         )}
                                     </div>
 
                                     <div className="tracking-dropdown relative">
-                                        <button type="button" onClick={(event) => { event.stopPropagation(); setTrackerOpen(!trackerOpen); setPeriodOpen(false); }} className="flex min-w-[155px] items-center justify-between gap-4 rounded-lg border border-[#d8e5dc] bg-white px-3.5 py-2.5 text-xs text-[#365443] shadow-sm transition-all hover:border-[#b9d3c1] hover:shadow-md active:scale-[.98] max-sm:w-full">
-                                            <span>{selectedTracker}</span><FiChevronDown className={`transition-transform duration-200 ${trackerOpen ? "rotate-180" : ""}`} size={13} />
+                                        <button
+                                            type="button"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                setTrackerOpen(!trackerOpen);
+                                                setPeriodOpen(false);
+                                            }}
+                                            className="flex min-w-[155px] items-center justify-between gap-4 rounded-lg border border-[#d8e5dc] bg-white px-3.5 py-2.5 text-xs text-[#365443] shadow-sm transition-all hover:border-[#b9d3c1] hover:shadow-md active:scale-[.98] max-sm:w-full"
+                                        >
+                                            <span>{selectedTracker}</span>
+                                            <FiChevronDown className={`transition-transform duration-200 ${trackerOpen ? "rotate-180" : ""}`} size={13} />
                                         </button>
+
                                         {trackerOpen && (
                                             <div className="absolute right-0 top-[calc(100%+7px)] z-30 w-[180px] rounded-xl border border-[#e1ebe4] bg-white p-1.5 shadow-[0_12px_30px_rgba(23,63,42,0.12)] max-sm:w-full">
-                                                {trackers.map((tracker) => <button key={tracker} type="button" onClick={() => { setSelectedTracker(tracker); setTrackerOpen(false); }} className="w-full rounded-lg px-3 py-2.5 text-left text-xs text-[#53685b] hover:bg-[#f1f8f3] hover:text-[#27834d]">{tracker}</button>)}
+                                                {trackers.map((tracker) => (
+                                                    <button
+                                                        key={tracker}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedTracker(tracker);
+                                                            setTrackerOpen(false);
+                                                        }}
+                                                        className="w-full rounded-lg px-3 py-2.5 text-left text-xs text-[#53685b] hover:bg-[#f1f8f3] hover:text-[#27834d]"
+                                                    >
+                                                        {tracker}
+                                                    </button>
+                                                ))}
                                             </div>
                                         )}
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-4 gap-[18px] max-xl:grid-cols-2 max-sm:grid-cols-1">
+                            <div
+                                key={`stats-${refreshKey}`}
+                                className={`grid gap-[18px] ${selectedTracker === "Electricity" ? "grid-cols-3 max-xl:grid-cols-3 max-md:grid-cols-1" : selectedTracker === "Waste Management" ? "grid-cols-5 max-2xl:grid-cols-3 max-xl:grid-cols-2 max-sm:grid-cols-1" : "grid-cols-4 max-xl:grid-cols-2 max-sm:grid-cols-1"}`}
+                            >
                                 {stats.map((stat, index) => (
-                                    <button key={stat.title} type="button" onClick={() => handleStatClick(selectedTracker, stat.title)} className="group w-full rounded-[15px] border border-[#e1ebe4] bg-white p-[21px] text-left shadow-[0_10px_30px_rgba(33,78,50,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-[#d4e4da] hover:shadow-[0_16px_35px_rgba(33,78,50,0.09)] animate-[cardFadeUp_.6s_ease_both]" style={{ animationDelay: `${0.28 + index * 0.08}s` }}>
-                                        <div className="mb-[18px] flex items-center justify-between"><span className="text-[11px] font-bold text-[#718277]">{stat.value === "—" ? "—" : ""}</span></div>
+                                    <button
+                                        key={stat.title}
+                                        type="button"
+                                        onClick={() => handleStatClick(selectedTracker, stat.title)}
+                                        className="group w-full rounded-[15px] border border-[#e1ebe4] bg-white p-[21px] text-left shadow-[0_10px_30px_rgba(33,78,50,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-[#d4e4da] hover:shadow-[0_16px_35px_rgba(33,78,50,0.09)] animate-[cardFadeUp_.6s_ease_both]"
+                                        style={{ animationDelay: `${0.28 + index * 0.08}s` }}
+                                    >
+                                        <div className="mb-[18px] flex items-center justify-between">
+                                            <span className="text-[11px] font-bold text-[#718277]">{stat.value === "—" ? "—" : ""}</span>
+                                        </div>
                                         <p className="mb-1.5 text-[13px] text-[#718277]">{stat.title}</p>
-                                        <h3 className="text-[27px] font-semibold text-[#173f2a]">{stat.value} {stat.unit && <span className="text-xs font-medium text-[#8a998f]">{stat.unit}</span>}</h3>
+                                        <h3 className="text-[27px] font-semibold text-[#173f2a]">
+                                            {stat.value}{" "}
+                                            {stat.unit && (
+                                                <span className="text-xs font-medium text-[#8a998f]">{stat.unit}</span>
+                                            )}
+                                        </h3>
                                     </button>
                                 ))}
                             </div>
                         </section>
 
-                        <section className="mb-[22px] grid grid-cols-[2fr_1fr] gap-[22px] max-xl:grid-cols-1">
+                        <section
+                            key={`dynamic-${refreshKey}`}
+                            className="mb-[22px] grid grid-cols-[2fr_1fr] gap-[22px] max-xl:grid-cols-1"
+                        >
                             <button
                                 type="button"
                                 onClick={() => navigate("/analytics")}
@@ -326,32 +537,47 @@ const activityChartData = {
 
                                 <div className="mt-8 flex h-[300px] gap-4">
                                     <div className="flex flex-col justify-between py-1 text-[10px] text-[#8a998f]">
-                                        <span>250</span>
-                                        <span>200</span>
-                                        <span>150</span>
-                                        <span>100</span>
-                                        <span>50</span>
-                                        <span>0</span>
+                                        {chartScale.ticks.map((tick, index) => (
+                                            <span key={index}>
+                                                {Number.isInteger(tick) ? tick : tick.toFixed(1)}
+                                            </span>
+                                        ))}
                                     </div>
 
                                     <div className="relative flex-1 border-b border-[#dfe9e2]">
                                         {[20, 40, 60, 80, 100].map((top) => (
-                                            <div key={top} className="absolute left-0 right-0 border-t border-dashed border-[#edf2ee]" style={{ top: `${top}%` }} />
+                                            <div
+                                                key={top}
+                                                className="absolute left-0 right-0 border-t border-dashed border-[#edf2ee]"
+                                                style={{ top: `${top}%` }}
+                                            />
                                         ))}
 
-                                        <div className="absolute inset-x-0 bottom-0 flex h-[92%] items-end justify-around gap-3 px-2">
-                                            {selectedChart.values.map((value, index) => (
-                                                <div key={index} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+                                        <div className="absolute inset-x-0 bottom-0 flex h-[92%] items-end justify-around gap-3 overflow-hidden px-2">
+                                            {selectedChart.values.map((value, index) => {
+                                                const percentage =
+                                                    chartScale.maximum > 0
+                                                        ? Math.min((value / chartScale.maximum) * 100, 100)
+                                                        : 0;
+
+                                                return (
                                                     <div
-                                                        className="w-full max-w-[34px] origin-bottom rounded-t-md bg-[#27834d] animate-[barGrow_.7s_ease_both]"
-                                                        style={{
-                                                            height: `${value}%`,
-                                                            animationDelay: `${0.7 + index * 0.1}s`,
-                                                        }}
-                                                    />
-                                                    <span className="text-[10px] text-[#8a998f]">{selectedChart.labels[index]}</span>
-                                                </div>
-                                            ))}
+                                                        key={`${selectedChart.labels[index]}-${index}`}
+                                                        className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
+                                                    >
+                                                        <div
+                                                            className="w-full max-w-[34px] origin-bottom rounded-t-md bg-[#27834d] animate-[barGrow_.7s_ease_both]"
+                                                            style={{
+                                                                height: `${percentage}%`,
+                                                                animationDelay: `${0.7 + index * 0.05}s`,
+                                                            }}
+                                                        />
+                                                        <span className="truncate text-[10px] text-[#8a998f]">
+                                                            {selectedChart.labels[index]}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 </div>
@@ -382,11 +608,20 @@ const activityChartData = {
                                     <span className="text-[11px] leading-5 text-[#8a998f]">Start tracking your activities to begin your sustainability journey.</span>
                                 </div>
 
-                                <button type="button" onClick={() => { navigate("/sustainability-goals"); }} className="mt-5 h-[42px] w-full rounded-lg border border-[#cfe0d4] bg-white text-[13px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]">View Goal</button>
+                                <button
+                                    type="button"
+                                    onClick={() => navigate("/sustainability-goals")}
+                                    className="mt-5 h-[42px] w-full rounded-lg border border-[#cfe0d4] bg-white text-[13px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
+                                >
+                                    View Goal
+                                </button>
                             </div>
                         </section>
 
-                        <section className="scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.72s_both]">
+                        <section
+                            key={`recommendation-${refreshKey}`}
+                            className="scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.72s_both]"
+                        >
                             <div className="flex items-center justify-between gap-5">
                                 <div>
                                     <p className="mb-1 text-[11px] font-bold tracking-[.15em] text-[#27834d]">RECOMMENDATION</p>
@@ -395,7 +630,11 @@ const activityChartData = {
                                 <img src="/assets/earth.jpg" alt="Earth" className="h-[52px] w-[52px] rounded-xl object-contain" />
                             </div>
 
-                            <button type="button" onClick={() => { navigate("/ai-insights"); }} className="mt-[22px] flex w-full gap-3.5 rounded-[11px] border border-[#e1eee4] bg-[#f3f9f4] p-[17px] text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4e5da] hover:shadow-md">
+                            <button
+                                type="button"
+                                onClick={() => navigate("/ai-insights")}
+                                className="mt-[22px] flex w-full gap-3.5 rounded-[11px] border border-[#e1eee4] bg-[#f3f9f4] p-[17px] text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4e5da] hover:shadow-md"
+                            >
                                 <div className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px]">
                                     <img src="/assets/Footprints.jpg" alt="Carbon footprint" className="h-full w-full object-cover transition-transform duration-300 hover:scale-105" />
                                 </div>
@@ -405,7 +644,13 @@ const activityChartData = {
                                 </div>
                             </button>
 
-                            <button type="button" onClick={() => { navigate("/ai-insights"); }} className="mt-[18px] h-[42px] w-full rounded-lg border border-[#cfe0d4] bg-white text-[13px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]">View More Recommendations</button>
+                            <button
+                                type="button"
+                                onClick={() => navigate("/ai-insights")}
+                                className="mt-[18px] h-[42px] w-full rounded-lg border border-[#cfe0d4] bg-white text-[13px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
+                            >
+                                View More Recommendations
+                            </button>
                         </section>
                     </main>
                 </div>

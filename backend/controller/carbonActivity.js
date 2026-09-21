@@ -13,8 +13,8 @@ module.exports.createTransporatationActivity = async(req,res)=>{
 
     const {category,date,transportation} = req.body;
 
-    if((transportation.transportMode==="2 wheeler" && transportation.fuelType==="diesel") ||
-       (transportation.transportMode==="bus" && transportation.fuelType==="petrol") || 
+    if((transportation.transportMode==="2 wheeler" && (transportation.fuelType==="diesel" || transportation.fuelType==="cng")) ||
+       (transportation.transportMode==="bus" && (transportation.fuelType==="petrol" || transportation.fuelType==="cng")) || 
        (transportation.transportMode==="train" && transportation.fuelType!=="electric")){
        return res.status(400).json({success : false, message : "wrong transport mode or fuel type"});
     }
@@ -315,18 +315,20 @@ module.exports.deleteActivity = async(req,res)=>{
 
 //summmary
 module.exports.summaryActivity = async(req,res)=>{
+  try{
     const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to update profile"});
     }
 
     const {type,duration} = req.query;
-    console.log(req.query);
     const result = await getSummary(type,duration,userId);
-    console.log(result);
     if(result.typeSummary && result.durationSummary){
         return res.status(200).json({success : true , message : `summary of ${type} activity basis of duration type ${duration}`,result});
     }else{
         return res.status(400).json({success : false, message : "summary of activity is not get"});
     }
+  }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+  }
 };

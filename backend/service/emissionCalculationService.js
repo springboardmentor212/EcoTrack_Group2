@@ -12,8 +12,6 @@ module.exports.transportationEmission = (vehicle,fuleType,distance,date)=>{
 
    if(vehicle==="2 wheeler" && fuleType==="petrol"){
        return distance * 0.1137;
-   }else if(vehicle==="2 wheeler" && fuleType==="cng"){
-       return distance * 0;
    }else if(vehicle==="2 wheeler" && fuleType==="electric"){
        return distance * 0.03 * EEF;
    }else if(vehicle==="4 wheeler" && fuleType==="petrol"){
@@ -34,8 +32,6 @@ module.exports.transportationEmission = (vehicle,fuleType,distance,date)=>{
        return distance * 0.037 * EEF;        
    }else if(vehicle==="bus" && fuleType==="diesel"){
        return distance * 0.0152;        
-   }else if(vehicle==="bus" && fuleType==="cng"){
-       return distance * 0;        
    }else if(vehicle==="bus" && fuleType==="electric"){
        return distance * 0.0325 * EEF;        
    }else if(vehicle==="train" && fuleType==="electric"){

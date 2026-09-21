@@ -243,7 +243,12 @@ const electricityTypeSummary = async (startDate,endDate,userId) => {
             // 2. Total electricity consumption
             totalElectricityConsumption: {
                 $sum: "$electricity.consumption"
-            }
+            },
+
+            // 3. Total electricity Activities
+            totalElectricityActivities: {
+                $sum: 1
+            },
         }
     },
 
@@ -251,7 +256,8 @@ const electricityTypeSummary = async (startDate,endDate,userId) => {
         $project: {
             _id: 0,
             totalElectricityEmission: 1,
-            totalElectricityConsumption: 1
+            totalElectricityConsumption: 1,
+            totalElectricityActivities : 1,
         }
     }
 ]);

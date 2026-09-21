@@ -17,25 +17,24 @@ module.exports.getSummary = async(type,duration,userId) => {
        startDate = new Date(Date.UTC(year,month - 3 ,1));
        endDate = new Date(Date.UTC(year,month,1));
        durationSummary =  await getSummaryMonthBasis(type,userId,startDate,endDate);
-       console.log("durationSummary = ",durationSummary);
    }else if(duration==="year"){
        startDate = new Date(Date.UTC(year,0,1));
        endDate = new Date(Date.UTC(year + 1,0,1));
        durationSummary = await getSummaryMonthBasis(type,userId,startDate,endDate);
+   }else{
+       durationSummary = [{}];
    }
 
-   console.log("start date = ",startDate);
-   console.log("end date = ",endDate);
-   
    if(type==="carbon"){
        typeSummary = await carbonTypeSummary(startDate,endDate,userId);
    }else if(type==="transportation"){
        typeSummary = await transportationTypeSummary(startDate,endDate,userId);
-       console.log("typeSummary = ",typeSummary);
    }else if(type==="electricity"){
        typeSummary = await electricityTypeSummary(startDate,endDate,userId);
    }else if(type==="waste"){
        typeSummary = await wasteTypeSummary(startDate,endDate,userId);
+   }else{
+       typeSummary = [{}];
    }
    
    return {typeSummary : typeSummary[0],durationSummary : durationSummary[0]};
