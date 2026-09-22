@@ -1,21 +1,75 @@
 import TrackingDetailLayout from "./tracking-detail-layout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaTrash,FaEdit } from "react-icons/fa";
+import axios from "axios";
 
 import { NumberInput, Select } from "@mantine/core";
 import { DateInput,YearPickerInput} from "@mantine/dates";
 
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
+
+// CHANGE: waste type dropdown — display label vs. backend value.
+const WASTE_TYPES = [
+  { value: "wet waste", label: "Wet Waste" },
+  { value: "dry waste", label: "Dry Waste" },
+  { value: "e waste", label: "E-Waste" },
+];
+
+// CHANGE: disposal methods depend on waste type; each entry pairs the
+// backend value with its display label.
+const DISPOSAL_METHODS = {
+  "wet waste": [
+    { value: "composting", label: "Composting" },
+    { value: "landfill", label: "Landfill" },
+  ],
+  "dry waste": [
+    { value: "recycled", label: "Recycled" },
+    { value: "burned", label: "Burned" },
+    { value: "landfill", label: "Landfill" },
+  ],
+  "e waste": [
+    { value: "recycled", label: "Recycled" },
+    { value: "burned", label: "Burned" },
+    { value: "landfill", label: "Landfill" },
+  ],
+};
+const now = new Date();
+
+const currentYear = now.getFullYear();
+
+const currentMonth = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+][now.getMonth()];
+
+
+// CHANGE: helpers to render friendly labels in the table from stored values.
+const labelFor = (options, value) =>
+  options.find((option) => option.value === value)?.label || value;
+
 export default function WasteManagement() {
+  const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
   const [wasteAmount, setWasteAmount] = useState(null);
   const [disposalMethod, setDisposalMethod] = useState(null);
  
   const [wasteDate, setWasteDate] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [wasteType, setWasteType] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState("");
-const [selectedYear, setSelectedYear] = useState(null);
+const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+const [selectedYear, setSelectedYear] = useState(
+  new Date(currentYear, 0, 1)
+);
 const [error, setError] = useState("");
 const [currentPage, setCurrentPage] = useState(1);
 const [formKey, setFormKey] = useState(0);
@@ -23,79 +77,105 @@ const [formKey, setFormKey] = useState(0);
 const [loading, setLoading] = useState(false);
 
 const recordsPerPage = 5;
-  const disposalOptions =
-  wasteType === "Wet Waste"
-    ? ["Composting", "Landfill"]
-    : wasteType === "Dry Waste"
-    ? ["Recycling", "Burned", "Landfill"]
-    : wasteType === "E-waste"
-    ? ["Recycling", "Burned", "Landfill"]
-    : [];
+  // CHANGE: wasteType state now holds the backend value (e.g. "wet waste"),
+  // so look disposal options up directly from the map.
+  const disposalOptions = DISPOSAL_METHODS[wasteType] || [];
   const [previousEntries, setPreviousEntries] = useState([]);
+  // CHANGE: maps a raw API record ({ _id, date, emission, waste: {...} })
+  // into the flat shape the table/edit logic below expects.
+  const mapActivity = (item) => ({
+    id: item._id,
+    date: item.date,
+    amount: item.waste.wasteAmount,
+    wasteType: item.waste.wasteType,
+    disposalMethod: item.waste.disposalMethod,
+    emission: item.emission,
+    carbonSave: item.waste.carbonSave,
+  });
+
+  // CHANGE: GET /waste?month=...&year=... — fetches and stores previousEntries.
+  const fetchWasteActivities = async () => {
+    try {
+      const params = {};
+      if (selectedMonth) params.month = selectedMonth;
+      if (selectedYear) params.year = new Date(selectedYear).getFullYear();
+
+      const response = await axios.get(`${CARBON_ACTIVITY}/waste`, {
+        params,
+        withCredentials: true,
+      });
+
+      if (response.data.success) {
+        setPreviousEntries(response.data.wasteActivity.map(mapActivity));
+      }
+    } catch (error) {
+      setError(
+        error.response?.data?.message || "Failed to load waste activities"
+      );
+    }
+  };
+
+  // CHANGE: fetch on initial load, and again whenever month/year filters change.
+  useEffect(() => {
+    fetchWasteActivities();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMonth, selectedYear]);
+
 const handleAddEntry = async() => {
   
   if (loading) return;
 
-  
-  setLoading(true);
-  await new Promise((resolve) => setTimeout(resolve, 3000)); //remove this after connecting backend
-
-  try {
-    if (
+  if (
     wasteAmount === "" ||
     Number(wasteAmount) <= 0 ||
     !wasteType ||
     !disposalMethod ||
     !wasteDate
   ) {
-    
     return;
   }
-    setError("");
-    const newEntry = {
-    id: editingId || Date.now(),
-    amount: Number(wasteAmount),
-    wasteType,
-    disposalMethod,
-    date: wasteDate
-      ? new Date(wasteDate).toLocaleDateString("en-GB")
-      : "N/A",
-  };
-  const filteredEntries = previousEntries.filter((entry) => {
-    return (
-      selectedMonth === "All" ||
-      entry.date.split("/")[1] === selectedMonth
-    );
-  });
-  const totalPages = Math.ceil(
-    filteredEntries.length / recordsPerPage
-  );
 
-  const currentEntries = filteredEntries.slice(
-    (currentPage - 1) * recordsPerPage,
-    currentPage * recordsPerPage
-  );
+  setLoading(true);
+  setError("");
 
-    if (editingId !== null) {
-    setPreviousEntries((prevEntries) =>
-      prevEntries.map((item) =>
-        item.id === editingId
-          ? { ...item, ...newEntry }
-          : item
-      )
-    );
+  try {
+    const payload = {
+      category: "waste",
+      date: new Date(wasteDate).toISOString().split("T")[0],
+      waste: {
+        wasteType,
+        wasteAmount: Number(wasteAmount),
+        disposalMethod,
+      },
+    };
 
-      setEditingId(null);
+    let response;
+
+    if (editingId) {
+      response = await axios.patch(
+        `${CARBON_ACTIVITY}/waste`,
+        {
+          _id: editingId,
+          ...payload,
+        },
+        { withCredentials: true }
+      );
     } else {
-    setPreviousEntries((prevEntries) => [
-      newEntry,
-      ...prevEntries,
-    ]);
+      response = await axios.post(`${CARBON_ACTIVITY}/waste`, payload, {
+        withCredentials: true,
+      });
     }
 
-    clearForm();
+    if (response.data.success) {
+      clearForm();
+      // CHANGE: refresh from the backend instead of hand-building local state.
+      await fetchWasteActivities();
+    }
+  } catch (error) {
+    setError(
+      error.response?.data?.message || "Failed to save waste activity"
+    );
   } finally {
-    
     setLoading(false);
   }
 };
@@ -115,39 +195,29 @@ const clearForm = () => {
   setError("");
   setFormKey((prev) => prev + 1);
 };
-const filteredEntries = previousEntries.filter((entry) => {
-  const [, month, year] = entry.date.split("/");
 
-  const selectedMonthNumber =
-    [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ].indexOf(selectedMonth) + 1;
+// CHANGE: DELETE ${CARBON_ACTIVITY}/${activityId}, then refresh from backend.
+const handleDelete = async (entryId) => {
+  setError("");
+  try {
+    const response = await axios.delete(`${CARBON_ACTIVITY}/${entryId}`, {
+      withCredentials: true,
+    });
 
-  const monthMatch =
-    !selectedMonth ||
-    Number(month) === selectedMonthNumber;
-
-  const selectedYearValue = selectedYear
-    ? new Date(selectedYear).getFullYear()
-    : null;
-
-  const yearMatch =
-    !selectedYear ||
-    Number(year) === selectedYearValue;
-
-  return monthMatch && yearMatch;
-});
+    if (response.data.success) {
+      if (editingId === entryId) clearForm();
+      await fetchWasteActivities();
+    }
+  } catch (error) {
+    setError(
+      error.response?.data?.message || "Failed to delete waste activity"
+    );
+  }
+};
+// CHANGE: month/year filtering now happens server-side via fetchWasteActivities'
+// query params, so previousEntries is already the filtered set. Keeping the name
+// "filteredEntries" avoids touching the JSX below that references it.
+const filteredEntries = previousEntries;
 const totalPages = Math.ceil(
   filteredEntries.length / recordsPerPage
 );
@@ -189,13 +259,14 @@ const currentEntries =
     <Select
       key={`waste-type-${formKey}`}
       value={wasteType}
-      onChange={setWasteType}
+      onChange={(value) => {
+        // CHANGE: reset disposal method when waste type changes, since its
+        // options depend on wasteType and a stale value could persist.
+        setWasteType(value);
+        setDisposalMethod(null);
+      }}
       placeholder="Select waste type"
-      data={[
-      "Wet Waste",
-      "Dry Waste",
-      "E-waste"
-      ]}
+      data={WASTE_TYPES}
       styles={inputStyles}
     />
   </div>
@@ -226,6 +297,8 @@ const currentEntries =
       valueFormat="DD/MM/YYYY"
       placeholder="Select date"
       color="green"
+      minDate={new Date(2000, 0, 1)}
+  maxDate={new Date()}
       styles={inputStyles}
     />
   </div>
@@ -285,6 +358,8 @@ const currentEntries =
     }}
     placeholder="Year"
     clearable={!!selectedYear}
+    minDate={new Date(2000, 0, 1)}
+  maxDate={new Date(currentYear, 11, 31)}
     styles={{
       input: {
         minHeight: "40px",
@@ -302,18 +377,20 @@ const currentEntries =
     placeholder="Month"
     clearable={!!selectedMonth}
     data={[
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
+      { value: "jan", label: "January" },
+  { value: "feb", label: "February" },
+  { value: "mar", label: "March" },
+  { value: "apr", label: "April" },
+  { value: "may", label: "May" },
+  { value: "jun", label: "June" },
+  { value: "jul", label: "July" },
+  { value: "aug", label: "August" },
+  { value: "sep", label: "September" },
+  { value: "oct", label: "October" },
+  { value: "nov", label: "November" },
+  { value: "dec", label: "December" },
+
+      
     ]}
     styles={{
       input: {
@@ -382,35 +459,43 @@ const currentEntries =
             key={entry.id}
             className="border-t border-[#D7EADF]"
           >
-            <td className="px-6 py-4">{entry.date}</td>
+            {/* CHANGE: entry.date is an ISO string from the API; format for display. */}
+            <td className="px-6 py-4">
+              {entry.date ? new Date(entry.date).toLocaleDateString("en-GB") : "-"}
+            </td>
 
             <td className="px-6 py-4">
               {entry.amount}
             </td>
 
             <td className="px-6 py-4">
-              {entry.wasteType}
+              {/* CHANGE: show the friendly label for the stored backend value. */}
+              {labelFor(WASTE_TYPES, entry.wasteType)}
             </td>
 
             <td className="px-6 py-4">
               <span className="rounded-full bg-[#EEF7F0] px-3 py-1 text-sm text-[#27834D]">
-                {entry.disposalMethod}
+                {/* CHANGE: show the friendly label for the stored backend value. */}
+                {labelFor(DISPOSAL_METHODS[entry.wasteType] || [], entry.disposalMethod)}
               </span>
             </td>
-            <td></td>
-            <td></td>
+            {/* CHANGE: display backend-computed emission/carbon-saved instead of blank cells. */}
+            <td className="px-6 py-4">
+              {typeof entry.emission === "number" ? entry.emission.toFixed(2) : "-"}
+            </td>
+            <td className="px-6 py-4">
+              {typeof entry.carbonSave === "number" ? entry.carbonSave.toFixed(2) : "-"}
+            </td>
             <td className="px-6 py-4">
   <div className="flex gap-3">
     <button
       type="button"
       onClick={() => {
-        const [day, month, year] = entry.date.split("/");
         setEditingId(entry.id);
         setWasteAmount(entry.amount);
         setDisposalMethod(entry.disposalMethod);
-        setWasteDate(
-  new Date(year, month - 1, day)
-);
+        // CHANGE: entry.date is now an ISO date string from the API.
+        setWasteDate(new Date(entry.date));
         setWasteType(entry.wasteType);
       }}
       className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#EEF7F0] text-[#27834D] transition hover:bg-[#DFF3E6]"
@@ -420,13 +505,7 @@ const currentEntries =
 
     <button
       type="button"
-      onClick={() =>
-        setPreviousEntries(
-          previousEntries.filter(
-            (item) => item.id !== entry.id
-          )
-        )
-      }
+      onClick={() => handleDelete(entry.id)}
       className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FDF2F2] text-[#B34B4B] transition hover:bg-[#FBE5E5]"
     >
       <FaTrash />

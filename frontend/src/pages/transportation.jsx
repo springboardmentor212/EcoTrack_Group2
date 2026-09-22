@@ -11,19 +11,23 @@ const now = new Date();
 
 const currentYear = now.getFullYear();
 
+const MIN_YEAR = 2000;
+const minYearDate = new Date(MIN_YEAR, 0, 1);
+const maxYearDate = new Date(currentYear, 11, 31);
+
 const currentMonth = [
-  "jan",
-  "feb",
-  "mar",
-  "apr",
-  "may",
-  "jun",
-  "jul",
-  "aug",
-  "sep",
-  "oct",
-  "nov",
-  "dec",
+ { value: "jan", label: "January" },
+  { value: "feb", label: "February" },
+  { value: "mar", label: "March" },
+  { value: "apr", label: "April" },
+  { value: "may", label: "May" },
+  { value: "jun", label: "June" },
+  { value: "jul", label: "July" },
+  { value: "aug", label: "August" },
+  { value: "sep", label: "September" },
+  { value: "oct", label: "October" },
+  { value: "nov", label: "November" },
+  { value: "dec", label: "December" },
 ][now.getMonth()];
 
 
@@ -50,8 +54,11 @@ export default function Transportation() {
   const [fuelType, setFuelType] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedYear, setSelectedYear] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+
+const [selectedYear, setSelectedYear] = useState(
+  new Date(currentYear, 0, 1)
+);
   const [currentPage, setCurrentPage] = useState(1);
   
   const [loading, setLoading] = useState(false);
@@ -344,6 +351,8 @@ const handleDeleteTrip = async (tripId) => {
             value={travelDate}
             onChange={setTravelDate}
             valueFormat="DD/MM/YYYY"
+            minDate={new Date(2000, 0, 1)}
+  maxDate={new Date()}
             placeholder="Select travel date"
             color="green"
             styles={inputStyles}
@@ -358,8 +367,9 @@ const handleDeleteTrip = async (tripId) => {
           <Select
   value={transportMode}
   onChange={(value) => {
-    setTransportMode(value);
-  }}
+  setTransportMode(value);
+  setFuelType("");
+}}
   placeholder="Select transport mode"
   data={[
   { value: "2 wheeler", label: "2 Wheeler" },
@@ -483,10 +493,19 @@ const handleDeleteTrip = async (tripId) => {
               <div className="flex items-end gap-2">
   <YearPickerInput
     value={selectedYear}
+    
     onChange={(value) => {
+      if (value) {
+        const pickedYear = new Date(value).getFullYear();
+        if (pickedYear > currentYear || pickedYear < MIN_YEAR) {
+          return;
+        }
+      }
       setSelectedYear(value);
       setCurrentPage(1);
     }}
+    minDate={new Date(2000, 0, 1)}
+  maxDate={new Date(currentYear, 11, 31)}
     placeholder="Year"
     clearable={!!selectedYear}
     styles={{
@@ -495,6 +514,7 @@ const handleDeleteTrip = async (tripId) => {
         width: "120px",
       },
     }}
+    
   />
 
   <Select

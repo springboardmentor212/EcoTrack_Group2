@@ -4,14 +4,35 @@ import { MonthPickerInput,YearPickerInput } from "@mantine/dates";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 import { NumberInput, Select} from "@mantine/core";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import axios from "axios";
 
+
+const MONTHS = [
+  { value: "jan", label: "January" },
+  { value: "feb", label: "February" },
+  { value: "mar", label: "March" },
+  { value: "apr", label: "April" },
+  { value: "may", label: "May" },
+  { value: "jun", label: "June" },
+  { value: "jul", label: "July" },
+  { value: "aug", label: "August" },
+  { value: "sep", label: "September" },
+  { value: "oct", label: "October" },
+  { value: "nov", label: "November" },
+  { value: "dec", label: "December" },
+];
+const MONTH_LABEL_BY_VALUE = Object.fromEntries(
+  MONTHS.map(({ value, label }) => [value, label])
+);
+const currentYear = new Date().getFullYear();
 
 export default function Electricity() {
-
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedYear, setSelectedYear] = useState(null);
+  const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
+  const [selectedYear, setSelectedYear] = useState(
+  new Date(currentYear, 0, 1)
+);
   const [usageType, setUsageType] = useState("");
   const [billingMonth, setBillingMonth] = useState(null);
   const [consumption, setConsumption] = useState("");
@@ -19,6 +40,8 @@ export default function Electricity() {
   const [currentPage, setCurrentPage] = useState(1);
   // CHANGE: loading state for the submit-in-progress flag (matches Transportation.jsx).
   const [loading, setLoading] = useState(false);
+  // CHANGE: error state surfaced in the UI on failed requests.
+  const [error, setError] = useState(null);
 
   const recordsPerPage = 5;
   const [previousEntries, setPreviousEntries] = useState([]);
@@ -37,13 +60,57 @@ export default function Electricity() {
   setEditingId(null);
 };
 
+  const mapActivity = (item) => ({
+    id: item._id,
+    monthValue: item.electricity.month,
+    month: MONTH_LABEL_BY_VALUE[item.electricity.month] || item.electricity.month,
+    year: item.electricity.year,
+    consumption: item.electricity.consumption,
+    usageTypeValue: item.electricity.usageType,
+    usageType:
+      item.electricity.usageType.charAt(0).toUpperCase() +
+      item.electricity.usageType.slice(1),
+    emission: item.emission,
+  });
+
+
+  const fetchElectricityActivities = async () => {
+    try {
+      const params = {};
+      if (selectedYear) {
+        params.year = new Date(selectedYear).getFullYear();
+      }
+
+      const response = await axios.get(`${CARBON_ACTIVITY}/electricity`, {
+        params,
+        withCredentials: true,
+      });
+
+      if (response.data.success) {
+        setPreviousEntries(response.data.electricityActivity.map(mapActivity));
+      }
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Failed to load electricity activities"
+      );
+    }
+  };
+
+  
+  useEffect(() => {
+    fetchElectricityActivities();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedYear]);
+
   const handleSave = async() => {
     // CHANGE: guard against duplicate submissions while a save is in progress.
     if (loading) return;
 
     // CHANGE: set loading to true before any processing begins.
     setLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 3000)); //remove this after connecting backend
+    // CHANGE: clear any previous error before a new attempt.
+    setError(null);
 
     try {
       const numericConsumption = Number(consumption);
@@ -53,34 +120,52 @@ export default function Electricity() {
        return;
 
       }
-        const monthDate = new Date(billingMonth);
-      const entry = {
-    id: editingId || Date.now(),
-    month: monthDate.toLocaleString("en-US", {
-      month: "long",
-    }),
-    year: monthDate.getFullYear(),
-    consumption: numericConsumption,
-    usageType:
-      usageType.charAt(0).toUpperCase() +
-      usageType.slice(1),
-  };
+      const monthDate = new Date(billingMonth);
 
-      if (editingId === null) {
-        setPreviousEntries((entries) => [
-          { ...entry, id: Date.now() },
-          ...entries,
-          
-        ]);
+      const payload = {
+        category: "electricity",
+        electricity: {
+          month: MONTHS[monthDate.getMonth()].value,
+          year: monthDate.getFullYear(),
+          consumption: numericConsumption,
+          usageType,
+        },
+      };
+
+      let response;
+
+      if (editingId) {
+        response = await axios.patch(
+          `${CARBON_ACTIVITY}/electricity`,
+          {
+            _id: editingId,
+            ...payload,
+          },
+          {
+            withCredentials: true,
+          }
+        );
       } else {
-        setPreviousEntries((entries) =>
-          entries.map((item) =>
-            item.id === editingId ? { ...item, ...entry } : item,
-          ),
+        response = await axios.post(
+          `${CARBON_ACTIVITY}/electricity`,
+          payload,
+          {
+            withCredentials: true,
+          }
         );
       }
 
-      resetForm();
+      if (response.data.success) {
+        resetForm();
+        // CHANGE: refresh from the backend instead of hand-building local state.
+        await fetchElectricityActivities();
+      }
+    } catch (error) {
+      // CHANGE: surface backend error message, falling back to a generic one.
+      setError(
+        error.response?.data?.message ||
+        "Failed to save electricity activity"
+      );
     } finally {
       // CHANGE: loading is always reset, regardless of outcome.
       setLoading(false);
@@ -89,24 +174,22 @@ export default function Electricity() {
 
   const handleEdit = (entry) => {
     setEditingId(entry.id);
-    const monthIndex = new Date(`${entry.month} 1, ${entry.year}`).getMonth();
-    setBillingMonth(new Date(entry.year, monthIndex, 1));
+    // CHANGE: derive the month index from the backend abbreviation (monthValue)
+    // instead of parsing the display label, so it's not locale/format-fragile.
+    const monthIndex = MONTHS.findIndex((m) => m.value === entry.monthValue);
+    setBillingMonth(new Date(entry.year, monthIndex >= 0 ? monthIndex : 0, 1));
 
     setConsumption(entry.consumption);
-    setUsageType(entry.usageType);
+    // CHANGE: Select's value must be the backend value ("home"/"business"),
+    // not the capitalized display label.
+    setUsageType(entry.usageTypeValue);
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
- const filteredEntries = previousEntries.filter((entry) => {
-  const yearMatch =
+ const filteredEntries = previousEntries.filter(
+  (entry) =>
     !selectedYear ||
-    entry.year === new Date(selectedYear).getFullYear();
-
-  const monthMatch =
-    !selectedMonth ||
-    entry.month === selectedMonth;
-
-  return yearMatch && monthMatch;
-});
+    entry.year === new Date(selectedYear).getFullYear()
+);
 const totalPages = Math.ceil(
   filteredEntries.length / recordsPerPage
 );
@@ -118,9 +201,24 @@ const currentEntries = filteredEntries.slice(
   safePage * recordsPerPage
 );
 
-  const handleDelete = (entryId) => {
-    setPreviousEntries((entries) => entries.filter((item) => item.id !== entryId));
-    if (editingId === entryId) resetForm();
+  // CHANGE: DELETE ${CARBON_ACTIVITY}/${activityId}, then refresh from backend.
+  const handleDelete = async (entryId) => {
+    setError(null);
+    try {
+      const response = await axios.delete(`${CARBON_ACTIVITY}/${entryId}`, {
+        withCredentials: true,
+      });
+
+      if (response.data.success) {
+        if (editingId === entryId) resetForm();
+        await fetchElectricityActivities();
+      }
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+        "Failed to delete electricity activity"
+      );
+    }
   };
 
     return (
@@ -155,6 +253,8 @@ const currentEntries = filteredEntries.slice(
       onChange={setBillingMonth}
       valueFormat="MMMM YYYY"
       placeholder="Select billing month"
+      minDate={new Date(2000, 0, 1)}
+  maxDate={new Date()}
       color="green"
       styles={inputStyles}
     />
@@ -183,7 +283,10 @@ const currentEntries = filteredEntries.slice(
       value={usageType}
       onChange={setUsageType}
       placeholder="Select usage type"
-      data={["Home", "Business"]}
+      data={[
+    { value: "home", label: "Home" },
+    { value: "business", label: "Business" },
+]}
       styles={inputStyles}
     />
   </div>
@@ -216,6 +319,12 @@ const currentEntries = filteredEntries.slice(
         Clear Form
     </button>
 </div>
+
+{/* CHANGE: surfaces request errors from handleSave / handleDelete / fetchElectricityActivities. */}
+{error && (
+  <p className="mt-4 text-sm text-[#B34B4B]">{error}</p>
+)}
+
 <div className="mt-12">
   <div className="mb-6 flex items-end justify-between">
   <div>
@@ -235,6 +344,8 @@ const currentEntries = filteredEntries.slice(
       setSelectedYear(value);
       setCurrentPage(1);
     }}
+    minDate={new Date(2000, 0, 1)}
+  maxDate={new Date(currentYear, 11, 31)}
     placeholder="Year"
     clearable={!!selectedYear}
     styles={{
@@ -245,36 +356,7 @@ const currentEntries = filteredEntries.slice(
     }}
   />
 
-  <Select
-    value={selectedMonth}
-    onChange={(value) => {
-      setSelectedMonth(value || "");
-      setCurrentPage(1);
-    }}
-    placeholder="Month"
-    clearable={!!selectedMonth}
-    
-    data={[
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ]}
-    styles={{
-      input: {
-        minHeight: "40px",
-        width: "140px",
-      },
-    }}
-  />
+  
 </div>
   </div>
 
@@ -327,7 +409,10 @@ const currentEntries = filteredEntries.slice(
                 {entry.usageType}
               </span>
             </td>
-            <td></td>
+            <td className="px-6 py-4">
+              {/* CHANGE: display backend-computed emission instead of a blank cell. */}
+              {typeof entry.emission === "number" ? entry.emission.toFixed(2) : "-"}
+            </td>
             <td className="px-6 py-4">
               <div className="flex gap-3">
                 <button
