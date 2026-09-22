@@ -77,18 +77,24 @@ export default function Profile() {
     try {
       setLoading(true);
 
-      const response = await axios.get(`${PROFILE_URL}/`, {
+      const { data } = await axios.get(`${PROFILE_URL}/`, {
         withCredentials: true,
       });
 
-      const profileData = {
-        ...emptyProfile,
-        ...(response.data.profile || {}),
-      };
+      const { success, message, profile: profileData } = data;
 
-      setProfile(profileData);
-      setFormData(profileData);
-      setPhotoPreview(profileData.profilePhoto || "");
+      if (success) {
+        const updatedProfile = {
+          ...emptyProfile,
+          ...(profileData || {}),
+        };
+
+        setProfile(updatedProfile);
+        setFormData(updatedProfile);
+        setPhotoPreview(updatedProfile.profilePhoto || "");
+      } else {
+        toast.error(message || "Unable to load profile");
+      }
     } catch (err) {
       toast.error(
         err.response?.data?.message || "Unable to load profile"
@@ -193,6 +199,7 @@ export default function Profile() {
       const body = new FormData();
 
       body.append("name", formData.name || "");
+      body.append("email", formData.email || "");
       body.append("location", formData.location || "");
 
       body.append(
@@ -214,20 +221,26 @@ export default function Profile() {
         body.append("profilePhoto", selectedPhoto);
       }
 
-      await axios.patch(`${PROFILE_URL}/`, body, {
+      const { data } = await axios.patch(`${PROFILE_URL}/`, body, {
         withCredentials: true,
       });
 
-      await loadProfile();
+      const { success, message } = data;
 
-      setSelectedPhoto(null);
-      setEditing(false);
+      if (success) {
+        await loadProfile();
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        setSelectedPhoto(null);
+        setEditing(false);
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+
+        toast.success(message || "Profile updated successfully.");
+      } else {
+        toast.error(message || "Unable to update profile");
       }
-
-      toast.success("Profile updated successfully.");
     } catch (err) {
       toast.error(
         err.response?.data?.message || "Unable to update profile"
