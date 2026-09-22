@@ -242,71 +242,70 @@ function Dashboard() {
     }, [selectedTracker]);
 
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                setDashboardLoading(true);
-                setNoActivity(false);
+    const fetchDashboardData = async () => {
+        try {
+            setDashboardLoading(true);
+            setNoActivity(false);
 
-                const type = trackerApiTypes[selectedTracker];
-                const duration = getApiDuration(selectedTracker, selectedPeriod);
+            const type = trackerApiTypes[selectedTracker];
+            const duration = getApiDuration(selectedTracker, selectedPeriod);
 
-                const response = await axios.get(
-                    `${CARBON_ACTIVITY}/summary?type=${type}&duration=${duration}`,
-                    {
-                        withCredentials: true,
-                    }
-                );
-
-                const data = response.data;
-
-                if (!data.success) {
-                    setDashboardStats((current) => ({
-                        ...current,
-                        [selectedTracker]: overviewData[selectedTracker],
-                    }));
-                    setChartData([]);
-                    setNoActivity(true);
-                    toast.info(data.message || "No activity found for this duration.");
-                    return;
+            const { data } = await axios.get(
+                `${CARBON_ACTIVITY}/summary?type=${type}&duration=${duration}`,
+                {
+                    withCredentials: true,
                 }
+            );
 
-                const result = data.result;
+            const { success, message, result } = data;
 
-                const stats = createStatsFromSummary(
-                    selectedTracker,
-                    result?.typeSummary
-                );
-
-                const durationData = getDurationData(
-                    duration,
-                    result?.durationSummary
-                );
-
-                setDashboardStats((current) => ({
-                    ...current,
-                    [selectedTracker]: stats,
-                }));
-
-                setChartData(durationData);
-            } catch (error) {
+            if (!success) {
                 setDashboardStats((current) => ({
                     ...current,
                     [selectedTracker]: overviewData[selectedTracker],
                 }));
                 setChartData([]);
-                setNoActivity(false);
-
-                toast.error(
-                    error.response?.data?.message ||
-                        "Unable to load dashboard data."
-                );
-            } finally {
-                setDashboardLoading(false);
+                setNoActivity(true);
+                toast.info(message || "No activity found for this duration.");
+                return;
             }
-        };
 
-        fetchDashboardData();
-    }, [selectedTracker, selectedPeriod]);
+            const stats = createStatsFromSummary(
+                selectedTracker,
+                result?.typeSummary
+            );
+
+            const durationData = getDurationData(
+                duration,
+                result?.durationSummary
+            );
+
+            setDashboardStats((current) => ({
+                ...current,
+                [selectedTracker]: stats,
+            }));
+
+            setChartData(durationData);
+            setNoActivity(false);
+        } catch (error) {
+            setDashboardStats((current) => ({
+                ...current,
+                [selectedTracker]: overviewData[selectedTracker],
+            }));
+            setChartData([]);
+            setNoActivity(false);
+
+            toast.error(
+                error.response?.data?.message ||
+                    "Unable to load dashboard data."
+            );
+        } finally {
+            setDashboardLoading(false);
+        }
+    };
+
+    fetchDashboardData();
+}, [selectedTracker, selectedPeriod]);
 
     const stats = dashboardStats[selectedTracker] || overviewData[selectedTracker];
 
