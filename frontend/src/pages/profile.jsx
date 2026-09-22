@@ -77,37 +77,27 @@ export default function Profile() {
     try {
       setLoading(true);
 
-<<<<<<< HEAD
-      const response = await fetch(`${PROFILE_URL}/`, {
-        credentials: "include",
-      });
-      const data = await response.json();
-      console.log(data);
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to load profile");
-      }
-
-      const profileData = {
-        ...data.profile,
-=======
-      const response = await axios.get(`${PROFILE_URL}/`, {
+      const { data } = await axios.get(`${PROFILE_URL}/`, {
         withCredentials: true,
       });
 
-      const profileData = {
-        ...emptyProfile,
-        ...response.data,
->>>>>>> 06bb24f3c497498791667e4603d0554ebc421b5b
-      };
+      let profileData = {};
+      const { success, profile } = data;
+      if (success) {
+        profileData = {
+          ...profile,
+        };
+      } else {
+        profileData = {
+          ...profile,
+        };
+      }
 
       setProfile(profileData);
       setFormData(profileData);
       setPhotoPreview(profileData.profilePhoto || "");
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Unable to load profile"
-      );
+      toast.error(err.response?.data?.message || "Unable to load profile");
     } finally {
       setLoading(false);
     }
@@ -201,18 +191,14 @@ export default function Profile() {
 
       body.append(
         "sustainabilityPreferences",
-<<<<<<< HEAD
         JSON.stringify(formData.sustainabilityPreferences || []),
-=======
-        JSON.stringify(formData.sustainabilityPreferences || [])
->>>>>>> 06bb24f3c497498791667e4603d0554ebc421b5b
       );
 
       body.append(
         "environmentalInterests",
-<<<<<<< HEAD
         JSON.stringify(formData.environmentalInterests || []),
       );
+
       body.append(
         "personalGoalPreferences",
         JSON.stringify(formData.personalGoalPreferences || []),
@@ -222,44 +208,15 @@ export default function Profile() {
         body.append("profilePhoto", selectedPhoto);
       }
 
-      console.log("body", ...body);
-
-      const response = await fetch(`${PROFILE_URL}/`, {
-        method: "PATCH",
-        credentials: "include",
-        body,
-      });
-
-      const data = await response.json();
-      console.log(data);
-
-      if (!response.ok) {
-        throw new Error(data.message || "Unable to update profile");
-=======
-        JSON.stringify(formData.environmentalInterests || [])
-      );
-
-      body.append(
-        "personalGoalPreferences",
-        JSON.stringify(formData.personalGoalPreferences || [])
-      );
-
-      if (selectedPhoto) {
-        body.append("profilePhoto", selectedPhoto);
->>>>>>> 06bb24f3c497498791667e4603d0554ebc421b5b
-      }
-
+      console.log(body);
       const response = await axios.patch(`${PROFILE_URL}/`, body, {
         withCredentials: true,
       });
 
+      console.log(response);
       const updatedProfile = {
-<<<<<<< HEAD
-        ...data.profile,
-=======
         ...emptyProfile,
         ...response.data,
->>>>>>> 06bb24f3c497498791667e4603d0554ebc421b5b
       };
 
       setProfile(updatedProfile);
@@ -274,9 +231,7 @@ export default function Profile() {
 
       toast.success("Profile updated successfully.");
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Unable to update profile"
-      );
+      toast.error(err.response?.data?.message || "Unable to update profile");
     } finally {
       setSaving(false);
     }
@@ -530,7 +485,7 @@ export default function Profile() {
               {editing ? (
                 renderPreferenceOptions(
                   "sustainabilityPreferences",
-                  sustainabilityPreferenceOptions
+                  sustainabilityPreferenceOptions,
                 )
               ) : (
                 <p className="mt-3 text-sm text-gray-500">
@@ -547,7 +502,7 @@ export default function Profile() {
               {editing ? (
                 renderPreferenceOptions(
                   "environmentalInterests",
-                  environmentalInterestOptions
+                  environmentalInterestOptions,
                 )
               ) : (
                 <p className="mt-3 text-sm text-gray-500">
@@ -564,7 +519,7 @@ export default function Profile() {
               {editing ? (
                 renderPreferenceOptions(
                   "personalGoalPreferences",
-                  personalGoalPreferenceOptions
+                  personalGoalPreferenceOptions,
                 )
               ) : (
                 <p className="mt-3 text-sm text-gray-500">
