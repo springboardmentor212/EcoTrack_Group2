@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const PROFILE_URL = import.meta.env.VITE_PROFILE_URL;
 
@@ -12,6 +14,33 @@ const emptyProfile = {
   personalGoalPreferences: [],
 };
 
+const sustainabilityPreferenceOptions = [
+  "small daily changes",
+  "weekly challenges",
+  "reduce emissions",
+  "reduce wastes",
+  "sustainable waste disposal",
+  "sustainable travel",
+  "sustainable efficient electricity",
+  "carbon footprints",
+];
+
+const environmentalInterestOptions = [
+  "transportation",
+  "electricity",
+  "waste management",
+  "build sustainable habits",
+];
+
+const personalGoalPreferenceOptions = [
+  "short term goals",
+  "long term goals",
+  "measurable progress",
+  "habit-based goals",
+  "emission reduction goals",
+  "resource-saving goals",
+];
+
 const formatValue = (value) => {
   if (!value) return "Not provided";
 
@@ -22,14 +51,19 @@ const formatValue = (value) => {
   return value;
 };
 
+const formatLabel = (value) => {
+  return value
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 export default function Profile() {
   const [profile, setProfile] = useState(emptyProfile);
   const [formData, setFormData] = useState(emptyProfile);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [photoPreview, setPhotoPreview] = useState("");
   const [selectedPhoto, setSelectedPhoto] = useState(null);
 
@@ -42,8 +76,8 @@ export default function Profile() {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      setError("");
 
+<<<<<<< HEAD
       const response = await fetch(`${PROFILE_URL}/`, {
         credentials: "include",
       });
@@ -56,13 +90,24 @@ export default function Profile() {
 
       const profileData = {
         ...data.profile,
+=======
+      const response = await axios.get(`${PROFILE_URL}/`, {
+        withCredentials: true,
+      });
+
+      const profileData = {
+        ...emptyProfile,
+        ...response.data,
+>>>>>>> 06bb24f3c497498791667e4603d0554ebc421b5b
       };
 
       setProfile(profileData);
       setFormData(profileData);
       setPhotoPreview(profileData.profilePhoto || "");
     } catch (err) {
-      setError(err.message || "Unable to load profile");
+      toast.error(
+        err.response?.data?.message || "Unable to load profile"
+      );
     } finally {
       setLoading(false);
     }
@@ -77,22 +122,34 @@ export default function Profile() {
     }));
   };
 
+  const handlePreferenceChange = (field, value) => {
+    setFormData((current) => {
+      const selectedValues = current[field] || [];
+
+      return {
+        ...current,
+        [field]: selectedValues.includes(value)
+          ? selectedValues.filter((item) => item !== value)
+          : [...selectedValues, value],
+      };
+    });
+  };
+
   const handlePhotoChange = (event) => {
     const file = event.target.files?.[0];
 
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image.");
+      toast.error("Please select a valid image.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError("Profile photo must be smaller than 5 MB.");
+      toast.error("Profile photo must be smaller than 5 MB.");
       return;
     }
 
-    setError("");
     setSelectedPhoto(file);
 
     const preview = URL.createObjectURL(file);
@@ -117,8 +174,6 @@ export default function Profile() {
     setFormData(profile);
     setPhotoPreview(profile.profilePhoto || "");
     setSelectedPhoto(null);
-    setMessage("");
-    setError("");
     setEditing(true);
   };
 
@@ -126,8 +181,6 @@ export default function Profile() {
     setFormData(profile);
     setPhotoPreview(profile.profilePhoto || "");
     setSelectedPhoto(null);
-    setMessage("");
-    setError("");
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -139,19 +192,25 @@ export default function Profile() {
   const saveProfile = async () => {
     try {
       setSaving(true);
-      setError("");
-      setMessage("");
 
       const body = new FormData();
 
       body.append("name", formData.name || "");
+      body.append("email", profile.email || "");
       body.append("location", formData.location || "");
+
       body.append(
         "sustainabilityPreferences",
+<<<<<<< HEAD
         JSON.stringify(formData.sustainabilityPreferences || []),
+=======
+        JSON.stringify(formData.sustainabilityPreferences || [])
+>>>>>>> 06bb24f3c497498791667e4603d0554ebc421b5b
       );
+
       body.append(
         "environmentalInterests",
+<<<<<<< HEAD
         JSON.stringify(formData.environmentalInterests || []),
       );
       body.append(
@@ -176,10 +235,31 @@ export default function Profile() {
 
       if (!response.ok) {
         throw new Error(data.message || "Unable to update profile");
+=======
+        JSON.stringify(formData.environmentalInterests || [])
+      );
+
+      body.append(
+        "personalGoalPreferences",
+        JSON.stringify(formData.personalGoalPreferences || [])
+      );
+
+      if (selectedPhoto) {
+        body.append("profilePhoto", selectedPhoto);
+>>>>>>> 06bb24f3c497498791667e4603d0554ebc421b5b
       }
 
+      const response = await axios.patch(`${PROFILE_URL}/`, body, {
+        withCredentials: true,
+      });
+
       const updatedProfile = {
+<<<<<<< HEAD
         ...data.profile,
+=======
+        ...emptyProfile,
+        ...response.data,
+>>>>>>> 06bb24f3c497498791667e4603d0554ebc421b5b
       };
 
       setProfile(updatedProfile);
@@ -187,13 +267,16 @@ export default function Profile() {
       setPhotoPreview(updatedProfile.profilePhoto || "");
       setSelectedPhoto(null);
       setEditing(false);
-      setMessage("Profile updated successfully.");
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+
+      toast.success("Profile updated successfully.");
     } catch (err) {
-      setError(err.message || "Unable to update profile");
+      toast.error(
+        err.response?.data?.message || "Unable to update profile"
+      );
     } finally {
       setSaving(false);
     }
@@ -201,6 +284,36 @@ export default function Profile() {
 
   const getInitial = () => {
     return profile.name?.trim()?.charAt(0)?.toUpperCase() || "U";
+  };
+
+  const renderPreferenceOptions = (field, options) => {
+    return (
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {options.map((option) => {
+          const selected = formData[field]?.includes(option);
+
+          return (
+            <label
+              key={option}
+              className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-all duration-300 ${
+                selected
+                  ? "border-[#a9cbb5] bg-[#edf5ef] text-[#2f6f4e] shadow-sm"
+                  : "border-[#e5ece7] bg-white text-gray-600 hover:border-[#cbded1] hover:bg-[#f8faf9]"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={() => handlePreferenceChange(field, option)}
+                className="h-4 w-4 accent-[#2f6f4e]"
+              />
+
+              <span>{formatLabel(option)}</span>
+            </label>
+          );
+        })}
+      </div>
+    );
   };
 
   if (loading) {
@@ -222,18 +335,6 @@ export default function Profile() {
             Manage your personal information and account details.
           </p>
         </div>
-
-        {message && (
-          <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 animate-[fadeDown_0.45s_ease-out]">
-            {message}
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 animate-[fadeDown_0.45s_ease-out]">
-            {error}
-          </div>
-        )}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
           <div className="group rounded-2xl border border-[#dfe9e3] bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-lg animate-[fadeUp_0.65s_ease-out]">
@@ -346,7 +447,7 @@ export default function Profile() {
                   Email
                 </label>
 
-                <div className="rounded-xl bg-[#f5f8f6] px-4 py-3 text-sm text-gray-800 transition-all duration-300 hover:bg-[#edf5ef]">
+                <div className="flex cursor-not-allowed items-center rounded-xl border border-[#dfe9e3] bg-[#f5f8f6] px-4 py-3 text-sm text-gray-500">
                   {formatValue(profile.email)}
                 </div>
               </div>
@@ -376,7 +477,7 @@ export default function Profile() {
                   Your Role
                 </label>
 
-                <div className="flex items-center justify-between rounded-xl bg-[#f5f8f6] px-4 py-3 transition-all duration-300 hover:bg-[#edf5ef]">
+                <div className="flex cursor-not-allowed items-center justify-between rounded-xl bg-[#f5f8f6] px-4 py-3 transition-all duration-300 hover:bg-[#edf5ef]">
                   <span className="text-sm text-gray-800">Member</span>
                   <span className="rounded-full bg-[#e3f0e7] px-3 py-1 text-xs font-semibold text-[#2f6f4e] transition-transform duration-300 hover:scale-105">
                     Account Role
@@ -425,27 +526,51 @@ export default function Profile() {
               <h3 className="text-sm font-semibold text-[#355445] transition-colors duration-300 group-hover:text-[#2f6f4e]">
                 Sustainability Preferences
               </h3>
-              <p className="mt-3 text-sm text-gray-500">
-                {formatValue(profile.sustainabilityPreferences)}
-              </p>
+
+              {editing ? (
+                renderPreferenceOptions(
+                  "sustainabilityPreferences",
+                  sustainabilityPreferenceOptions
+                )
+              ) : (
+                <p className="mt-3 text-sm text-gray-500">
+                  {formatValue(profile.sustainabilityPreferences)}
+                </p>
+              )}
             </div>
 
             <div className="group rounded-xl border border-[#e5ece7] bg-[#f8faf9] p-5 transition-all duration-400 hover:-translate-y-1 hover:border-[#cbded1] hover:bg-[#f3f8f4] hover:shadow-sm animate-[fadeUp_1s_ease-out]">
               <h3 className="text-sm font-semibold text-[#355445] transition-colors duration-300 group-hover:text-[#2f6f4e]">
                 Environmental Interests
               </h3>
-              <p className="mt-3 text-sm text-gray-500">
-                {formatValue(profile.environmentalInterests)}
-              </p>
+
+              {editing ? (
+                renderPreferenceOptions(
+                  "environmentalInterests",
+                  environmentalInterestOptions
+                )
+              ) : (
+                <p className="mt-3 text-sm text-gray-500">
+                  {formatValue(profile.environmentalInterests)}
+                </p>
+              )}
             </div>
 
             <div className="group rounded-xl border border-[#e5ece7] bg-[#f8faf9] p-5 transition-all duration-400 hover:-translate-y-1 hover:border-[#cbded1] hover:bg-[#f3f8f4] hover:shadow-sm animate-[fadeUp_1.1s_ease-out]">
               <h3 className="text-sm font-semibold text-[#355445] transition-colors duration-300 group-hover:text-[#2f6f4e]">
                 Personal Goal Preferences
               </h3>
-              <p className="mt-3 text-sm text-gray-500">
-                {formatValue(profile.personalGoalPreferences)}
-              </p>
+
+              {editing ? (
+                renderPreferenceOptions(
+                  "personalGoalPreferences",
+                  personalGoalPreferenceOptions
+                )
+              ) : (
+                <p className="mt-3 text-sm text-gray-500">
+                  {formatValue(profile.personalGoalPreferences)}
+                </p>
+              )}
             </div>
           </div>
         </div>
