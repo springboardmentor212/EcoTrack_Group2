@@ -199,7 +199,6 @@ export default function Profile() {
       const body = new FormData();
 
       body.append("name", formData.name || "");
-      body.append("email", formData.email || "");
       body.append("location", formData.location || "");
 
       body.append(
