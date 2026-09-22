@@ -49,11 +49,14 @@ const userSchema = new Schema({
   sustainabilityPreferences: [{
     type: String,
     enum: [
-      "renewable energy",
-      "recycling",
-      "waste reduction",
-      "sustainable living",
-      "green transportation"
+      "small daily changes",
+      "weekly challenges",
+      "reduce emissions",
+      "reduce wastes",
+      "sustainable waste disposal",
+      "sustainable travel",
+      "sustainable efficient electricity",
+      "carbon footprints"
     ],
     lowercase : true,
     trim : true,
@@ -62,9 +65,10 @@ const userSchema = new Schema({
   environmentalInterests: [{
     type: String,
     enum: [
-      "renewable energy",
-      "recycling",
-      "waste reduction"
+     "transportation",
+     "electricity",
+     "waste management",
+     "build sustainable habits"
     ],
     lowercase : true,
     trim : true,
@@ -73,12 +77,12 @@ const userSchema = new Schema({
   personalGoalPreferences: [{
     type: String,
     enum: [
-      "reduce carbon",
-      "reduce electricity",
-      "increase recycling",
-      "reduce plastic",
-      "use public transport",
-      "plant trees"
+     "short term goals",
+     "long term goals",
+     "measurable progress",
+     "habit-based goals",
+     "emission reduction goals",
+     "resource-saving goals"
     ],
     lowercase : true,
     trim : true,

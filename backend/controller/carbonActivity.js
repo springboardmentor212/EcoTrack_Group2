@@ -56,7 +56,7 @@ module.exports.createElectricityActivity = async(req,res)=>{
 };
 
 module.exports.createWasteActivity = async(req,res)=>{
-  try{
+  // try{
     const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to update profile"});
@@ -69,13 +69,21 @@ module.exports.createWasteActivity = async(req,res)=>{
         return res.status(400).json({success : false,message : "wrong waste type or disposal method"});
     }
 
-    const emission = wasteEmission(waste.wasteType,waste.disposalMethod,waste.wasteAmount);
+    let emission;
+    if((waste.wasteType==="dry waste" || waste.wasteType==="e waste") && waste.disposalMethod==="recycled"){
+        waste.carbonSave = wasteEmission(waste.wasteType,waste.disposalMethod,waste.wasteAmount);
+        emission  = 0;
+    }else{
+        emission = wasteEmission(waste.wasteType,waste.disposalMethod,waste.wasteAmount);
+        waste.carbonSave = 0;
+    }
+
     const activity = new carbonActivityModel({userId,category,date,waste,emission});
     await activity.save();
     return res.status(200).json({success : true , message : "activity save successfully"});
-  }catch(error){
-    return res.status(500).json({success : false , message : "internal server error"});
-  }
+  // }catch(error){
+  //   return res.status(500).json({success : false , message : "internal server error"});
+  // }
 };
 
 //Read Activity
@@ -271,12 +279,20 @@ module.exports.updateWasteActivity = async(req,res)=>{
 
     const {id,date,waste} = req.body;
 
-   if((waste.wasteType==="wet waste" && (waste.disposalMethod === "burned" || waste.disposalMethod === "recycled")) || 
+    if((waste.wasteType==="wet waste" && (waste.disposalMethod === "burned" || waste.disposalMethod === "recycled")) || 
       (waste.wasteType!=="wet waste" && waste.disposalMethod === "composting")){
         return res.status(400).json({success : false,message : "wrong waste type or disposal method"});
     }
 
-    const emission = wasteEmission(waste.wasteType,waste.disposalMethod,waste.wasteAmount);
+    let emission;
+    if((waste.wasteType==="dry waste" || waste.wasteType==="e waste") && waste.disposalMethod==="recycled"){
+        waste.carbonSave = wasteEmission(waste.wasteType,waste.disposalMethod,waste.wasteAmount);
+        emission  = 0;
+    }else{
+        emission = wasteEmission(waste.wasteType,waste.disposalMethod,waste.wasteAmount);
+        waste.carbonSave = 0;
+    }
+
     const newActivity = await carbonActivityModel.findByIdAndUpdate(id,
         {
             date,
@@ -326,7 +342,7 @@ module.exports.summaryActivity = async(req,res)=>{
     if(result.typeSummary && result.durationSummary){
         return res.status(200).json({success : true , message : `summary of ${type} activity basis of duration type ${duration}`,result});
     }else{
-        return res.status(400).json({success : false, message : "summary of activity is not get"});
+        return res.status(400).json({success : false, message : `doesn't have any ${type} activity in ${duration} duration`});
     }
   }catch(error){
        return res.status(500).json({success : false , message : "internal server error"}); 

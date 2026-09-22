@@ -22,12 +22,12 @@ const carbonTypeSummary = async (startDate,endDate,userId) => {
       _id: null,
 
       // 1. All activities
-      totalCarbonEmission: {
+      emission: {
         $sum: "$emission"
       },
 
       // 2. Transportation
-      totalTransportationEmission: {
+      transportationEmission: {
         $sum: {
           $cond: [
             {
@@ -40,7 +40,7 @@ const carbonTypeSummary = async (startDate,endDate,userId) => {
       },
 
       // 3. Electricity
-      totalElectricityEmission: {
+      electricityEmission: {
         $sum: {
           $cond: [
             {
@@ -53,7 +53,7 @@ const carbonTypeSummary = async (startDate,endDate,userId) => {
       },
 
       // 4. Waste
-      totalWasteEmission: {
+      wasteEmission: {
         $sum: {
           $cond: [
             {
@@ -71,10 +71,10 @@ const carbonTypeSummary = async (startDate,endDate,userId) => {
   {
     $project: {
       _id: 0,
-      totalCarbonEmission: 1,
-      totalTransportationEmission: 1,
-      totalElectricityEmission: 1,
-      totalWasteEmission: 1
+      emission: 1,
+      transportationEmission: 1,
+      electricityEmission: 1,
+      wasteEmission: 1
     }
   }
 ]);
@@ -101,13 +101,13 @@ const transportationTypeSummary = async (startDate,endDate,userId) =>{
             _id: null,
 
             // 1. Total transportation carbon emission
-            totalTransportationEmission: {
+            emission: {
                 $sum: "$emission"
             },
 
             // 2. Total transportation activities
-            totalTransportationActivities: {
-                $sum: 1
+            distance: {
+                $sum: "$transportation.distance"
             },
 
             // Store all transport modes
@@ -125,8 +125,8 @@ const transportationTypeSummary = async (startDate,endDate,userId) =>{
     {
         $project: {
             _id: 0,
-            totalTransportationEmission: 1,
-            totalTransportationActivities: 1,
+            emission: 1,
+            distance: 1,
 
             // 3. Most used transportation mode
             mostUsedTransportMode: {
@@ -236,17 +236,17 @@ const electricityTypeSummary = async (startDate,endDate,userId) => {
             _id: null,
 
             // 1. Total electricity carbon emission
-            totalElectricityEmission: {
+            emission: {
                 $sum: "$emission"
             },
 
             // 2. Total electricity consumption
-            totalElectricityConsumption: {
+            consumption: {
                 $sum: "$electricity.consumption"
             },
 
             // 3. Total electricity Activities
-            totalElectricityActivities: {
+            entries: {
                 $sum: 1
             },
         }
@@ -255,9 +255,9 @@ const electricityTypeSummary = async (startDate,endDate,userId) => {
     {
         $project: {
             _id: 0,
-            totalElectricityEmission: 1,
-            totalElectricityConsumption: 1,
-            totalElectricityActivities : 1,
+            emission: 1,
+            consumption: 1,
+            entries : 1,
         }
     }
 ]);
@@ -283,12 +283,16 @@ const wasteTypeSummary = async(startDate,endDate,userId) => {
             _id: null,
 
             // 1. Total waste carbon emission
-            totalWasteEmission: {
+            emission: {
                 $sum: "$emission"
             },
 
-            // 2. Total waste amount
-            totalWasteAmount: {
+            carbonSave : {
+                $sum : "$waste.carbonSave"
+            },
+
+            // 3. Total waste amount
+            wasteAmount: {
                 $sum: "$waste.wasteAmount"
             },
 
@@ -308,8 +312,9 @@ const wasteTypeSummary = async(startDate,endDate,userId) => {
         $project: {
             _id: 0,
 
-            totalWasteEmission: 1,
-            totalWasteAmount: 1,
+            emission: 1,
+            carbonSave : 1,
+            wasteAmount: 1,
 
             // 3. Most used waste type
             mostUsedWasteType: {

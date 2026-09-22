@@ -33,28 +33,32 @@ module.exports.profileSchema = joi.object({
      profilePhoto: joi.string().allow("",null),
      sustainabilityPreferences : joi.array().items(
       joi.string().valid(
-          "renewable energy",
-          "recycling",
-          "waste reduction",
-          "sustainable living",
-          "green transportation"
-      )).unique().max(5).required(),
+         "small daily changes",
+         "weekly challenges",
+         "reduce emissions",
+         "reduce wastes",
+         "sustainable waste disposal",
+         "sustainable travel",
+         "sustainable efficient electricity",
+         "carbon footprints"
+      )).unique().max(8).required(),
 
      environmentalInterests : joi.array().items(
         joi.string().valid(
-             "renewable energy",
-             "recycling",
-             "waste reduction"
-      )).unique().max(3).required(),
+             "transportation",
+             "electricity",
+             "waste management",
+             "build sustainable habits"
+      )).unique().max(4).required(),
 
      personalGoalPreferences :  joi.array().items(
         joi.string().valid(
-             "reduce carbon",
-             "reduce electricity",
-             "increase recycling",
-             "reduce plastic",
-             "use public transport",
-             "plant trees"
+               "short term goals",
+               "long term goals",
+               "measurable progress",
+               "habit-based goals",
+               "emission reduction goals",
+               "resource-saving goals"
       )).unique().max(6).required(),
      location : joi.string().required().min(3),
 }).required();
@@ -66,8 +70,9 @@ module.exports.transportationSchema = joi.object({
      transportation: joi.object({
           transportMode : joi.string().valid("2 wheeler","4 wheeler","auto rickshaw","bus","train").required(),
           distance : joi.number().min(0).required(),
-          tripPurpose : joi.string(),
-          fuelType : joi.string().valid("petrol","diesel","cng","electric").required()
+          fuelType : joi.string().valid("petrol","diesel","cng","electric").required(),
+          from : joi.string().required().min(3),
+          to : joi.string().required().min(3),
      }).required(),
 }).required();
 

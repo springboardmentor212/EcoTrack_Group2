@@ -50,13 +50,13 @@ module.exports.wasteEmission = (wasteType,disposalMethod,wasteAmount)=>{
     }else if(wasteType==="wet waste" && disposalMethod==="landfill"){
         return wasteAmount * 1.29;
     }else if(wasteType==="dry waste" && disposalMethod==="recycled"){
-        return wasteAmount * (-0.74);
+        return wasteAmount * 0.74;//carbon save
     }else if(wasteType==="dry waste" && disposalMethod==="burned"){
         return wasteAmount * 0.121;
     }else if(wasteType==="dry waste" && disposalMethod==="landfill"){
         return wasteAmount * 0.10;
     }else if(wasteType==="e waste" && disposalMethod==="recycled"){
-        return wasteAmount * (-1.21);
+        return wasteAmount * 1.21;//carbon save
     }else if(wasteType==="e waste" && disposalMethod==="burned"){
         return wasteAmount * 0.551;
     }else if(wasteType==="e waste" && disposalMethod==="landfill"){

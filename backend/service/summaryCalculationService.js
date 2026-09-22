@@ -13,6 +13,10 @@ module.exports.getSummary = async(type,duration,userId) => {
        startDate = new Date(Date.UTC(year,month,1));
        endDate = new Date(Date.UTC(year,month + 1,1));
        durationSummary =  await getSummaryWeekBasis(type,userId,startDate,endDate);
+   }else if(duration==="month" && type==="electricity"){
+       startDate = new Date(Date.UTC(year,month,1));
+       endDate = new Date(Date.UTC(year,month + 1,1));
+       durationSummary =  await getSummaryMonthBasis(type,userId,startDate,endDate);
    }else if(duration==="3months"){
        startDate = new Date(Date.UTC(year,month - 3 ,1));
        endDate = new Date(Date.UTC(year,month,1));

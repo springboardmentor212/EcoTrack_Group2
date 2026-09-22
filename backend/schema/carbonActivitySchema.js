@@ -14,11 +14,20 @@ const transportationSchema = new Schema({
         required: true
     },
 
-    tripPurpose: {
+    from : {
         type: String,
         minLength : "3",
         lowercase :true,
         trim : true,
+        required: true
+    },
+
+    to : {
+        type: String,
+        minLength : "3",
+        lowercase :true,
+        trim : true,
+        required: true
     },
 
     fuelType: {
@@ -94,6 +103,12 @@ const wasteSchema = new Schema({
         required: true,
         lowercase : true,
         trim : true,
+    },
+    carbonSave : {
+        type : Number,
+        required : true,
+        min : 0,
+        default : 0
     }
 }, { _id: false });
 
