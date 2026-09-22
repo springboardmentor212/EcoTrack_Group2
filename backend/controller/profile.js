@@ -33,18 +33,17 @@ module.exports.updateProfile = async(req,res)=>{
             return res.status(400).json({success : false, message : "login first to update profile"});
         }
 
-        const {name,profilePhoto, sustainabilityPreferences, environmentalInterests, personalGoalPreferences,location} = req.body; 
+        const {name,sustainabilityPreferences, environmentalInterests, personalGoalPreferences,location} = req.body;
+        const user = {name,sustainabilityPreferences, environmentalInterests, personalGoalPreferences,location};
+
+          if(typeof req.file !== "undefined"){
+              const profilePhoto = req.file.path;
+              user.profilePhoto = profilePhoto;
+          }
         const updateprofile = await userModel.findByIdAndUpdate(
                userId,
                {
-                 $set : {
-                   name,
-                   profilePhoto,
-                   sustainabilityPreferences,
-                   environmentalInterests,
-                   personalGoalPreferences,
-                   location
-                 }
+                 $set : user
                 },
                 {
                    new : true,

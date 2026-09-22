@@ -81,17 +81,10 @@ export default function Profile() {
         withCredentials: true,
       });
 
-      let profileData = {};
-      const { success, profile } = data;
-      if (success) {
-        profileData = {
-          ...profile,
-        };
-      } else {
-        profileData = {
-          ...profile,
-        };
-      }
+      const profileData = {
+        ...emptyProfile,
+        ...(data.profile || {}),
+      };
 
       setProfile(profileData);
       setFormData(profileData);
@@ -161,7 +154,13 @@ export default function Profile() {
   };
 
   const startEditing = () => {
-    setFormData(profile);
+    setFormData({
+      ...profile,
+      sustainabilityPreferences: [...(profile.sustainabilityPreferences || [])],
+      environmentalInterests: [...(profile.environmentalInterests || [])],
+      personalGoalPreferences: [...(profile.personalGoalPreferences || [])],
+    });
+
     setPhotoPreview(profile.profilePhoto || "");
     setSelectedPhoto(null);
     setEditing(true);
@@ -186,7 +185,7 @@ export default function Profile() {
       const body = new FormData();
 
       body.append("name", formData.name || "");
-      body.append("email", profile.email || "");
+      body.append("email", formData.email || "");
       body.append("location", formData.location || "");
 
       body.append(
@@ -208,20 +207,12 @@ export default function Profile() {
         body.append("profilePhoto", selectedPhoto);
       }
 
-      console.log(body);
-      const response = await axios.patch(`${PROFILE_URL}/`, body, {
+      const { data } = await axios.patch(`${PROFILE_URL}/`, body, {
         withCredentials: true,
       });
 
-      console.log(response);
-      const updatedProfile = {
-        ...emptyProfile,
-        ...response.data,
-      };
+      await loadProfile();
 
-      setProfile(updatedProfile);
-      setFormData(updatedProfile);
-      setPhotoPreview(updatedProfile.profilePhoto || "");
       setSelectedPhoto(null);
       setEditing(false);
 

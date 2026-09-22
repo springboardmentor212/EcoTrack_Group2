@@ -61,7 +61,7 @@ module.exports.profileSchema = joi.object({
                "resource-saving goals"
       )).unique().max(6).required(),
      location : joi.string().required().min(3),
-}).required();
+});
 
 module.exports.transportationSchema = joi.object({
      id : joi.string(),

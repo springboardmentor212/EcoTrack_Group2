@@ -12,8 +12,34 @@ router.use(userCheck);
 
 router.route("/")
       .get(getProfile)
-      .patch(validateProfile,
-             upload.single('profilePhoto'),
+      .patch(
+            upload.single('profilePhoto'),
+                (req, res, next) => {
+            try {
+                if (req.body.sustainabilityPreferences) {
+                    req.body.sustainabilityPreferences =
+                        JSON.parse(req.body.sustainabilityPreferences);
+                }
+
+                if (req.body.environmentalInterests) {
+                    req.body.environmentalInterests =
+                        JSON.parse(req.body.environmentalInterests);
+                }
+
+                if (req.body.personalGoalPreferences) {
+                    req.body.personalGoalPreferences =
+                        JSON.parse(req.body.personalGoalPreferences);
+                }
+
+                next();
+            } catch (error) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid array data"
+                });
+            }
+        },
+             validateProfile,
              updateProfile);
 
 module.exports = router;

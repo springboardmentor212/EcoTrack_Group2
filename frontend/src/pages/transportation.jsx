@@ -93,12 +93,10 @@ export default function Transportation() {
   const [previousEntries, setPreviousEntries] = useState([]);
   const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
   const fetchTransportationActivities = async (
-    month = currentMonth.value,
+    month = currentMonth,
     year = currentYear,
   ) => {
     try {
-      console.log("monht = ", month);
-      console.log("year = ", year);
       const response = await axios.get(
         `${CARBON_ACTIVITY}/transportation?month=${month}&year=${year}`,
         {
