@@ -54,7 +54,7 @@ export default function Transportation() {
   const [fuelType, setFuelType] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth.label);
 
 const [selectedYear, setSelectedYear] = useState(
   new Date(currentYear, 0, 1)
@@ -123,10 +123,17 @@ const fuelOptions =
     console.error(error);
   }
 };
+console.log("previousEntries:", previousEntries);
+console.log("selectedMonth:", selectedMonth);
+console.log("selectedYear:", selectedYear);
   const filteredTrips = previousEntries.filter((trip) => {
+    console.log("Trip:", trip);
   if (!trip.date) return false;
     
 const [year, month, day] = trip.date.split("-");
+console.log("Trip year:", year);
+  console.log("Trip month:", month);
+
   const selectedMonthNumber =
     [
       "January",
@@ -142,18 +149,23 @@ const [year, month, day] = trip.date.split("-");
       "November",
       "December",
     ].indexOf(selectedMonth) + 1;
+    console.log("selectedMonthNumber:", selectedMonthNumber);
 
-  const monthMatch =
+
+const monthMatch =
     !selectedMonth ||
     Number(month) === selectedMonthNumber;
-
   const selectedYearValue = selectedYear
-  ? new Date(selectedYear).getFullYear()
-  : null;
+    ? new Date(selectedYear).getFullYear()
+    : null;
+    console.log("selectedYearValue:", selectedYearValue);
+   const yearMatch =
+    !selectedYear ||
+    Number(year) === selectedYearValue;
 
-const yearMatch =
-  !selectedYear ||
-  Number(year) === selectedYearValue;
+console.log("monthMatch:", monthMatch);
+  console.log("yearMatch:", yearMatch);
+
 
   return monthMatch && yearMatch;
 });
