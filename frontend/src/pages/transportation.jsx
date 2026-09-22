@@ -99,10 +99,12 @@ const fuelOptions =
   const [previousEntries, setPreviousEntries] = useState([]);
   const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
   const fetchTransportationActivities = async (
-  month = currentMonth,
+  month = currentMonth.value,
   year = currentYear
 ) => {
   try {
+    console.log("month =", month);
+    console.log("typeof month =", typeof month);
     const response = await axios.get(
       `${CARBON_ACTIVITY}/transportation?month=${month}&year=${year}`,
       {
@@ -112,8 +114,10 @@ const fuelOptions =
 
     if (response.data.success) {
       setPreviousEntries(
-        response.data.transporatationActivity || []
+        response.data.transportationActivity || []
+        
       );
+      console.log(response.data);
     }
   } catch (error) {
     console.error(error);
@@ -209,6 +213,7 @@ const yearMatch =
 };
 useEffect(() => {
     fetchTransportationActivities();
+    console.log("previousEntries updated:", previousEntries);
   }, []);
   
   const handleAddTrip = async () => {
@@ -221,9 +226,17 @@ useEffect(() => {
     try {
       
 
-      const trimmedFrom = fromLocation.trim();
-      const trimmedTo = toLocation.trim();
-      const numericDistance = Number(distance);
+      console.log("1. Entered handleAddTrip");
+
+    const trimmedFrom = fromLocation.trim();
+    console.log("2. fromLocation OK");
+
+    const trimmedTo = toLocation.trim();
+    console.log("3. toLocation OK");
+
+    const numericDistance = Number(distance);
+    console.log("4. distance OK");
+
       
 
       if (
@@ -247,15 +260,20 @@ console.log(typeof travelDate);
 console.log(travelDate);
       const payload = {
   category: "transportation",
-  date: travelDate.toISOString().split("T")[0],
+  date: travelDate,
   transportation: {
     transportMode,
     distance: numericDistance,
     fuelType,
     from: trimmedFrom,
     to: trimmedTo,
+    
   },
+  
 };
+console.log("5. payload created", payload);
+
+
 console.log("About to send POST");
 console.log(payload);
 let response;
@@ -280,6 +298,7 @@ if (editingId) {
     }
   );
 }
+console.log("6. API success", response);
 
 if (response.data.success) {
   clearForm();
@@ -288,10 +307,13 @@ if (response.data.success) {
 
     }
 catch (error) {
+  
     setError(
       error.response?.data?.message ||
       "Failed to save transportation activity"
+      
     );
+console.log("ERROR OCCURRED HERE:", error);
   } finally {
     setLoading(false);
   }
