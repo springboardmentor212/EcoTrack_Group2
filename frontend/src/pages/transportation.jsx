@@ -39,9 +39,9 @@ const toInputDate = (date) => {
 
 const displayDate = (date) => {
   if (!date) return "";
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) return date;
+  //if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) return date;
   const [year, month, day] = date.split("-");
-  return `${day}/${month}/${year}`;
+  return `${day.substr(0, 2)}/${month}/${year}`;
 };
 
 export default function Transportation() {
@@ -53,7 +53,7 @@ export default function Transportation() {
   const [fuelType, setFuelType] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth.label);
 
   const [selectedYear, setSelectedYear] = useState(new Date(currentYear, 0, 1));
   const [currentPage, setCurrentPage] = useState(1);
@@ -104,20 +104,19 @@ export default function Transportation() {
         },
       );
 
-      console.log("data ", response.data);
       if (response.data.success) {
-        console.log(response.data.transporatationActivity);
         setPreviousEntries(response.data.transporatationActivity || []);
-        console.log(previousEntries);
       }
     } catch (error) {
       console.error(error);
     }
   };
+
   const filteredTrips = previousEntries.filter((trip) => {
     if (!trip.date) return false;
 
     const [year, month, day] = trip.date.split("-");
+
     const selectedMonthNumber =
       [
         "January",
@@ -135,15 +134,13 @@ export default function Transportation() {
       ].indexOf(selectedMonth) + 1;
 
     const monthMatch = !selectedMonth || Number(month) === selectedMonthNumber;
-
     const selectedYearValue = selectedYear
       ? new Date(selectedYear).getFullYear()
       : null;
-
     const yearMatch = !selectedYear || Number(year) === selectedYearValue;
-
     return monthMatch && yearMatch;
   });
+
   const totalPages = Math.ceil(filteredTrips.length / recordsPerPage);
   const pageCount = totalPages || 1;
   const startIndex = (currentPage - 1) * recordsPerPage;
@@ -194,15 +191,12 @@ export default function Transportation() {
   }, []);
 
   const handleAddTrip = async () => {
-    console.log("loading =", loading);
-
     if (loading) return;
 
     try {
       const trimmedFrom = fromLocation.trim();
       const trimmedTo = toLocation.trim();
       const numericDistance = Number(distance);
-
       if (
         !travelDate ||
         !transportMode ||
@@ -219,11 +213,9 @@ export default function Transportation() {
 
       setError("");
 
-      console.log(typeof travelDate);
-      console.log(travelDate);
       const payload = {
         category: "transportation",
-        date: travelDate.toISOString().split("T")[0],
+        date: travelDate,
         transportation: {
           transportMode,
           distance: numericDistance,
@@ -232,22 +224,20 @@ export default function Transportation() {
           to: trimmedTo,
         },
       };
-      console.log("About to send POST");
-      console.log(payload);
+
       let response;
 
       if (editingId) {
         response = await axios.patch(
           `${CARBON_ACTIVITY}/transportation`,
           {
-            _id: editingId,
+            id: editingId,
             ...payload,
           },
           {
             withCredentials: true,
           },
         );
-        console.log(response.data);
       } else {
         response = await axios.post(
           `${CARBON_ACTIVITY}/transportation`,
@@ -256,7 +246,6 @@ export default function Transportation() {
             withCredentials: true,
           },
         );
-        console.log(response.data);
       }
 
       if (response.data.success) {
@@ -272,19 +261,6 @@ export default function Transportation() {
       setLoading(false);
     }
   };
-
-  /*if (editingId === null) {
-        setPreviousEntries((prevEntries) => [
-          { ...tripData, id: Date.now() },
-          ...prevEntries,
-        ]);
-      } else {
-        setPreviousEntries((prevEntries) =>
-          prevEntries.map((entry) =>
-            entry.id === editingId ? { ...entry, ...tripData } : entry,
-          ),
-        );
-      }*/
 
   const handleDeleteTrip = async (tripId) => {
     try {
