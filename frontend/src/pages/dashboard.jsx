@@ -266,27 +266,25 @@ function Dashboard() {
         const type = trackerApiTypes[selectedTracker];
         const duration = getApiDuration(selectedTracker, selectedPeriod);
 
-        const response = await axios.get(
+        const { data } = await axios.get(
           `${CARBON_ACTIVITY}/summary?type=${type}&duration=${duration}`,
           {
             withCredentials: true,
           },
         );
 
-        const data = response.data;
+        const { success, message, result } = data;
 
-        if (!data.success) {
+        if (!success) {
           setDashboardStats((current) => ({
             ...current,
             [selectedTracker]: overviewData[selectedTracker],
           }));
           setChartData([]);
           setNoActivity(true);
-          toast.info(data.message || "No activity found for this duration.");
+          toast.info(message || "No activity found for this duration.");
           return;
         }
-
-        const result = data.result;
 
         const stats = createStatsFromSummary(
           selectedTracker,
@@ -301,6 +299,7 @@ function Dashboard() {
         }));
 
         setChartData(durationData);
+        setNoActivity(false);
       } catch (error) {
         setDashboardStats((current) => ({
           ...current,

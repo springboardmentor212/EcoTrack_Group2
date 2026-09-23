@@ -93,7 +93,7 @@ export default function Transportation() {
   const [previousEntries, setPreviousEntries] = useState([]);
   const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
   const fetchTransportationActivities = async (
-    month = currentMonth,
+    month = currentMonth.value,
     year = currentYear,
   ) => {
     try {

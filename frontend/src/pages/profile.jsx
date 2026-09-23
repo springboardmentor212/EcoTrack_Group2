@@ -81,14 +81,7 @@ export default function Profile() {
         withCredentials: true,
       });
 
-<<<<<<< HEAD
-      const profileData = {
-        ...emptyProfile,
-        ...(data.profile || {}),
-      };
-=======
       const { success, message, profile: profileData } = data;
->>>>>>> bf9d17b8b99908a04059989202b7d51ac419386d
 
       if (success) {
         const updatedProfile = {
