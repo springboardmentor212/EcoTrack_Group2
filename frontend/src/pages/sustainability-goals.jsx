@@ -10,27 +10,19 @@ const goalConfig = {
     types: [
       {
         label: "Reduce travelling distance",
-        targets: [10, 20, 30, 40, 50],
         unit: "%",
-        direction: "minimum",
       },
       {
         label: "Keep travelling distance within limit",
-        targets: [10, 50, 100, 200, 300],
         unit: "km",
-        direction: "maximum",
       },
       {
         label: "Use only Electric Vehicle",
-        targets: [5, 10, 20, 30, 40, 50],
         unit: "trips",
-        direction: "maximum",
       },
       {
         label: "Use only CNG Vehicle",
-        targets: [5, 10, 20, 30, 40, 50],
         unit: "trips",
-        direction: "maximum",
       },
     ],
   },
@@ -40,15 +32,11 @@ const goalConfig = {
     types: [
       {
         label: "Reduce electricity consumption",
-        targets: [10, 20, 30, 40, 50],
         unit: "%",
-        direction: "minimum",
       },
       {
         label: "Keep electricity consumption within limit",
-        targets: [50, 100, 150, 200, 250],
         unit: "kWh",
-        direction: "maximum",
       },
     ],
   },
@@ -58,15 +46,11 @@ const goalConfig = {
     types: [
       {
         label: "Reduce waste generated",
-        targets: [10, 20, 30, 40, 50],
         unit: "%",
-        direction: "minimum",
       },
       {
         label: "Keep waste generation within limit",
-        targets: [1, 2, 5, 10, 15],
         unit: "kg",
-        direction: "maximum",
       },
     ],
   },
@@ -82,15 +66,11 @@ const goalConfig = {
     types: [
       {
         label: "Reduce carbon emissions",
-        targets: [10, 20, 30, 40, 50],
         unit: "%",
-        direction: "minimum",
       },
       {
         label: "Keep carbon emissions within limit",
-        targets: [5, 10, 15, 20, 25],
         unit: "kg CO₂",
-        direction: "maximum",
       },
     ],
   },
@@ -100,9 +80,7 @@ const goalConfig = {
     types: [
       {
         label: "Increase carbon saved",
-        targets: [2, 5, 10, 20, 30, 40, 50],
         unit: "kg CO₂",
-        direction: "minimum",
       },
     ],
   },
@@ -132,12 +110,6 @@ const formatLabel = (value) => {
     .join(" ");
 };
 
-const getPeriodText = (period) => {
-  if (period === "Daily") return "day";
-  if (period === "Weekly") return "week";
-  return "month";
-};
-
 const getGoalTitle = ({
   category,
   trackingType,
@@ -148,34 +120,32 @@ const getGoalTitle = ({
 }) => {
   if (!goalType || !target || !unit || !period) return "";
 
-  const periodText = getPeriodText(period);
-
   if (category === "Carbon Emissions") {
     if (trackingType && trackingType !== "All") {
       if (goalType.startsWith("Reduce")) {
-        return `${goalType} from ${trackingType} by ${target}${unit} this ${periodText}`;
+        return `${goalType} from ${trackingType} by ${target}${unit}`;
       }
 
-      return `${goalType} from ${trackingType} within ${target} ${unit} this ${periodText}`;
+      return `${goalType} from ${trackingType} within ${target} ${unit}`;
     }
 
     if (goalType.startsWith("Reduce")) {
-      return `${goalType} by ${target}${unit} this ${periodText}`;
+      return `${goalType} by ${target}${unit}`;
     }
 
-    return `${goalType} within ${target} ${unit} this ${periodText}`;
+    return `${goalType} by ${target}${unit}`;
   }
 
   if (goalType.startsWith("Reduce")) {
-    return `${goalType} by ${target}${unit} this ${periodText}`;
+    return `${goalType} within ${target} ${unit}`;
   }
 
   if (goalType.startsWith("Keep")) {
-    return `${goalType} within ${target} ${unit} this ${periodText}`;
+    return `${goalType} by ${target}${unit}`;
   }
 
   if (goalType.startsWith("Use only")) {
-    return `${goalType} for ${target} ${unit} this ${periodText}`;
+    return `${goalType} for ${target} ${unit}`;
   }
 
   return `${goalType} by ${target} ${unit} this ${periodText}`;
@@ -770,6 +740,7 @@ export default function SustainabilityGoals() {
     useState(true);
   const [saving, setSaving] =
     useState(false);
+  const [targetError, setTargetError] = useState("");
   const [showForm, setShowForm] =
     useState(false);
 
@@ -867,6 +838,7 @@ export default function SustainabilityGoals() {
   }, []);
 
   const resetForm = () => {
+    setTargetError("");
     setForm({
       category: "",
       trackingType: "",
@@ -891,6 +863,7 @@ export default function SustainabilityGoals() {
   const handleCategoryChange = (
     value
   ) => {
+    setTargetError("");
     setForm({
       category: value,
       trackingType: "",
@@ -923,12 +896,46 @@ export default function SustainabilityGoals() {
           item.label === value
       );
 
+    setTargetError("");
     setForm((current) => ({
       ...current,
       goalType: value,
       target: "",
       unit: type?.unit || "",
     }));
+  };
+
+  const handleTargetChange = (event) => {
+    const value = event.target.value;
+
+    setForm((current) => ({
+      ...current,
+      target: value,
+    }));
+
+    if (value === "") {
+      setTargetError("");
+      return;
+    }
+
+    if (!/^\d+$/.test(value)) {
+      setTargetError("Target must be a whole number.");
+      return;
+    }
+
+    const targetValue = Number(value);
+
+    if (!Number.isSafeInteger(targetValue) || targetValue < 1) {
+      setTargetError("Target must be at least 1.");
+      return;
+    }
+
+    if (form.unit === "%" && targetValue > 100) {
+      setTargetError("Percentage target cannot be greater than 100%.");
+      return;
+    }
+
+    setTargetError("");
   };
 
   const handlePeriodChange = (
@@ -978,6 +985,26 @@ export default function SustainabilityGoals() {
       return;
     }
 
+    if (!/^\d+$/.test(form.target)) {
+      setTargetError("Target must be a whole number.");
+      toast.error("Target must be a whole number.");
+      return;
+    }
+
+    const targetValue = Number(form.target);
+
+    if (!Number.isSafeInteger(targetValue) || targetValue < 1) {
+      setTargetError("Target must be at least 1.");
+      toast.error("Target must be at least 1.");
+      return;
+    }
+
+    if (form.unit === "%" && targetValue > 100) {
+      setTargetError("Percentage target cannot be greater than 100%.");
+      toast.error("Percentage target cannot be greater than 100%.");
+      return;
+    }
+
     if (form.endDate < today) {
       toast.error(
         "End date cannot be before today."
@@ -989,15 +1016,14 @@ export default function SustainabilityGoals() {
       setSaving(true);
 
       const body = {
+        title: goalTitle,
         goalType: form.category,
-        target: Number(form.target),
+        target: targetValue,
         unit: form.unit,
         period:
           form.period.toLowerCase(),
         startDate: today,
         endDate: form.endDate,
-        goalDirection:
-          selectedType?.direction,
       };
 
       if (
@@ -1194,28 +1220,38 @@ export default function SustainabilityGoals() {
                   }
                 />
 
-                <CustomSelect
-                  label="Target"
-                  value={form.target}
-                  options={
-                    selectedType?.targets.map(
-                      (target) =>
-                        String(target)
-                    ) || []
-                  }
-                  placeholder="Select target"
-                  disabled={
-                    !selectedType
-                  }
-                  onChange={(value) =>
-                    setForm(
-                      (current) => ({
-                        ...current,
-                        target: value,
-                      })
-                    )
-                  }
-                />
+                <div>
+                  <label className="goal-form-label">
+                    Target
+                  </label>
+
+                  <input
+                    type="number"
+                    min="1"
+                    max={form.unit === "%" ? "100" : undefined}
+                    step="1"
+                    inputMode="numeric"
+                    value={form.target}
+                    placeholder={
+                      form.unit === "%"
+                        ? "Enter 1-100"
+                        : "Enter target"
+                    }
+                    disabled={!selectedType}
+                    onChange={handleTargetChange}
+                    className={`goal-input ${
+                      targetError
+                        ? "goal-input-error"
+                        : ""
+                    }`}
+                  />
+
+                  {targetError && (
+                    <p className="goal-input-error-message">
+                      {targetError}
+                    </p>
+                  )}
+                </div>
 
                 <div>
                   <label className="goal-form-label">
@@ -1420,7 +1456,7 @@ export default function SustainabilityGoals() {
         }
 
         .goals-section {
-          margin-top: 28px;
+          margin-top: 32px;
           animation: goalsFadeUp .55s ease-out;
         }
 
@@ -1429,7 +1465,7 @@ export default function SustainabilityGoals() {
           align-items: center;
           justify-content: space-between;
           gap: 18px;
-          margin-bottom: 12px;
+          margin-bottom: 16px;
         }
 
         .section-heading-left {
@@ -1558,11 +1594,11 @@ export default function SustainabilityGoals() {
           border: 1px solid #e1ebe4;
           border-radius: 13px;
           background: white;
-          padding: 19px;
+          padding: 24px;
+          min-height: 240px;
           box-shadow: 0 9px 28px rgba(33,78,50,.045);
           transition: .25s ease;
         }
-
         .goal-card:hover {
           transform: translateY(-2px);
           box-shadow: 0 14px 34px rgba(33,78,50,.075);
@@ -1810,6 +1846,21 @@ export default function SustainabilityGoals() {
         .goal-select-open {
           border-color: #72a988;
           box-shadow: 0 0 0 4px rgba(114,169,136,.11);
+        }
+
+        .goal-input-error {
+          border-color: #d35d5d;
+        }
+
+        .goal-input-error:focus {
+          border-color: #d35d5d;
+          box-shadow: 0 0 0 4px rgba(211,93,93,.10);
+        }
+
+        .goal-input-error-message {
+          margin: 6px 0 0;
+          color: #d35d5d;
+          font-size: 10px;
         }
 
         .goal-input-muted {
