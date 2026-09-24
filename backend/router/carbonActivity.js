@@ -2,7 +2,9 @@ const express =  require("express");
 const router = express.Router();
 
 const {userCheck} = require("../middleware/userMiddleware");
-const {validateTransportation,validateElectricity,validateWaste} = require("../middleware/carbonActivityMiddleware");
+const {validateTransportation,validateElectricity,validateWaste,
+       validateUpdateTransportation,validateUpdateElectricity,validateUpdateWaste
+} = require("../middleware/carbonActivityMiddleware");
 const {createTransporatationActivity,createElectricityActivity,createWasteActivity,
        getTransporatationActivity,getElectricityActivity,getWasteActivity,getActivity,
        updateTransporatationActivity,updateElectricityActivity,updateWasteActivity,
@@ -17,17 +19,17 @@ router.route("/summary")
 router.route("/transportation")
       .get(getTransporatationActivity)
       .post(validateTransportation,createTransporatationActivity)
-      .patch(validateTransportation,updateTransporatationActivity);
+      .patch(validateUpdateTransportation,updateTransporatationActivity);
 
 router.route("/electricity")
       .get(getElectricityActivity)
       .post(validateElectricity,createElectricityActivity)
-      .patch(validateElectricity,updateElectricityActivity);
+      .patch(validateUpdateElectricity,updateElectricityActivity);
 
 router.route("/waste")
       .get(getWasteActivity)
       .post(validateWaste,createWasteActivity)
-      .patch(validateWaste,updateWasteActivity);
+      .patch(validateUpdateWaste,updateWasteActivity);
 
 router.route("/:id")
       .get(getActivity)

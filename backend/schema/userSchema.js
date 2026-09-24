@@ -1,6 +1,7 @@
 const {Schema} = require('mongoose');
 const bcrypt = require("bcrypt");
 const {carbonActivityModel} = require("../model/carbonActivityModel");
+const {goalModel} = require("../model/goalModel");
 
 const userSchema = new Schema({
     name : {
@@ -103,5 +104,6 @@ userSchema.pre("findOneAndUpdate",async function(){
 userSchema.pre("findOneAndDelete",async function(){
     const userId = this.getQuery()._id; 
     await carbonActivityModel.deleteMany({userId});
+    await goalModel.deleteMany({userId});
 });
 module.exports = {userSchema};

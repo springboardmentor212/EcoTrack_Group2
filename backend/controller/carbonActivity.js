@@ -1,5 +1,5 @@
 const {carbonActivityModel} = require("../model/carbonActivityModel");
-const {monthMap} = require("../utills/getMonth");
+const monthMap = require("../utills/getMonth");
 const {transportationEmission,electricityEmission,wasteEmission} = require("../service/emissionCalculationService");
 const {getSummary} = require("../service/summaryCalculationService");
 

@@ -23,6 +23,7 @@ app.set("trust proxy",1);
 const userRouter = require("./router/user");
 const profileRouter = require("./router/profile");
 const carbonRouter = require("./router/carbonActivity");
+const goalRouter = require("./router/goal");
 
 async function main(){
         await mongoose.connect(url);
@@ -36,7 +37,8 @@ main().then(()=>{
 
 app.use("/user",userRouter);
 app.use("/profile",profileRouter);
-app.use("/carbonActivity",carbonRouter)
+app.use("/carbonActivity",carbonRouter);
+app.use("/goal",goalRouter);
 
 app.listen(port,()=>{
    console.log(`Server is running on port ${port}`);
