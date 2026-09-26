@@ -147,20 +147,6 @@ export default function Profile() {
     setPhotoPreview(preview);
   };
 
-  const deletePhoto = () => {
-    setSelectedPhoto(null);
-    setPhotoPreview("");
-
-    setFormData((current) => ({
-      ...current,
-      profilePhoto: "",
-    }));
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
   const startEditing = () => {
     setFormData({
       ...profile,
@@ -345,16 +331,6 @@ export default function Profile() {
                   >
                     Upload Photo
                   </button>
-
-                  {photoPreview && (
-                    <button
-                      type="button"
-                      onClick={deletePhoto}
-                      className="mt-3 w-full rounded-xl border border-[#d7e3db] px-4 py-3 text-sm font-semibold text-[#2f6f4e] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#f3f8f4] hover:shadow-sm active:translate-y-0"
-                    >
-                      Delete Photo
-                    </button>
-                  )}
 
                   {selectedPhoto && (
                     <p className="mt-3 break-words text-xs text-gray-400 animate-[fadeIn_0.35s_ease-out]">
