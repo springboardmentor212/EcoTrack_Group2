@@ -5,6 +5,7 @@ const verificationCodeSchema = new Schema({
       email : {
          type : String,
          required : true,
+         trim : true,
       },
       code : {
          type : String,
@@ -13,7 +14,7 @@ const verificationCodeSchema = new Schema({
       },
       expries : {
         type : Date,
-        default : Date.now() + 5 * 60 * 1000, // 5 minutes
+        default : () => new Date(Date.now() + 5 * 60 * 1000), // 5 minutes
       }
 });
 

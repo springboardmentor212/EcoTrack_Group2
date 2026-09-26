@@ -21,8 +21,7 @@ function Register() {
 
   const namePattern = /^(?=.{3,}$)[A-Za-z]+(?: [A-Za-z]+)?$/;
 
-  const emailPattern =
-    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
   const passwordPattern =
     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/;
@@ -45,7 +44,9 @@ function Register() {
     setError("");
 
     if (!namePattern.test(name)) {
-      setError("Name must be at least 3 characters and contain only letters.");
+      setError(
+        "Name must be at least 3 characters and only one space between words.",
+      );
       return;
     }
 
@@ -56,7 +57,7 @@ function Register() {
 
     if (!password.trim() || !passwordPattern.test(password)) {
       setError(
-        "Password must contain uppercase, lowercase, number and special character.",
+        "Please enter atleast 8 character using uppercase, lowercase, number and special character.",
       );
       return;
     }
@@ -99,7 +100,8 @@ function Register() {
       toast.error(response.data.message || "Registration failed");
     } catch (err) {
       const message =
-        err.response?.data?.message || "Something went wrong. Please try again.";
+        err.response?.data?.message ||
+        "Something went wrong. Please try again.";
 
       setError(message);
       toast.error(message);
@@ -147,8 +149,7 @@ function Register() {
       setOtpExpired(true);
       toast.error(data.message || "Invalid or expired OTP");
     } catch (err) {
-      const message =
-        err.response?.data?.message || "Invalid or expired OTP";
+      const message = err.response?.data?.message || "Invalid or expired OTP";
 
       setError(message);
       setOtpExpired(true);

@@ -54,7 +54,7 @@ function Login() {
 
     if (!passwordPattern.test(password)) {
       setError(
-        "Password must contain uppercase, lowercase, number and special character.",
+        "Please enter atleast 8 character using uppercase, lowercase, number and special character.",
       );
       return;
     }

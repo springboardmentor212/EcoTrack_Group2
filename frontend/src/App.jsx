@@ -5,37 +5,26 @@ import Register from "./pages/register";
 import ForgotPassword from "./pages/forgot-password";
 import Dashboard from "./pages/dashboard";
 import Tracking from "./pages/tracking";
-import SustainabilityGoals from "./pages/sustainability-goals";
-import CommunityChallenges from "./pages/community-challenges";
-import AIInsights from "./pages/ai-insights";
-import Analytics from "./pages/analytics";
-import Reports from "./pages/reports";
-import Rewards from "./pages/rewards";
-import Notifications from "./pages/notifications";
+import Transportation from "./pages/transportation";
+import WasteManagement from "./pages/waste-management";
+import Electricity from "./pages/electricity";
 import Profile from "./pages/profile";
-import Settings from "./pages/settings";
 
 function App() {
-    return (
-        <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-
-            <Route path="/tracking" element={<Tracking />} />
-            <Route path="/sustainability-goals" element={<SustainabilityGoals />} />
-            <Route path="/community-challenges" element={<CommunityChallenges />} />
-            <Route path="/ai-insights" element={<AIInsights />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/rewards" element={<Rewards />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
-        </Routes>
-    );
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/tracking" element={<Tracking />} />
+      <Route path="/tracking/transportation" element={<Transportation />} />
+      <Route path="/tracking/electricity" element={<Electricity />} />
+      <Route path="/tracking/waste" element={<WasteManagement />} />
+    </Routes>
+  );
 }
 
 export default App;
