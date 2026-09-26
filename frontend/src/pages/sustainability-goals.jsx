@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const GOALS_URL = import.meta.env.VITE_GOALS_URL;
+const GOALS_URL = import.meta.env.VITE_GOAL_API;
 
 const goalConfig = {
   Transportation: {
@@ -88,6 +88,63 @@ const goalConfig = {
 
 const categories = Object.keys(goalConfig);
 
+const categoryApiMap = {
+  Transportation: "transportation",
+  Electricity: "electricity",
+  "Waste Management": "waste management",
+  "Carbon Emissions": "carbon emission",
+  "Carbon Saved": "carbon save",
+};
+
+const goalTypeApiMap = {
+  "Reduce travelling distance": "reduce travelling distance",
+  "Keep travelling distance within limit": "keep travelling distance within limit",
+  "Use only Electric Vehicle": "use only electric vehicle",
+  "Use only CNG Vehicle": "use only cng vehicle",
+  "Reduce electricity consumption": "reduce electricity consumption",
+  "Keep electricity consumption within limit": "keep electricity consumption within limit",
+  "Reduce waste generated": "reduce waste generated",
+  "Keep waste generation within limit": "keep waste generation within limit",
+  "Reduce carbon emissions": "reduce carbon emissions",
+  "Keep carbon emissions within limit": "keep carbon emissions within limit",
+  "Increase carbon saved": "increase carbon saved",
+};
+
+const trackingTypeApiMap = {
+  All: "all",
+  Transportation: "transportation",
+  Electricity: "electricity",
+  "Waste Management": "waste management",
+};
+
+const unitApiMap = {
+  "%": "%",
+  km: "km",
+  trips: "trips",
+  kWh: "kwh",
+  kg: "kg",
+  "kg CO₂": "kgco2",
+};
+
+const categoryDisplayMap = {
+  transportation: "Transportation",
+  electricity: "Electricity",
+  "waste management": "Waste Management",
+  "carbon emission": "Carbon Emissions",
+  "carbon save": "Carbon Saved",
+};
+
+const trackingTypeDisplayMap = {
+  all: "All",
+  transportation: "Transportation",
+  electricity: "Electricity",
+  "waste management": "Waste Management",
+};
+
+const goalTypeDisplayMap = Object.fromEntries(
+  Object.entries(goalTypeApiMap).map(([label, value]) => [value, label])
+);
+
 const getToday = () => {
   const date = new Date();
 
@@ -116,9 +173,8 @@ const getGoalTitle = ({
   goalType,
   target,
   unit,
-  period,
 }) => {
-  if (!goalType || !target || !unit || !period) return "";
+  if (!goalType || !target || !unit) return "";
 
   if (category === "Carbon Emissions") {
     if (trackingType && trackingType !== "All") {
@@ -133,22 +189,22 @@ const getGoalTitle = ({
       return `${goalType} by ${target}${unit}`;
     }
 
-    return `${goalType} by ${target}${unit}`;
-  }
-
-  if (goalType.startsWith("Reduce")) {
     return `${goalType} within ${target} ${unit}`;
   }
 
-  if (goalType.startsWith("Keep")) {
+  if (goalType.startsWith("Reduce")) {
     return `${goalType} by ${target}${unit}`;
+  }
+
+  if (goalType.startsWith("Keep")) {
+    return `${goalType} within ${target} ${unit}`;
   }
 
   if (goalType.startsWith("Use only")) {
     return `${goalType} for ${target} ${unit}`;
   }
 
-  return `${goalType} by ${target} ${unit} this ${periodText}`;
+  return `${goalType} by ${target} ${unit}`;
 };
 
 const normalizeGoal = (goal) => {
@@ -178,15 +234,42 @@ const normalizeGoal = (goal) => {
       goal?.goalTitle ||
       "Sustainability Goal",
     category:
+      categoryDisplayMap[String(
+        goal?.category ||
+        ""
+      ).toLowerCase()] ||
       goal?.category ||
       goal?.goalType ||
       goal?.type ||
       "",
     target: goal?.target,
-    unit: goal?.unit || "",
-    period: goal?.period || "",
+    unit:
+      {
+        "%": "%",
+        km: "km",
+        trips: "trips",
+        kwh: "kWh",
+        kg: "kg",
+        kgco2: "kg CO₂",
+      }[String(goal?.unit || "").toLowerCase()] ||
+      goal?.unit ||
+      "",
+    period: formatLabel(goal?.period || ""),
+    startDate: goal?.startDate || "",
     endDate: goal?.endDate || "",
-    trackingType: goal?.trackingType || "",
+    goalType:
+      goalTypeDisplayMap[String(
+        goal?.goalType || ""
+      ).toLowerCase()] ||
+      goal?.goalType ||
+      "",
+    trackingType:
+      trackingTypeDisplayMap[String(
+        goal?.trackingType ||
+        ""
+      ).toLowerCase()] ||
+      goal?.trackingType ||
+      "",
     status,
     currentProgress,
     progressPercentage,
@@ -453,6 +536,7 @@ function ProgressCircle({
 function GoalCard({
   goal,
   onCancel,
+  onEdit,
 }) {
   const hasProgress =
     typeof goal.progressPercentage === "number" &&
@@ -577,6 +661,14 @@ function GoalCard({
         <div className="goal-card-actions">
           <button
             type="button"
+            onClick={() => onEdit(goal)}
+            className="edit-goal-button"
+          >
+            Edit Goal
+          </button>
+
+          <button
+            type="button"
             onClick={() => onCancel(goal)}
             className="cancel-goal-button"
           >
@@ -594,6 +686,7 @@ function GoalCarousel({
   description,
   icon,
   onCancel,
+  onEdit,
   previous,
 }) {
   const [index, setIndex] = useState(0);
@@ -724,6 +817,7 @@ function GoalCarousel({
       <GoalCard
         goal={visibleGoal}
         onCancel={onCancel}
+        onEdit={onEdit}
       />
     </section>
   );
@@ -743,6 +837,8 @@ export default function SustainabilityGoals() {
   const [targetError, setTargetError] = useState("");
   const [showForm, setShowForm] =
     useState(false);
+  const [editingGoal, setEditingGoal] =
+    useState(null);
 
   const [form, setForm] = useState({
     category: "",
@@ -769,7 +865,6 @@ export default function SustainabilityGoals() {
     goalType: form.goalType,
     target: form.target,
     unit: form.unit,
-    period: form.period,
   });
 
   const activeGoals = goals.filter(
@@ -839,6 +934,7 @@ export default function SustainabilityGoals() {
 
   const resetForm = () => {
     setTargetError("");
+    setEditingGoal(null);
     setForm({
       category: "",
       trackingType: "",
@@ -858,6 +954,25 @@ export default function SustainabilityGoals() {
   const closeForm = () => {
     resetForm();
     setShowForm(false);
+  };
+
+  const openEditForm = (goal) => {
+    setTargetError("");
+    setEditingGoal(goal);
+    setForm({
+      category: goal?.category || "",
+      trackingType: goal?.trackingType || "",
+      goalType: goal?.goalType || "",
+      target:
+        goal?.target !== undefined &&
+        goal?.target !== null
+          ? String(goal.target)
+          : "",
+      unit: goal?.unit || "",
+      period: goal?.period || "",
+      endDate: goal?.endDate || "",
+    });
+    setShowForm(true);
   };
 
   const handleCategoryChange = (
@@ -956,21 +1071,19 @@ export default function SustainabilityGoals() {
     }));
   };
 
-  const startGoal = async (
+  const saveGoal = async (
     event
   ) => {
     event.preventDefault();
 
-    if (
-      !form.category ||
-      !form.goalType ||
-      !form.target ||
-      !form.period ||
-      !form.endDate
-    ) {
-      toast.error(
-        "Please complete all required fields."
-      );
+    if (!form.category || !form.goalType || !form.period || !form.endDate) {
+      toast.error("Please complete all required fields.");
+      return;
+    }
+
+    if (form.target === "") {
+      setTargetError("Target is required.");
+      toast.error("Target is required.");
       return;
     }
 
@@ -1016,32 +1129,31 @@ export default function SustainabilityGoals() {
       setSaving(true);
 
       const body = {
+        ...(editingGoal ? { id: editingGoal.id } : {}),
         title: goalTitle,
-        goalType: form.category,
+        category: categoryApiMap[form.category],
+        goalType: goalTypeApiMap[form.goalType],
         target: targetValue,
-        unit: form.unit,
-        period:
-          form.period.toLowerCase(),
-        startDate: today,
+        unit: unitApiMap[form.unit],
+        period: form.period.toLowerCase(),
+        ...(editingGoal
+          ? { startDate: editingGoal.startDate }
+          : {}),
         endDate: form.endDate,
       };
 
-      if (
-        form.category ===
-        "Carbon Emissions"
-      ) {
+      if (form.category === "Carbon Emissions") {
         body.trackingType =
-          form.trackingType;
+          trackingTypeApiMap[form.trackingType];
       }
 
-      const { data } =
-        await axios.post(
-          `${GOALS_URL}/`,
-          body,
-          {
+      const { data } = editingGoal
+        ? await axios.patch(`${GOALS_URL}/`, body, {
             withCredentials: true,
-          }
-        );
+          })
+        : await axios.post(`${GOALS_URL}/`, body, {
+            withCredentials: true,
+          });
 
       const {
         success,
@@ -1051,7 +1163,9 @@ export default function SustainabilityGoals() {
       if (success) {
         toast.success(
           message ||
-            "Goal started successfully."
+            (editingGoal
+              ? "Goal updated successfully."
+              : "Goal started successfully.")
         );
 
         closeForm();
@@ -1080,7 +1194,7 @@ export default function SustainabilityGoals() {
     try {
       const { data } =
         await axios.patch(
-          `${GOALS_URL}/${goal.id}/cancel`,
+          `${GOALS_URL}/${goal.id}`,
           {},
           {
             withCredentials: true,
@@ -1147,16 +1261,19 @@ export default function SustainabilityGoals() {
             <div className="goal-form-header">
               <div>
                 <p className="goals-eyebrow">
-                  NEW GOAL
+                  {editingGoal ? "EDIT GOAL" : "NEW GOAL"}
                 </p>
 
                 <h2>
-                  Create a sustainability goal
+                  {editingGoal
+                    ? "Edit your sustainability goal"
+                    : "Create a sustainability goal"}
                 </h2>
 
                 <p>
-                  Choose what you want to improve
-                  and set your deadline.
+                  {editingGoal
+                    ? "Update your target and deadline."
+                    : "Choose what you want to improve and set your deadline."}
                 </p>
               </div>
 
@@ -1169,7 +1286,7 @@ export default function SustainabilityGoals() {
               </button>
             </div>
 
-            <form onSubmit={startGoal}>
+            <form onSubmit={saveGoal}>
               <div className="goal-form-grid">
                 <CustomSelect
                   label="Category"
@@ -1341,7 +1458,11 @@ export default function SustainabilityGoals() {
                   className="start-goal-button"
                 >
                   {saving
-                    ? "Starting..."
+                    ? editingGoal
+                      ? "Updating..."
+                      : "Starting..."
+                    : editingGoal
+                    ? "Update Goal"
                     : "Start Goal"}
                 </button>
               </div>
@@ -1364,6 +1485,7 @@ export default function SustainabilityGoals() {
                   icon="target"
                   goals={activeGoals}
                   onCancel={cancelGoal}
+                  onEdit={openEditForm}
                 />
 
                 <GoalCarousel
@@ -1456,7 +1578,7 @@ export default function SustainabilityGoals() {
         }
 
         .goals-section {
-          margin-top: 32px;
+          margin-top: 28px;
           animation: goalsFadeUp .55s ease-out;
         }
 
@@ -1465,7 +1587,7 @@ export default function SustainabilityGoals() {
           align-items: center;
           justify-content: space-between;
           gap: 18px;
-          margin-bottom: 16px;
+          margin-bottom: 12px;
         }
 
         .section-heading-left {
@@ -1594,11 +1716,11 @@ export default function SustainabilityGoals() {
           border: 1px solid #e1ebe4;
           border-radius: 13px;
           background: white;
-          padding: 24px;
-          min-height: 240px;
+          padding: 19px;
           box-shadow: 0 9px 28px rgba(33,78,50,.045);
           transition: .25s ease;
         }
+
         .goal-card:hover {
           transform: translateY(-2px);
           box-shadow: 0 14px 34px rgba(33,78,50,.075);
@@ -1740,7 +1862,24 @@ export default function SustainabilityGoals() {
         .goal-card-actions {
           display: flex;
           justify-content: flex-end;
+          gap: 10px;
           margin-top: 14px;
+        }
+
+        .edit-goal-button {
+          border: 1px solid #d5e2da;
+          border-radius: 8px;
+          background: white;
+          padding: 7px 11px;
+          color: #27734c;
+          cursor: pointer;
+          font-size: 9px;
+          font-weight: 600;
+          transition: .2s ease;
+        }
+
+        .edit-goal-button:hover {
+          background: #f0f8f3;
         }
 
         .cancel-goal-button {
