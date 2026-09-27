@@ -537,6 +537,7 @@ function GoalCard({
   goal,
   onCancel,
   onEdit,
+  onDelete,
 }) {
   const hasProgress =
     typeof goal.progressPercentage === "number" &&
@@ -674,6 +675,14 @@ function GoalCard({
           >
             Cancel Goal
           </button>
+
+          <button
+            type="button"
+            onClick={() => onDelete(goal)}
+            className="cancel-goal-button"
+          >
+            Delete Goal
+          </button>
         </div>
       )}
     </article>
@@ -687,6 +696,7 @@ function GoalCarousel({
   icon,
   onCancel,
   onEdit,
+  onDelete,
   previous,
 }) {
   const [index, setIndex] = useState(0);
@@ -818,6 +828,7 @@ function GoalCarousel({
         goal={visibleGoal}
         onCancel={onCancel}
         onEdit={onEdit}
+        onDelete={onDelete}
       />
     </section>
   );
@@ -882,8 +893,11 @@ export default function SustainabilityGoals() {
 
   const previousGoals = goals.filter(
     (goal) =>
-      goal.status === "failed" ||
-      goal.status === "cancelled"
+      goal.status !== "active" &&
+      goal.status !== "complete" &&
+      goal.status !== "completed" &&
+      goal.status !== "achieve" &&
+      goal.status !== "achieved"
   );
 
   const loadGoals = async () => {
@@ -901,16 +915,28 @@ export default function SustainabilityGoals() {
       const {
         success,
         message,
-        goals: responseGoals,
+        result,
       } = data;
 
       if (success) {
+        const activeGoal = Array.isArray(result?.activeGoal)
+          ? result.activeGoal
+          : [];
+
+        const completeGoal = Array.isArray(result?.completeGoal)
+          ? result.completeGoal
+          : [];
+
+        const otherGoal = Array.isArray(result?.otherGoal)
+          ? result.otherGoal
+          : [];
+
         setGoals(
-          Array.isArray(responseGoals)
-            ? responseGoals.map(
-                normalizeGoal
-              )
-            : []
+          [
+            ...activeGoal,
+            ...completeGoal,
+            ...otherGoal,
+          ].map(normalizeGoal)
         );
       } else {
         toast.error(
@@ -956,23 +982,53 @@ export default function SustainabilityGoals() {
     setShowForm(false);
   };
 
-  const openEditForm = (goal) => {
-    setTargetError("");
-    setEditingGoal(goal);
-    setForm({
-      category: goal?.category || "",
-      trackingType: goal?.trackingType || "",
-      goalType: goal?.goalType || "",
-      target:
-        goal?.target !== undefined &&
-        goal?.target !== null
-          ? String(goal.target)
-          : "",
-      unit: goal?.unit || "",
-      period: goal?.period || "",
-      endDate: goal?.endDate || "",
-    });
-    setShowForm(true);
+  const openEditForm = async (goal) => {
+    if (!goal?.id) return;
+
+    try {
+      const { data } = await axios.get(
+        `${GOALS_URL}/${goal.id}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      const {
+        success,
+        message,
+        goal: responseGoal,
+      } = data;
+
+      if (success) {
+        const normalizedGoal = normalizeGoal(responseGoal);
+
+        setTargetError("");
+        setEditingGoal(normalizedGoal);
+        setForm({
+          category: normalizedGoal.category || "",
+          trackingType: normalizedGoal.trackingType || "",
+          goalType: normalizedGoal.goalType || "",
+          target:
+            normalizedGoal.target !== undefined &&
+            normalizedGoal.target !== null
+              ? String(normalizedGoal.target)
+              : "",
+          unit: normalizedGoal.unit || "",
+          period: normalizedGoal.period || "",
+          endDate: normalizedGoal.endDate || "",
+        });
+        setShowForm(true);
+      } else {
+        toast.error(
+          message || "Unable to load goal."
+        );
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to load goal."
+      );
+    }
   };
 
   const handleCategoryChange = (
@@ -1223,6 +1279,47 @@ export default function SustainabilityGoals() {
       toast.error(
         error.response?.data?.message ||
           "Unable to cancel goal."
+      );
+    }
+  };
+
+  const deleteGoal = async (goal) => {
+    if (!goal?.id) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this goal?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const { data } = await axios.delete(
+        `${GOALS_URL}/${goal.id}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      const {
+        success,
+        message,
+      } = data;
+
+      if (success) {
+        toast.success(
+          message || "Goal deleted successfully."
+        );
+
+        await loadGoals();
+      } else {
+        toast.error(
+          message || "Unable to delete goal."
+        );
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to delete goal."
       );
     }
   };
@@ -1486,6 +1583,7 @@ export default function SustainabilityGoals() {
                   goals={activeGoals}
                   onCancel={cancelGoal}
                   onEdit={openEditForm}
+                  onDelete={deleteGoal}
                 />
 
                 <GoalCarousel
@@ -1494,6 +1592,7 @@ export default function SustainabilityGoals() {
                   icon="check"
                   goals={completedGoals}
                   onCancel={cancelGoal}
+                  onDelete={deleteGoal}
                 />
 
                 <GoalCarousel
@@ -1503,6 +1602,7 @@ export default function SustainabilityGoals() {
                   goals={previousGoals}
                   previous
                   onCancel={cancelGoal}
+                  onDelete={deleteGoal}
                 />
               </>
             )}
