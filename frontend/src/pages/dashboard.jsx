@@ -5,6 +5,7 @@ import { FiBell, FiChevronDown } from "react-icons/fi";
 import { toast } from "react-toastify";
 
 const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
+const GOALS_URL = import.meta.env.VITE_GOALS_URL;
 
 const trackerPeriods = {
     All: ["This Month (Day-wise)", "This Month (weekly)", "Last 3 Months", "This Year"],
@@ -206,6 +207,8 @@ function Dashboard() {
     const [chartData, setChartData] = useState([]);
     const [dashboardLoading, setDashboardLoading] = useState(true);
     const [noActivity, setNoActivity] = useState(false);
+    const [goals, setGoals] = useState([]);
+    const [goalsLoading, setGoalsLoading] = useState(true);
 
     useEffect(() => {
         const handleDocumentClick = (event) => {
@@ -306,6 +309,74 @@ function Dashboard() {
 
     fetchDashboardData();
 }, [selectedTracker, selectedPeriod]);
+
+    useEffect(() => {
+        const fetchGoals = async () => {
+            try {
+                setGoalsLoading(true);
+
+                const { data } = await axios.get(
+                    `${GOALS_URL}/`,
+                    {
+                        withCredentials: true,
+                    }
+                );
+
+                const { success, message, result } = data;
+
+                if (success) {
+                    const activeGoals = Array.isArray(result?.activeGoal)
+                        ? result.activeGoal
+                        : [];
+
+                    const completeGoals = Array.isArray(result?.completeGoal)
+                        ? result.completeGoal
+                        : [];
+
+                    const otherGoals = Array.isArray(result?.otherGoal)
+                        ? result.otherGoal
+                        : [];
+
+                    setGoals([
+                        ...activeGoals,
+                        ...completeGoals,
+                        ...otherGoals,
+                    ]);
+                } else {
+                    setGoals([]);
+                    toast.error(message || "Unable to load goals.");
+                }
+            } catch (error) {
+                setGoals([]);
+                toast.error(
+                    error.response?.data?.message ||
+                        "Unable to load goals."
+                );
+            } finally {
+                setGoalsLoading(false);
+            }
+        };
+
+        fetchGoals();
+    }, []);
+
+    const activeGoals = goals.filter((goal) => goal.status === "active");
+    const completedGoals = goals.filter(
+        (goal) =>
+            goal.status === "complete" ||
+            goal.status === "completed" ||
+            goal.status === "achieve" ||
+            goal.status === "achieved"
+    );
+
+    const otherGoals = goals.filter(
+        (goal) =>
+            goal.status !== "active" &&
+            goal.status !== "complete" &&
+            goal.status !== "completed" &&
+            goal.status !== "achieve" &&
+            goal.status !== "achieved"
+    );
 
     const stats = dashboardStats[selectedTracker] || overviewData[selectedTracker];
 
@@ -797,7 +868,7 @@ function Dashboard() {
 
                         <section
                             key={`dynamic-${refreshKey}`}
-                            className="mb-[22px] grid grid-cols-[2fr_1fr] gap-[22px] max-xl:grid-cols-1"
+                            className="mb-[22px]"
                         >
                             <button
                                 type="button"
@@ -823,13 +894,13 @@ function Dashboard() {
                                 </div>
 
                                 {dashboardLoading ? (
-                                    <div className="mt-8 flex h-[300px] items-center justify-center">
+                                    <div className="mt-8 flex h-[340px] items-center justify-center">
                                         <div className="text-sm text-[#8a998f] animate-pulse">
                                             Loading activity data...
                                         </div>
                                     </div>
                                 ) : noActivity ? (
-                                    <div className="mt-8 flex h-[300px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                                    <div className="mt-8 flex h-[340px] items-center justify-center rounded-xl bg-[#f8faf9]">
                                         <div className="px-6 text-center">
                                             <p className="text-sm font-semibold text-[#294a36]">
                                                 No activity found for this duration.
@@ -841,7 +912,7 @@ function Dashboard() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="mt-8 flex h-[300px] gap-4">
+                                    <div className="mt-8 flex h-[340px] gap-4">
                                         <div className="flex flex-col justify-between py-1 text-[10px] text-[#8a998f]">
                                             {chartScale.ticks.map((tick, index) => (
                                                 <span key={index}>
@@ -866,9 +937,7 @@ function Dashboard() {
                                                     const percentage =
                                                         chartScale.maximum > 0
                                                             ? Math.min(
-                                                                  (value /
-                                                                      chartScale.maximum) *
-                                                                      100,
+                                                                  (value / chartScale.maximum) * 100,
                                                                   100
                                                               )
                                                             : 0;
@@ -879,7 +948,7 @@ function Dashboard() {
                                                             className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
                                                         >
                                                             <div
-                                                                className="w-full max-w-[34px] origin-bottom rounded-t-md bg-[#27834d] animate-[barGrow_.7s_ease_both]"
+                                                                className="w-full max-w-[46px] origin-bottom rounded-t-md bg-[#27834d] animate-[barGrow_.7s_ease_both]"
                                                                 style={{
                                                                     height: `${percentage}%`,
                                                                     animationDelay: `${0.7 + index * 0.05}s`,
@@ -898,59 +967,114 @@ function Dashboard() {
                                 )}
                             </button>
 
-                            <div className="scroll-reveal flex flex-col rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.66s_both] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(33,78,50,0.08)]">
-                                <div className="flex items-center justify-between gap-5">
+                            <section className="mt-[22px] scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.66s_both]">
+                                <div className="flex items-center justify-between gap-5 max-sm:flex-col max-sm:items-start">
                                     <div>
                                         <p className="mb-1 text-[11px] font-bold tracking-[.15em] text-[#27834d]">
-                                            PROGRESS
+                                            SUSTAINABILITY GOALS
                                         </p>
 
                                         <h2 className="text-[21px] font-semibold text-[#173f2a]">
-                                            {goalTitle}
+                                            Your Goals
                                         </h2>
                                     </div>
 
-                                    <img
-                                        src="/assets/goals.jpg"
-                                        alt="Goals"
-                                        className="h-[52px] w-[52px] rounded-xl object-contain"
-                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate("/sustainability-goals")}
+                                        className="h-[40px] rounded-lg border border-[#cfe0d4] bg-white px-4 text-[12px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
+                                    >
+                                        View All Goals
+                                    </button>
                                 </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() => navigate("/sustainability-goals")}
-                                    className="mx-auto my-[25px] flex h-[155px] w-[155px] items-center justify-center rounded-full border-0 bg-[conic-gradient(#27834d_0deg_0deg,#e5eee8_0deg_360deg)] p-0 animate-[progressReveal_.7s_ease_.82s_both] transition-transform duration-300 hover:scale-105"
-                                >
-                                    <div className="flex h-[119px] w-[119px] flex-col items-center justify-center rounded-full bg-white">
-                                        <strong className="text-[28px] text-[#173f2a]">
-                                            0%
-                                        </strong>
-
-                                        <span className="mt-1 text-[11px] text-[#8a998f]">
-                                            Complete
+                                {goalsLoading ? (
+                                    <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                                        <span className="text-sm text-[#8a998f] animate-pulse">
+                                            Loading goals...
                                         </span>
                                     </div>
-                                </button>
+                                ) : goals.length === 0 ? (
+                                    <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                                        <div className="px-6 text-center">
+                                            <p className="text-sm font-semibold text-[#294a36]">
+                                                No sustainability goals yet
+                                            </p>
+                                            <p className="mt-2 text-xs leading-5 text-[#8a998f]">
+                                                Create a goal to start tracking your sustainability progress.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                        {activeGoals.slice(0, 3).map((goal, index) => {
+                                            const isCompleted =
+                                                goal.status === "complete" ||
+                                                goal.status === "completed" ||
+                                                goal.status === "achieve" ||
+                                                goal.status === "achieved";
 
-                                <div className="flex flex-col gap-1.5 text-center animate-[heroFadeUp_.55s_ease_.92s_both]">
-                                    <strong className="text-sm text-[#294a36]">
-                                        No goal progress yet
-                                    </strong>
+                                            return (
+                                                <button
+                                                    key={goal._id || goal.id || `${goal.title}-${index}`}
+                                                    type="button"
+                                                    onClick={() => navigate("/sustainability-goals")}
+                                                    className="rounded-xl border border-[#e1ebe4] bg-[#fbfdfb] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#d1e3d7] hover:bg-white hover:shadow-[0_12px_28px_rgba(33,78,50,0.07)]"
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="min-w-0">
+                                                            <p className="text-[10px] font-bold tracking-[.12em] text-[#27834d]">
+                                                                {goal.category || "SUSTAINABILITY"}
+                                                            </p>
+                                                            <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
+                                                                {goal.title || "Sustainability Goal"}
+                                                            </h3>
+                                                        </div>
 
-                                    <span className="text-[11px] leading-5 text-[#8a998f]">
-                                        Start tracking your activities to begin your sustainability journey.
-                                    </span>
-                                </div>
+                                                        <span
+                                                            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                                                                isCompleted
+                                                                    ? "bg-[#eaf5ed] text-[#27834d]"
+                                                                    : "bg-[#f3f8f4] text-[#53685b]"
+                                                            }`}
+                                                        >
+                                                            {isCompleted
+                                                                ? "Completed"
+                                                                : goal.status === "active"
+                                                                    ? "Active"
+                                                                    : "Previous"}
+                                                        </span>
+                                                    </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() => navigate("/sustainability-goals")}
-                                    className="mt-5 h-[42px] w-full rounded-lg border border-[#cfe0d4] bg-white text-[13px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
-                                >
-                                    View Goal
-                                </button>
-                            </div>
+                                                    <div className="mt-5 grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <p className="text-[10px] text-[#8a998f]">Target</p>
+                                                            <p className="mt-1 text-sm font-semibold text-[#173f2a]">
+                                                                {goal.target ?? "—"} {goal.unit || ""}
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] text-[#8a998f]">Period</p>
+                                                            <p className="mt-1 text-sm font-semibold text-[#173f2a]">
+                                                                {goal.period || "—"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="mt-4 border-t border-[#edf2ee] pt-3">
+                                                        <p className="text-[10px] text-[#8a998f]">
+                                                            End date
+                                                        </p>
+                                                        <p className="mt-1 text-xs font-medium text-[#53685b]">
+                                                            {goal.endDate || "—"}
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </section>
                         </section>
 
                         <section
