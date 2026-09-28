@@ -147,6 +147,7 @@ module.exports.updateWasteSchema = joi.object({
 }).required();
 
 module.exports.transportationGoalSchema = joi.object({
+     title : joi.string().required().min(3),
      category : joi.string().valid("transportation").required(),
      goalType : joi.string().valid(
                 "reduce travelling distance",
@@ -157,11 +158,13 @@ module.exports.transportationGoalSchema = joi.object({
      target : joi.number().min(0).required(),
      unit : joi.string().valid("km","%","trips").required(),
      period : joi.string().valid("daily","weekly","monthly").required(),
-     endDate : joi.date().min("now").required(),
+     endDate : joi.date().required().min("now")
 }).required();
 
 module.exports.updateTransportationGoalSchema = joi.object({
      id : joi.string().required(),
+     title : joi.string().required().min(3),
+     category : joi.string().valid("transportation").required(),
      goalType : joi.string().valid(
                 "reduce travelling distance",
                 "keep travelling distance within limit",
@@ -176,6 +179,7 @@ module.exports.updateTransportationGoalSchema = joi.object({
 }).required();
 
 module.exports.electricityGoalSchema = joi.object({
+     title : joi.string().required().min(3),
      category : joi.string().valid("electricity").required(),
      goalType : joi.string().valid(
                 "reduce electricity consumption",
@@ -189,6 +193,7 @@ module.exports.electricityGoalSchema = joi.object({
 
 module.exports.updateElectricityGoalSchema = joi.object({
      id : joi.string().required(),
+     title : joi.string().required().min(3),
      category : joi.string().valid("electricity").required(),
      goalType : joi.string().valid(
                 "reduce electricity consumption",
@@ -202,7 +207,8 @@ module.exports.updateElectricityGoalSchema = joi.object({
 }).required();
 
 module.exports.wasteGoalSchema = joi.object({
-     category : joi.string().valid("waste_management").required(),
+     title : joi.string().required().min(3),
+     category : joi.string().valid("waste management").required(),
      goalType : joi.string().valid(
                 "reduce waste generated",
                 "keep waste generation within limit"
@@ -215,7 +221,8 @@ module.exports.wasteGoalSchema = joi.object({
 
 module.exports.updateWasteGoalSchema = joi.object({
      id : joi.string().required(),
-     category : joi.string().valid("waste_management").required(),
+     title : joi.string().required().min(3),
+     category : joi.string().valid("waste management").required(),
      goalType : joi.string().valid(
                 "reduce waste generated",
                 "keep waste generation within limit"
@@ -228,7 +235,8 @@ module.exports.updateWasteGoalSchema = joi.object({
 }).required();
 
 module.exports.carbonEmissionGoalSchema = joi.object({
-     category : joi.string().valid("carbon_emission").required(),
+     title : joi.string().required().min(3),
+     category : joi.string().valid("carbon emission").required(),
      goalType : joi.string().valid(
                 "reduce carbon emissions",
                 "keep carbon emissions within limit"
@@ -244,7 +252,8 @@ module.exports.carbonEmissionGoalSchema = joi.object({
 
 module.exports.updateCarbonEmissionGoalSchema = joi.object({
      id : joi.string().required(),
-     category : joi.string().valid("carbon_emission").required(),
+     title : joi.string().required().min(3),
+     category : joi.string().valid("carbon emission").required(),
      goalType : joi.string().valid(
                 "reduce carbon emissions",
                 "keep carbon emissions within limit"
@@ -260,7 +269,8 @@ module.exports.updateCarbonEmissionGoalSchema = joi.object({
 }).required();
 
 module.exports.carbonSaveGoalSchema = joi.object({
-     category : joi.string().valid("carbon_save").required(),
+     title : joi.string().required().min(3),
+     category : joi.string().valid("carbon save").required(),
      goalType : joi.string().valid(
                 "increase carbon saved"
       ).required(),
@@ -272,7 +282,8 @@ module.exports.carbonSaveGoalSchema = joi.object({
 
 module.exports.updateCarbonSaveGoalSchema = joi.object({
      id : joi.string().required(),
-     category : joi.string().valid("carbon_save").required(),
+     title : joi.string().required().min(3),
+     category : joi.string().valid("carbon save").required(),
      goalType : joi.string().valid(
                 "increase carbon saved"
       ).required(),
@@ -280,5 +291,5 @@ module.exports.updateCarbonSaveGoalSchema = joi.object({
      unit : joi.string().valid("kgco2").required(),
      period : joi.string().valid("daily","weekly","monthly").required(),
      startDate : joi.date().required(),
-     endDate : joi.date().min("now").required(),
+     endDate : joi.date().required(),
 }).required();

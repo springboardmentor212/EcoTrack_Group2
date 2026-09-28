@@ -2,7 +2,7 @@ const {transportationGoalSchema,electricityGoalSchema,wasteGoalSchema,carbonEmis
      updateTransportationGoalSchema,updateElectricityGoalSchema,updateWasteGoalSchema,updateCarbonEmissionGoalSchema,updateCarbonSaveGoalSchema
 } = require("../devSchema");
 
-module.exports.validateTransportationGoal = (req,res,next)=>{
+const validateTransportationGoal = (req,res,next)=>{
    const {error} = transportationGoalSchema.validate(req.body);
    if(error){
         const errMsg = error.details.map(el=>el.message).join(",");
@@ -12,7 +12,7 @@ module.exports.validateTransportationGoal = (req,res,next)=>{
    }
 };
 
-module.exports.validateElectricityGoal = (req,res,next)=>{
+const validateElectricityGoal = (req,res,next)=>{
    const {error} = electricityGoalSchema.validate(req.body);
    if(error){
         const errMsg = error.details.map(el=>el.message).join(",");
@@ -22,7 +22,7 @@ module.exports.validateElectricityGoal = (req,res,next)=>{
    }
 };
 
-module.exports.validateWasteGoal = (req,res,next)=>{
+const validateWasteGoal = (req,res,next)=>{
    const {error} = wasteGoalSchema.validate(req.body);
    if(error){
         const errMsg = error.details.map(el=>el.message).join(",");
@@ -32,7 +32,7 @@ module.exports.validateWasteGoal = (req,res,next)=>{
    }
 };
 
-module.exports.validateCarbonEmissionGoal = (req,res,next)=>{
+const validateCarbonEmissionGoal = (req,res,next)=>{
    const {error} = carbonEmissionGoalSchema.validate(req.body);
    if(error){
         const errMsg = error.details.map(el=>el.message).join(",");
@@ -43,7 +43,7 @@ module.exports.validateCarbonEmissionGoal = (req,res,next)=>{
 };
 
 
-module.exports.validateCarbonSaveGoal = (req,res,next)=>{
+const validateCarbonSaveGoal = (req,res,next)=>{
    const {error} = carbonSaveGoalSchema.validate(req.body);
    if(error){
         const errMsg = error.details.map(el=>el.message).join(",");
@@ -53,7 +53,7 @@ module.exports.validateCarbonSaveGoal = (req,res,next)=>{
    }
 };
 
-module.exports.validateUpdateTransportationGoal = (req,res,next)=>{
+const validateUpdateTransportationGoal = (req,res,next)=>{
    const {error} = updateTransportationGoalSchema.validate(req.body);
    if(error){
         const errMsg = error.details.map(el=>el.message).join(",");
@@ -63,7 +63,7 @@ module.exports.validateUpdateTransportationGoal = (req,res,next)=>{
    }
 };
 
-module.exports.validateUpdateElectricityGoal = (req,res,next)=>{
+const validateUpdateElectricityGoal = (req,res,next)=>{
    const {error} = updateElectricityGoalSchema.validate(req.body);
    if(error){
         const errMsg = error.details.map(el=>el.message).join(",");
@@ -73,7 +73,7 @@ module.exports.validateUpdateElectricityGoal = (req,res,next)=>{
    }
 };
 
-module.exports.validateUpdateWasteGoal = (req,res,next)=>{
+const validateUpdateWasteGoal = (req,res,next)=>{
    const {error} = updateWasteGoalSchema.validate(req.body);
    if(error){
         const errMsg = error.details.map(el=>el.message).join(",");
@@ -83,7 +83,7 @@ module.exports.validateUpdateWasteGoal = (req,res,next)=>{
    }
 };
 
-module.exports.validateUpdateCarbonEmissionGoal = (req,res,next)=>{
+const validateUpdateCarbonEmissionGoal = (req,res,next)=>{
    const {error} = updateCarbonEmissionGoalSchema.validate(req.body);
    if(error){
         const errMsg = error.details.map(el=>el.message).join(",");
@@ -93,7 +93,7 @@ module.exports.validateUpdateCarbonEmissionGoal = (req,res,next)=>{
    }
 };
 
-module.exports.validateUpdateCarbonSaveGoal = (req,res,next)=>{
+const validateUpdateCarbonSaveGoal = (req,res,next)=>{
    const {error} = updateCarbonSaveGoalSchema.validate(req.body);
    if(error){
         const errMsg = error.details.map(el=>el.message).join(",");
@@ -104,22 +104,41 @@ module.exports.validateUpdateCarbonSaveGoal = (req,res,next)=>{
 };
 
 module.exports.validateGoal = (req,res,next)=>{
-     try{
+     // try{
           if(req.body.category === "transportation"){
-               validateTransportationGoal;
+               validateTransportationGoal(req,res,next);
           }else if(req.body.category === "electricity"){
-               validateElectricityGoal;
-          }else if(req.body.category === "waste_management"){
-               validateWasteGoal;
-          }else if(req.body.category === "carbon_emission"){
-               validateCarbonEmissionGoal;
-          }else if(req.body.category === "carbon_save"){
-               validateCarbonSaveGoal;
+               validateElectricityGoal(req,res,next);
+          }else if(req.body.category === "waste management"){
+               validateWasteGoal(req,res,next);
+          }else if(req.body.category === "carbon emission"){
+               validateCarbonEmissionGoal(req,res,next);
+          }else if(req.body.category === "carbon save"){
+               validateCarbonSaveGoal(req,res,next);
           }else{
                res.status(400).json({success : false, message : "not a valid category"});
           }
-          next();
-     }catch(error){
-          res.status(400).json({success : false, message : "not validate data"});
-     }
-}
+     // }catch(error){
+     //      res.status(400).json({success : false, message : "not validate data"});
+     // }
+};
+
+module.exports.validateUpdateGoal = (req,res,next)=>{
+     // try{
+          if(req.body.category === "transportation"){
+               validateUpdateTransportationGoal(req,res,next);
+          }else if(req.body.category === "electricity"){
+               validateUpdateElectricityGoal(req,res,next);
+          }else if(req.body.category === "waste management"){
+               validateUpdateWasteGoal(req,res,next);
+          }else if(req.body.category === "carbon emission"){
+               validateUpdateCarbonEmissionGoal(req,res,next);
+          }else if(req.body.category === "carbon save"){
+               validateUpdateCarbonSaveGoal(req,res,next);
+          }else{
+               res.status(400).json({success : false, message : "not a valid category"});
+          }
+     // }catch(error){
+     //      res.status(400).json({success : false, message : "not validate data"});
+     // }
+};

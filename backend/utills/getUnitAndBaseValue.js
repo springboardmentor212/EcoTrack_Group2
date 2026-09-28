@@ -1,4 +1,4 @@
-const {carbonTypeSummary,transportationTypeSummary,electricityTypeSummary,wasteTypeSummary} = require("./typeBasisSummaryService");
+const {carbonTypeSummary,transportationTypeSummary,electricityTypeSummary,wasteTypeSummary} = require("../service/typeBasisSummaryService");
 const unitMap = (goalType)=>{
    if(goalType === "reduce travelling distance" || goalType === "reduce electricity consumption" || 
       goalType === "reduce waste generated" || goalType === "reduce carbon emissions"){
@@ -19,18 +19,18 @@ const unitMap = (goalType)=>{
 
 const getBaseValue = async (date,period,category,userId) => {
      const month = new Date(date).getMonth(),year = new Date(date).getFullYear();
-     const Date = new Date(date).getDate(),day = new Date(date).getDay();
+     const DateValue = new Date(date).getDate(),day = new Date(date).getDay();
 
      let startDate,endDate;
      if(period==="daily"){
-        startDate =  new Date(Date.UTC(year,month,Date-1));
-        endDate = new Date(Date.UTC(year,month,Date));
+        startDate =  new Date(Date.UTC(year,month,DateValue-1));
+        endDate = new Date(Date.UTC(year,month,DateValue));
      }else if(period==="weekly"){
          if(day===0){
             day = 7;
          }
          startDate =  new Date(date);
-         startDate.setDate(Date - (currentDay - 1) - 7);
+         startDate.setDate(DateValue - (day - 1) - 7);
          endDate = new Date(startDate);
          endDate.setDate(startDate.getDate() + 7);
      }else if(period==="monthly"){
@@ -38,17 +38,26 @@ const getBaseValue = async (date,period,category,userId) => {
         endDate = new Date(Date.UTC(year,month,1));
      }
 
+     console.log("startDate = ",startDate);
+     console.log("endDate = ",endDate);
+
+     let typeSummary;
      if(category === "transportation"){
-        return await transportationTypeSummary(startDate,endDate,userId).distance;
-     }else if(category === "electricity"){
-        return await electricityTypeSummary(startDate,endDate,userId).consumption;
-     }else if(category === "waste_management"){
-        return await wasteTypeSummary(startDate,endDate,userId).wasteAmount;
-     }else if(category === "carbon_emission"){
-        return await carbonTypeSummary(startDate,endDate,userId);
+        typeSummary = await transportationTypeSummary(startDate,endDate,userId);
+        typeSummary = typeSummary.length > 0 ? typeSummary[0].distance : 0;
+    }else if(category === "electricity"){
+        typeSummary = await electricityTypeSummary(startDate,endDate,userId);
+        typeSummary = typeSummary.length > 0 ? typeSummary[0].consumption : 0;
+     }else if(category === "waste management"){
+        typeSummary = await wasteTypeSummary(startDate,endDate,userId);
+        typeSummary = typeSummary.length > 0 ? typeSummary[0].wasteAmount : 0;
+     }else if(category === "carbon emission"){
+        typeSummary = await carbonTypeSummary(startDate,endDate,userId);
+        typeSummary = typeSummary.length > 0 ? typeSummary[0] : 0;
      }else{
-        return 0;
+        typeSummary = 0;
      }
+     return typeSummary;
 };
 
 module.exports = {unitMap,getBaseValue};

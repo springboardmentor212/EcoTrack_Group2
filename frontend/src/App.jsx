@@ -9,6 +9,7 @@ import Transportation from "./pages/transportation";
 import WasteManagement from "./pages/waste-management";
 import Electricity from "./pages/electricity";
 import Profile from "./pages/profile";
+import SustainabilityGoals from "./pages/sustainability-goals";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
       <Route path="/tracking/transportation" element={<Transportation />} />
       <Route path="/tracking/electricity" element={<Electricity />} />
       <Route path="/tracking/waste" element={<WasteManagement />} />
+      <Route path="/sustainability-goals" element={<SustainabilityGoals />} />
     </Routes>
   );
 }

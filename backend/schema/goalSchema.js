@@ -7,9 +7,15 @@ const goalSchema = new Schema({
         required: true
     },
 
+    title : {
+        type : String,
+        required : true,
+        lowerCase : true,
+    },
+    
     category : {
         type: String,
-        enum: ["transportation","electricity","waste_management","carbon_emission","carbon_save"],
+        enum: ["transportation","electricity","waste management","carbon emission","carbon save"],
         lowerCase : true,
         required: true
     },
@@ -69,7 +75,7 @@ const goalSchema = new Schema({
 
     status: {
         type: String,
-        enum: ["active","completed","failed","cancelled"],
+        enum: ["active","completed","failed","cancelled","not have entry"],
         default: "active",
         required : true
     },
@@ -78,11 +84,13 @@ const goalSchema = new Schema({
        type: String,
        enum: ["maximum", "minimum"],
        required: true
+       
   },
 
   baseValue : {
        type : Number,
        min : 0,
+       default : 0
   }
 
 }, { timestamps: true });
