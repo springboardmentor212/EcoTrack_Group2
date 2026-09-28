@@ -1,4 +1,6 @@
-const {loginSchema,registerSchema,verifyEmailSchema,resendOtpSchema,resentPasswordSchema} = require("./devSchema");
+const jwt = require("jsonwebtoken");
+const {userModel} = require("../model/userModel");
+const {loginSchema,registerSchema,verifyEmailSchema,resendOtpSchema,resentPasswordSchema} = require("../devSchema");
 
 module.exports.validateLogin = ((req,res,next) => {
    const {error} = loginSchema.validate(req.body);
@@ -51,13 +53,13 @@ module.exports.validateResetPassword = ((req,res,next)=>{
 });
 
 module.exports.userCheck = async(req,res,next) => {
-    try{
+ try{
       if (!req.cookies.token) {
         return res.status(400).json({ success: false ,  message : "your want permission"});
       }
       const token = req.cookies.token;
       const data = jwt.verify(token, process.env.token_key); 
-      const user = await UserModel.findById(data.id);
+      const user = await userModel.findById(data.id);
       if(!user) {
          return res.status(200).json({ success: false , message : "your want permission"});
       }

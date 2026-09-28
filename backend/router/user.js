@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const {register,login,verifyEmail,resendOtp,logOut,resetPassword,verifyEmailForResetPassword} = require('../controller/user');
-const {validateLogin,validateRegister,validateVerifyEmail,validateResendOtp,validateResetPassword,userCheck} = require("../middleware");
+const {register,login,verifyEmail,resendOtp,logOut,resetPassword,verifyEmailForResetPassword,deleteAccount} = require('../controller/user');
+const {validateLogin,validateRegister,validateVerifyEmail,validateResendOtp,validateResetPassword,userCheck} = require("../middleware/userMiddleware");
 
 router.route('/register')
       .post(validateRegister,register);
@@ -23,6 +23,9 @@ router.route("/resetPassword")
 
 router.use(userCheck);
 
+router.route("/")
+       .delete(deleteAccount);
+       
 router.route("/logout")
        .get(logOut);
 

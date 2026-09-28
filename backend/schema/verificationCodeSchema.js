@@ -5,6 +5,7 @@ const verificationCodeSchema = new Schema({
       email : {
          type : String,
          required : true,
+         trim : true,
       },
       code : {
          type : String,
