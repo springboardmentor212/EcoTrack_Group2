@@ -199,7 +199,7 @@ module.exports.resetPassword = async(req,res)=>{
 module.exports.deleteAccount = async(req,res)=>{
    const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to delete account"});
     }
 
     await userModel.findOneAndDelete({_id : userId});

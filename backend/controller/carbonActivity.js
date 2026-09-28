@@ -8,7 +8,7 @@ module.exports.createTransporatationActivity = async(req,res)=>{
   try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to create Transporatation activity"});
     }
 
     const {category,date,transportation} = req.body;
@@ -32,7 +32,7 @@ module.exports.createElectricityActivity = async(req,res)=>{
   try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to create Electricity activity"});
     }
 
     const {category,electricity} = req.body;
@@ -56,10 +56,10 @@ module.exports.createElectricityActivity = async(req,res)=>{
 };
 
 module.exports.createWasteActivity = async(req,res)=>{
-  // try{
+  try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to create Waste Management activity"});
     }
 
     const {category,date,waste} = req.body;
@@ -81,9 +81,9 @@ module.exports.createWasteActivity = async(req,res)=>{
     const activity = new carbonActivityModel({userId,category,date,waste,emission});
     await activity.save();
     return res.status(200).json({success : true , message : "activity save successfully"});
-  // }catch(error){
-  //   return res.status(500).json({success : false , message : "internal server error"});
-  // }
+  }catch(error){
+    return res.status(500).json({success : false , message : "internal server error"});
+  }
 };
 
 //Read Activity
@@ -91,7 +91,7 @@ module.exports.getTransporatationActivity = async(req,res)=>{
  try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to get Transporatation activity"});
     }
     
     const {month,year} = req.query;
@@ -112,7 +112,7 @@ module.exports.getTransporatationActivity = async(req,res)=>{
     if(transporatationActivity){
         res.status(200).json({success : true , transporatationActivity });
     }else{
-        res.status(200).json({success : false});
+        res.status(200).json({success : false , message : "doesn't get transporatation activity"});
     }
   }catch(error){
     return res.status(500).json({success : false , message : "internal server error"}); 
@@ -123,7 +123,7 @@ module.exports.getElectricityActivity = async(req,res)=>{
   try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to get Electricity activity"});
     }
     
     const year = parseInt(req.query.year);
@@ -142,7 +142,7 @@ module.exports.getElectricityActivity = async(req,res)=>{
     if(electricityActivity){
         res.status(200).json({success : true , electricityActivity });
     }else{
-        res.status(200).json({success : false});
+        res.status(200).json({success : false , message : "doesn't get Electricity activity"});
     }
   }catch(error){
     return res.status(500).json({success : false , message : "internal server error"});
@@ -153,7 +153,7 @@ module.exports.getWasteActivity = async(req,res)=>{
   try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to get Waste Management activity"});
     }
     
     const {month,year} = req.query;
@@ -174,7 +174,7 @@ module.exports.getWasteActivity = async(req,res)=>{
     if(wasteActivity){
         res.status(200).json({success : true , wasteActivity});
     }else{
-        res.status(200).json({success : false});
+        res.status(200).json({success : false , message : "doesn't get Electricity activity"});
     }
   }catch(error){
     return res.status(500).json({success : false , message : "internal server error"});
@@ -185,7 +185,7 @@ module.exports.getActivity = async(req,res)=>{
   try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to get activity"});
     }
     
     const {id} = req.params;
@@ -199,7 +199,7 @@ module.exports.getActivity = async(req,res)=>{
            res.status(200).json({success : true , activity : {_id : activity._id ,category : activity.category,date : activity.date,emission : activity.emission,waste : activity.waste}});
         }
     }else{
-        res.status(200).json({success : false});
+        res.status(200).json({success : false , message : "doesn't get specific activity"});
     }
   }catch(error){
     return res.status(500).json({success : false , message : "internal server error"});
@@ -211,7 +211,7 @@ module.exports.updateTransporatationActivity = async(req,res)=>{
  try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to update Transporatation activity"});
     }
 
     const {id,date,transportation} = req.body;
@@ -244,7 +244,7 @@ module.exports.updateElectricityActivity = async(req,res)=>{
   try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to update Electricity activity"});
     }
 
     const {id,electricity} = req.body;
@@ -274,7 +274,7 @@ module.exports.updateWasteActivity = async(req,res)=>{
   try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to update Waste Management activity"});
     }
 
     const {id,date,waste} = req.body;
@@ -317,7 +317,7 @@ module.exports.deleteActivity = async(req,res)=>{
  try{
    const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to delete specific activity"});
     }
     
     const {id} = req.params;
@@ -334,7 +334,7 @@ module.exports.summaryActivity = async(req,res)=>{
   try{
     const userId = req.currUser;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to update profile"});
+        return res.status(400).json({success : false, message : "login first to get dashboard data"});
     }
 
     const {type,duration} = req.query;

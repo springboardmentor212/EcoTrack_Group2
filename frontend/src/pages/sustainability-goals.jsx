@@ -504,7 +504,8 @@ function GoalCard({ goal, onCancel, onEdit, onDelete }) {
 
             {goal.endDate && (
               <span>
-                End Date : {new Date(goal.endDate).toLocaleDateString("en-GB")}
+                End Date :{" "}
+                {goal.endDate.split("T")[0].split("-").reverse().join("/")}
               </span>
             )}
           </div>
@@ -815,7 +816,6 @@ export default function SustainabilityGoals() {
 
       const { success, message, goal: responseGoal } = data;
 
-      console.log(data);
       if (success) {
         const normalizedGoal = normalizeGoal(responseGoal);
 

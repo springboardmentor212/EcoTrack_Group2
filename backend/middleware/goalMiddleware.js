@@ -104,7 +104,7 @@ const validateUpdateCarbonSaveGoal = (req,res,next)=>{
 };
 
 module.exports.validateGoal = (req,res,next)=>{
-     // try{
+     try{
           if(req.body.category === "transportation"){
                validateTransportationGoal(req,res,next);
           }else if(req.body.category === "electricity"){
@@ -118,13 +118,13 @@ module.exports.validateGoal = (req,res,next)=>{
           }else{
                res.status(400).json({success : false, message : "not a valid category"});
           }
-     // }catch(error){
-     //      res.status(400).json({success : false, message : "not validate data"});
-     // }
+     }catch(error){
+          res.status(400).json({success : false, message : "not validate data"});
+     }
 };
 
 module.exports.validateUpdateGoal = (req,res,next)=>{
-     // try{
+     try{
           if(req.body.category === "transportation"){
                validateUpdateTransportationGoal(req,res,next);
           }else if(req.body.category === "electricity"){
@@ -138,7 +138,7 @@ module.exports.validateUpdateGoal = (req,res,next)=>{
           }else{
                res.status(400).json({success : false, message : "not a valid category"});
           }
-     // }catch(error){
-     //      res.status(400).json({success : false, message : "not validate data"});
-     // }
+     }catch(error){
+          res.status(400).json({success : false, message : "not validate data"});
+     }
 };

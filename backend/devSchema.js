@@ -290,5 +290,5 @@ module.exports.updateCarbonSaveGoalSchema = joi.object({
      unit : joi.string().valid("kgco2").required(),
      period : joi.string().valid("daily","weekly","monthly").required(),
      startDate : joi.date().required(),
-     endDate : joi.date().required(),
+     endDate : joi.date().min("now").required(),
 }).required();

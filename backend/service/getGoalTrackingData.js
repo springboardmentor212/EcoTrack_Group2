@@ -14,8 +14,6 @@ module.exports.getGoalTrackingData = async (goal) => {
       unit = "month";
    }
 
-   console.log("previous day = ",previousDay);
-
    const endD = previousDay < endDate ? previousDay : endDate;
    let values,goalValue; 
     goalValue = (goalType === "reduce travelling distance" || goalType === "reduce electricity consumption" 
@@ -44,8 +42,6 @@ module.exports.getGoalTrackingData = async (goal) => {
         const carbonData = await getEmissionData(startDate,endD,unit,trackingType,userId);
         values = carbonData.map(el => el.totalEmission);
     }
-
-    console.log("values = ",values);
-    console.log("goal value = ",goalValue);
+    
     return {values,goalValue};
 };

@@ -38,8 +38,6 @@ const getBaseValue = async (date,period,category,userId) => {
         endDate = new Date(Date.UTC(year,month,1));
      }
 
-     console.log("startDate = ",startDate);
-     console.log("endDate = ",endDate);
 
      let typeSummary;
      if(category === "transportation"){

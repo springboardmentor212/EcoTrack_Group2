@@ -4,6 +4,7 @@ const {currDates,utcDates} = require("../utills/getDate");
 const updateGoalStatus = require("../service/updateGoalStatus")
 //read
 module.exports.getGoals = async(req,res)=>{
+ try{
     const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to get update of goals"});
@@ -33,9 +34,13 @@ module.exports.getGoals = async(req,res)=>{
     }else{
       return res.status(400).json({success : false , message : "not get the latest data of goals"});
     }
+  }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+  }
 };
 
 module.exports.getGoal = async(req,res)=>{
+  try{
     const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to get goal"});
@@ -64,10 +69,14 @@ module.exports.getGoal = async(req,res)=>{
                         startDate : goal.startDate,endDate : goal.endDate 
                }}); 
     }
+   }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+   }
 };
 
 //create
 module.exports.createGoal = async(req,res)=>{
+ try{
    const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to create goal"});
@@ -79,7 +88,7 @@ module.exports.createGoal = async(req,res)=>{
    let baseValue = 0;
 
    if(goalData.target > 100 && goalData.unit==="%"){
-      return res.status(400).json({success : false , message : `target value ${goalData.target} or unit ${goalData.unit} or goalType ${goalData.goalType} is wrong`})
+      return res.status(400).json({success : false , message : `target  ${goalData.target} or unit ${goalData.unit} or goalType ${goalData.goalType} is wrong`})
    }
    if(goalData.goalType === "use only electric vehicle" || 
       goalData.goalType === "use only cng vehicle" || 
@@ -117,11 +126,15 @@ module.exports.createGoal = async(req,res)=>{
 
    const goal = new goalModel(goalData);
    await goal.save();
-   return res.status(200).json({success : true , message  : "goal save successfully"});
+   return res.status(200).json({success : true , message  : "goal create successfully"});
+  }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+  }
 };
 
 //update
 module.exports.updateGoal = async(req,res)=>{
+ try{
   const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to update goals"});
@@ -180,10 +193,14 @@ module.exports.updateGoal = async(req,res)=>{
    }else{
     return res.status(200).json({success : true , message  : "goal not updated"}); 
    }
+  }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+  }
 };
 
 //delete
 module.exports.cancelGoal = async(req,res)=>{
+ try{
     const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to cancel goal"});
@@ -202,9 +219,13 @@ module.exports.cancelGoal = async(req,res)=>{
     }else{
        return res.status(200).json({success : false , message : "goal is completed or failed or cancelled so you can't cancelled it"});
     }
+   }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+   }
 };
 
 module.exports.deleteGoal = async(req,res)=>{
+ try{
     const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to delete goal"});
@@ -213,4 +234,7 @@ module.exports.deleteGoal = async(req,res)=>{
     const {id} = req.params;
     await goalModel.findByIdAndDelete(id);
     return res.status(200).json({success : true , message : "goal delete successfully"});
+   }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+   }
 };
