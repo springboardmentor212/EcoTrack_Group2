@@ -170,7 +170,7 @@ module.exports.updateGoal = async(req,res)=>{
    goalData.baseValue = baseValue;
 
   const goal = await goalModel.findById(goalData.id);
-  if(goal.status==="complete" || goal.status==="cancelled"){
+  if(goal.status==="completed" || goal.status==="cancelled"){
      return res.status(400).json({success : false, message : "goal is completed or cancelled so you can't update it"});
   }
 
@@ -196,11 +196,11 @@ module.exports.cancelGoal = async(req,res)=>{
        return res.status(400).json({success : false, message : "goal doesn't exist"}); 
     }
 
-    if(goal.status === "active"){
+    if(goal.status !== "completed" || goal.status !== "failed" || goal.status !== "cancelled"){
        await goalModel.findByIdAndUpdate(id ,{status : "cancelled"});
        return res.status(200).json({success : false , message : "goal cancelled successfully"});
     }else{
-       return res.status(200).json({success : false , message : "goal doesn't active so you can't cancelled it"});
+       return res.status(200).json({success : false , message : "goal is completed or failed or cancelled so you can't cancelled it"});
     }
 };
 
