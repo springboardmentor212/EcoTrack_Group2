@@ -81,9 +81,8 @@ const userSchema = new Schema({
      "short term goals",
      "long term goals",
      "measurable progress",
-     "habit-based goals",
      "emission reduction goals",
-     "resource-saving goals"
+     "carbon saving goals"
     ],
     lowercase : true,
     trim : true,

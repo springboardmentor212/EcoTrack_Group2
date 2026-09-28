@@ -56,9 +56,8 @@ module.exports.profileSchema = joi.object({
                "short term goals",
                "long term goals",
                "measurable progress",
-               "habit-based goals",
                "emission reduction goals",
-               "resource-saving goals"
+               "carbon saving goals"
       )).unique().max(6).required(),
      location : joi.string().required().min(3),
 }).required();
