@@ -1,4 +1,4 @@
-const {carbonTypeSummary,transportationTypeSummary,electricityTypeSummary,wasteTypeSummary} = require("../service/typeBasisSummaryService");
+const {carbonTypeSummary,transportationTypeSummary,electricityTypeSummary,wasteTypeSummary} = require("../service/carbonActivity/typeBasisSummaryService");
 const unitMap = (goalType)=>{
    if(goalType === "reduce travelling distance" || goalType === "reduce electricity consumption" || 
       goalType === "reduce waste generated" || goalType === "reduce carbon emissions"){

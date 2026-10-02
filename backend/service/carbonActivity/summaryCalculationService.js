@@ -2,7 +2,7 @@ const {carbonTypeSummary,transportationTypeSummary,electricityTypeSummary,wasteT
 const {getSummaryDaysBasis,getSummaryWeekBasis,getSummaryMonthBasis} = require("./durationBasisSummaryService");
 
 module.exports.getSummary = async(type,duration,userId) => {
-   const month = new Date().getMonth(),year = new Date().getFullYear();
+   const month = new Date().getUTCMonth(),year = new Date().getUTCFullYear();
    let startDate,endDate,durationSummary,typeSummary; 
 
    if(duration==="day" && type!=="electricity"){
@@ -28,6 +28,7 @@ module.exports.getSummary = async(type,duration,userId) => {
    }else{
        durationSummary = [{}];
    }
+
 
    if(type==="carbon"){
        typeSummary = await carbonTypeSummary(startDate,endDate,userId);

@@ -1,10 +1,10 @@
-const {getTransportationData,getElectricityData,getWasteData,getEmissionData} = require("../service/goalsDurationData");
-const {utcDates} = require("../utills/getDate");
+const {getTransportationData,getElectricityData,getWasteData,getEmissionData} = require("./goalsDurationData");
+const {utcDates} = require("../../utills/getDate");
 
 module.exports.getGoalTrackingData = async (goal) => {
    const {category,startDate,endDate,goalType,trackingType,period,userId,target,baseValue} = goal;
-   let previousDay = new Date().setDate(new Date().getDate() - 1);
-   previousDay = utcDates(previousDay);
+   let currDay = new Date().setDate(new Date().getDate());
+   currDay = utcDates(currDay);
    let unit;
    if(period === "daily"){
       unit = "day";
@@ -14,7 +14,7 @@ module.exports.getGoalTrackingData = async (goal) => {
       unit = "month";
    }
 
-   const endD = previousDay < endDate ? previousDay : endDate;
+   const endD = currDay < endDate ? currDay : endDate;
    let values,goalValue; 
     goalValue = (goalType === "reduce travelling distance" || goalType === "reduce electricity consumption" 
                  ||  goalType === "reduce waste generated" || goalType === "reduce carbon emissions"  
@@ -29,7 +29,7 @@ module.exports.getGoalTrackingData = async (goal) => {
               values = transportationData.map(el => el.cngCount);
         }
     }else if(category === "electricity"){
-        const electricityData = await getElectricityData(startDate,endD,userId);
+        const electricityData = await getElectricityData(startDate,endDate,userId);
         values = electricityData.map(el => el.consumption);
     }else if(category === "waste management" || category === "carbon save"){
         const wasteData = await getWasteData(startDate,endD,unit,userId);

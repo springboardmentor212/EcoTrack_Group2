@@ -3,6 +3,8 @@ const {secreatToken} = require("../utills/secreatToken");
 const {userModel} = require("../model/userModel");
 const {verificationCodeModel } =  require("../model/verificationCodeModel");
 const {generateOtp} = require("../utills/generateOtp"); 
+const {userNotificationModel} = require("../model/userNotificationModel");
+const {notificationModel} = require("../model/notificationModel");
 const sendVerificationMail = require("../utills/sendVerificationMail");
 
 module.exports.register = async(req,res) => {
@@ -103,6 +105,25 @@ module.exports.verifyEmail = async(req,res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
         await userModel.findByIdAndUpdate(user._id,{verified : true});
+        const notification = await notificationModel.findOne({type : "profile complition"});
+        if(notification){
+            await userNotificationModel.findOneAndUpdate(
+               {
+                    userId: user._id,
+                    notificationId: notification._id
+               },
+               {
+                    $setOnInsert: {
+                        userId: user._id,
+                        notificationId: notification._id
+                    }
+               },
+               {
+                    upsert: true,
+                    new: true
+               }
+            );
+        }
         return res.status(200).json({success : true, message : "Email verifiy successfully"});
     }else{
         await verificationCodeModel.deleteMany({email});
@@ -134,7 +155,28 @@ module.exports.verifyEmailForResetPassword = async(req,res) => {
     if(verificationCode.expries.getTime() > Date.now()){
         await verificationCodeModel.deleteMany({email});
         const user = await userModel.findOne({email});
-        await userModel.findByIdAndUpdate(user._id,{verified : true});
+        if(user.verified === false){
+            await userModel.findByIdAndUpdate(user._id,{verified : true});
+            const notification = await notificationModel.findOne({type : "profile complition"});
+            if(notification){
+              await userNotificationModel.findOneAndUpdate(
+                 {
+                    userId: user._id,
+                    notificationId: notification._id
+                 },
+                 {
+                    $setOnInsert: {
+                        userId: user._id,
+                        notificationId: notification._id
+                    }
+                 },
+                 {
+                    upsert: true,
+                    new: true
+                 }
+               );
+            }
+        }
         return res.status(200).json({success : true, message : "Email verifiy successfully"});
     }else{
         await verificationCodeModel.deleteMany({email});

@@ -24,6 +24,10 @@ const userRouter = require("./router/user");
 const profileRouter = require("./router/profile");
 const carbonRouter = require("./router/carbonActivity");
 const goalRouter = require("./router/goal");
+const notificationRouter = require("./router/notification");
+const {sendDailyGoalSuggestion,sendGoalReminder} = require("./jobs/goalSuggestionAndGoalReminder");
+const {sendGoalSuggestion,sendDailyGoalReminderNotification,
+       sendWeeklyGoalReminderNotification,sendMonthlyGoalReminderNotification} = require("./service/notification/goalNotificationService");
 
 async function main(){
         await mongoose.connect(url);
@@ -35,11 +39,22 @@ main().then(()=>{
     console.log(err);
 });
 
+sendDailyGoalSuggestion();
+sendGoalReminder();
+
 app.use("/user",userRouter);
 app.use("/profile",profileRouter);
 app.use("/carbonActivity",carbonRouter);
 app.use("/goal",goalRouter);
+app.use("/notification",notificationRouter);
 
+app.get("/",async (req,res)=>{
+    await sendGoalSuggestion();
+    await sendDailyGoalReminderNotification();
+    await sendWeeklyGoalReminderNotification();
+    await sendMonthlyGoalReminderNotification();
+    res.send("work complete");
+});
 app.listen(port,()=>{
    console.log(`Server is running on port ${port}`);
 });

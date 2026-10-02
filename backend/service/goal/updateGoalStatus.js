@@ -1,5 +1,5 @@
-const {getGoalStatus} = require("../service/getGoalStatus"); 
-const {goalModel} = require("../model/goalModel");
+const {getGoalStatus} = require("./getGoalStatus"); 
+const {goalModel} = require("../../model/goalModel");
 
 const updateGoalStatus = async (goals) => {
    for(const goal of goals) {

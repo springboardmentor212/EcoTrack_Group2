@@ -40,7 +40,6 @@ module.exports.profileSchema = joi.object({
          "sustainable waste disposal",
          "sustainable travel",
          "sustainable efficient electricity",
-         "carbon footprints"
       )).unique().max(8).required(),
 
      environmentalInterests : joi.array().items(

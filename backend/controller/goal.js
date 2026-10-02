@@ -1,7 +1,7 @@
 const {goalModel} = require("../model/goalModel");
 const {unitMap,getBaseValue} = require("../utills/getUnitAndBaseValue");
 const {currDates,utcDates} = require("../utills/getDate");
-const updateGoalStatus = require("../service/updateGoalStatus")
+const updateGoalStatus = require("../service/goal/updateGoalStatus");
 //read
 module.exports.getGoals = async(req,res)=>{
  try{

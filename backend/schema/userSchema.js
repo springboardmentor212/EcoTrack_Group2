@@ -2,6 +2,7 @@ const {Schema} = require('mongoose');
 const bcrypt = require("bcrypt");
 const {carbonActivityModel} = require("../model/carbonActivityModel");
 const {goalModel} = require("../model/goalModel");
+const {userNotificationModel} = require("../model/userNotificationModel");
 
 const userSchema = new Schema({
     name : {
@@ -47,7 +48,7 @@ const userSchema = new Schema({
       default : '../utills/user.png'
     },
 
-  sustainabilityPreferences: [{
+  sustainabilityPreferences : [{
     type: String,
     enum: [
       "small daily changes",
@@ -57,7 +58,6 @@ const userSchema = new Schema({
       "sustainable waste disposal",
       "sustainable travel",
       "sustainable efficient electricity",
-      "carbon footprints"
     ],
     lowercase : true,
     trim : true,
@@ -87,6 +87,12 @@ const userSchema = new Schema({
     lowercase : true,
     trim : true,
   }],
+  
+  suggestedGoal: [
+    {
+        type: Schema.Types.ObjectId,
+        ref: "Goal"
+    }],
 } , { timestamps: true });
 
 userSchema.pre("save",async function(){
@@ -104,5 +110,6 @@ userSchema.pre("findOneAndDelete",async function(){
     const userId = this.getQuery()._id; 
     await carbonActivityModel.deleteMany({userId});
     await goalModel.deleteMany({userId});
+    await userNotificationModel.deleteMany({userId});
 });
 module.exports = {userSchema};

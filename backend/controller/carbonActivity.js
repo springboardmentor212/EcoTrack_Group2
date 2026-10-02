@@ -1,7 +1,7 @@
 const {carbonActivityModel} = require("../model/carbonActivityModel");
 const monthMap = require("../utills/getMonth");
-const {transportationEmission,electricityEmission,wasteEmission} = require("../service/emissionCalculationService");
-const {getSummary} = require("../service/summaryCalculationService");
+const {transportationEmission,electricityEmission,wasteEmission} = require("../service/carbonActivity/emissionCalculationService");
+const {getSummary} = require("../service/carbonActivity/summaryCalculationService");
 
 //Create Activity
 module.exports.createTransporatationActivity = async(req,res)=>{
@@ -37,7 +37,7 @@ module.exports.createElectricityActivity = async(req,res)=>{
 
     const {category,electricity} = req.body;
     const monthIndex = monthMap[electricity.month];
-    const date = new Date(Date.UTC(electricity.year,monthIndex,2));
+    const date = new Date(Date.UTC(electricity.year,monthIndex,1,0,1,0,0));
 
     const emission = electricityEmission(electricity.consumption,date);
     const activity = new carbonActivityModel(
@@ -109,6 +109,7 @@ module.exports.getTransporatationActivity = async(req,res)=>{
          $lt : endDate
        }
       }).sort({date : 'desc'});
+
     if(transporatationActivity){
         res.status(200).json({success : true , transporatationActivity });
     }else{

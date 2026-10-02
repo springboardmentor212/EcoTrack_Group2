@@ -4,7 +4,6 @@ const goalSchema = new Schema({
    userId: {
         type: Schema.Types.ObjectId,
         ref: "User",
-        required: true
     },
 
     title : {
@@ -64,13 +63,10 @@ const goalSchema = new Schema({
 
     startDate: {
         type: Date,
-        default : () => new Date(Date.now()),
-        required: true
     },
 
     endDate: {
         type: Date,
-        required: true
     },
 
     status: {
@@ -91,7 +87,13 @@ const goalSchema = new Schema({
        type : Number,
        min : 0,
        default : 0
+  },
+
+  isSystemGoal: {
+    type: Boolean,
+    default: false
   }
+
 
 }, { timestamps: true });
 
