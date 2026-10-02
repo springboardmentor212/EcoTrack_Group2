@@ -161,38 +161,47 @@ const formatLabel = (value) => {
     .join(" ");
 };
 
-const getGoalTitle = ({ category, trackingType, goalType, target, unit }) => {
-  if (!goalType || !target || !unit) return "";
+const getGoalTitle = ({
+  category,
+  trackingType,
+  goalType,
+  target,
+  unit,
+  period,
+}) => {
+  if (!goalType || !target || !unit || !period) return "";
+
+  const periodText = String(period).toLowerCase();
 
   if (category === "Carbon Emissions") {
     if (trackingType && trackingType !== "All") {
       if (goalType.startsWith("Reduce")) {
-        return `${goalType} from ${trackingType} by ${target}${unit}`;
+        return `${goalType} from ${trackingType} by ${target}${unit} ${periodText}`;
       }
 
-      return `${goalType} from ${trackingType} within ${target} ${unit}`;
+      return `${goalType} from ${trackingType} within ${target} ${unit} ${periodText}`;
     }
 
     if (goalType.startsWith("Reduce")) {
-      return `${goalType} by ${target}${unit}`;
+      return `${goalType} by ${target}${unit} ${periodText}`;
     }
 
-    return `${goalType} within ${target} ${unit}`;
+    return `${goalType} within ${target} ${unit} ${periodText}`;
   }
 
   if (goalType.startsWith("Reduce")) {
-    return `${goalType} by ${target}${unit}`;
+    return `${goalType} by ${target}${unit} ${periodText}`;
   }
 
   if (goalType.startsWith("Keep")) {
-    return `${goalType} within ${target} ${unit}`;
+    return `${goalType} within ${target} ${unit} ${periodText}`;
   }
 
   if (goalType.startsWith("Use only")) {
-    return `${goalType} for ${target} ${unit}`;
+    return `${goalType} for ${target} ${unit} ${periodText}`;
   }
 
-  return `${goalType} by ${target} ${unit}`;
+  return `${goalType} by ${target} ${unit} ${periodText}`;
 };
 
 const normalizeGoal = (goal) => {
@@ -721,6 +730,7 @@ export default function SustainabilityGoals() {
     goalType: form.goalType,
     target: form.target,
     unit: form.unit,
+    period: form.period,
   });
 
   const activeGoals = goals.filter((goal) => goal.status === "active");
