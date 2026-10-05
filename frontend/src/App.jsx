@@ -11,6 +11,7 @@ import WasteManagement from "./pages/waste-management";
 import Electricity from "./pages/electricity";
 import Profile from "./pages/profile";
 import SustainabilityGoals from "./pages/sustainability-goals";
+import CommunityChallenges from "./pages/community-challenges";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -97,6 +98,15 @@ function App() {
           </ProtectedRoute>
         }
       />
+      
+     <Route
+      path="/community-challenges"
+      element={
+          <ProtectedRoute>
+            <CommunityChallenges />
+          </ProtectedRoute>
+      }
+    />
     </Routes>
   );
 }
