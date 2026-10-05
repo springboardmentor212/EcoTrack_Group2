@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const GOALS_URL = import.meta.env.VITE_GOAL_API;
 
@@ -57,7 +59,12 @@ const goalConfig = {
 
   "Carbon Emissions": {
     periods: ["Daily", "Weekly", "Monthly"],
-    trackingTypes: ["All", "Transportation", "Electricity", "Waste Management"],
+    trackingTypes: [
+      "All",
+      "Transportation",
+      "Electricity",
+      "Waste Management",
+    ],
     types: [
       {
         label: "Reduce carbon emissions",
@@ -93,13 +100,11 @@ const categoryApiMap = {
 
 const goalTypeApiMap = {
   "Reduce travelling distance": "reduce travelling distance",
-  "Keep travelling distance within limit":
-    "keep travelling distance within limit",
+  "Keep travelling distance within limit": "keep travelling distance within limit",
   "Use only Electric Vehicle": "use only electric vehicle",
   "Use only CNG Vehicle": "use only cng vehicle",
   "Reduce electricity consumption": "reduce electricity consumption",
-  "Keep electricity consumption within limit":
-    "keep electricity consumption within limit",
+  "Keep electricity consumption within limit": "keep electricity consumption within limit",
   "Reduce waste generated": "reduce waste generated",
   "Keep waste generation within limit": "keep waste generation within limit",
   "Reduce carbon emissions": "reduce carbon emissions",
@@ -139,7 +144,7 @@ const trackingTypeDisplayMap = {
 };
 
 const goalTypeDisplayMap = Object.fromEntries(
-  Object.entries(goalTypeApiMap).map(([label, value]) => [value, label]),
+  Object.entries(goalTypeApiMap).map(([label, value]) => [value, label])
 );
 
 const getToday = () => {
@@ -152,12 +157,53 @@ const getToday = () => {
   ].join("-");
 };
 
+const parseDateInput = (value) => {
+  if (!value) return null;
+  const [year, month, day] = String(value).split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatDateInput = (date) => {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+};
+
+const addDays = (date, days) => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
+const getWeekEnd = (date) => {
+  const result = new Date(date);
+  const day = result.getDay();
+  const daysUntilSunday = day === 0 ? 0 : 7 - day;
+  result.setDate(result.getDate() + daysUntilSunday);
+  return result;
+};
+
+const getMonthEnd = (date) =>
+  new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+const startOfCalendarMonth = (date) =>
+  new Date(date.getFullYear(), date.getMonth(), 1);
+
+const sameMonth = (a, b) =>
+  a.getFullYear() === b.getFullYear() &&
+  a.getMonth() === b.getMonth();
+
 const formatLabel = (value) => {
   if (!value) return "";
 
   return String(value)
     .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map(
+      (word) =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+    )
     .join(" ");
 };
 
@@ -169,66 +215,67 @@ const getGoalTitle = ({
   unit,
   period,
 }) => {
-  if (!goalType || !target || !unit || !period) return "";
+  if (!goalType || !target || !unit) return "";
 
-  const periodText = String(period).toLowerCase();
+  const cleanGoalType = goalType.replace(/ within limit$/i, "");
+  let title = "";
 
   if (category === "Carbon Emissions") {
     if (trackingType && trackingType !== "All") {
       if (goalType.startsWith("Reduce")) {
-        return `${goalType} from ${trackingType} by ${target}${unit} ${periodText}`;
+        title = `${cleanGoalType} from ${trackingType} by ${target}${unit}`;
+      } else {
+        title = `${cleanGoalType} from ${trackingType} within ${target} ${unit}`;
       }
-
-      return `${goalType} from ${trackingType} within ${target} ${unit} ${periodText}`;
+    } else if (goalType.startsWith("Reduce")) {
+      title = `${cleanGoalType} by ${target}${unit}`;
+    } else {
+      title = `${cleanGoalType} within ${target} ${unit}`;
     }
-
-    if (goalType.startsWith("Reduce")) {
-      return `${goalType} by ${target}${unit} ${periodText}`;
-    }
-
-    return `${goalType} within ${target} ${unit} ${periodText}`;
+  } else if (goalType.startsWith("Reduce")) {
+    title = `${cleanGoalType} by ${target}${unit}`;
+  } else if (goalType.startsWith("Keep")) {
+    title = `${cleanGoalType} within ${target} ${unit}`;
+  } else if (goalType.startsWith("Use only")) {
+    title = `${cleanGoalType} for ${target} ${unit}`;
+  } else {
+    title = `${cleanGoalType} by ${target} ${unit}`;
   }
 
-  if (goalType.startsWith("Reduce")) {
-    return `${goalType} by ${target}${unit} ${periodText}`;
-  }
-
-  if (goalType.startsWith("Keep")) {
-    return `${goalType} within ${target} ${unit} ${periodText}`;
-  }
-
-  if (goalType.startsWith("Use only")) {
-    return `${goalType} for ${target} ${unit} ${periodText}`;
-  }
-
-  return `${goalType} by ${target} ${unit} ${periodText}`;
+  return period ? `${title} ${period.toLowerCase()}` : title;
 };
 
 const normalizeGoal = (goal) => {
   const status = String(
-    goal?.status || goal?.goalStatus || "active",
+    goal?.status || goal?.goalStatus || "active"
   ).toLowerCase();
 
   const progressPercentage =
     typeof goal?.progressPercentage === "number"
       ? goal.progressPercentage
       : typeof goal?.progress?.percentage === "number"
-        ? goal.progress.percentage
-        : null;
+      ? goal.progress.percentage
+      : null;
 
   const currentProgress =
     typeof goal?.currentProgress === "number"
       ? goal.currentProgress
       : typeof goal?.progress?.current === "number"
-        ? goal.progress.current
-        : null;
+      ? goal.progress.current
+      : null;
 
   return {
     ...goal,
     id: goal?._id || goal?.id,
-    title: goal?.title || goal?.goalTitle || "Sustainability Goal",
+    title:
+      goal?.title ||
+      goal?.goalTitle ||
+      "Sustainability Goal",
     category:
-      categoryDisplayMap[String(goal?.category || "").toLowerCase()] ||
+      categoryDisplayMap[String(
+        goal?.category ||
+        ""
+      ).toLowerCase()] ||
       goal?.category ||
       goal?.goalType ||
       goal?.type ||
@@ -249,11 +296,16 @@ const normalizeGoal = (goal) => {
     startDate: goal?.startDate || "",
     endDate: goal?.endDate || "",
     goalType:
-      goalTypeDisplayMap[String(goal?.goalType || "").toLowerCase()] ||
+      goalTypeDisplayMap[String(
+        goal?.goalType || ""
+      ).toLowerCase()] ||
       goal?.goalType ||
       "",
     trackingType:
-      trackingTypeDisplayMap[String(goal?.trackingType || "").toLowerCase()] ||
+      trackingTypeDisplayMap[String(
+        goal?.trackingType ||
+        ""
+      ).toLowerCase()] ||
       goal?.trackingType ||
       "",
     status,
@@ -272,7 +324,10 @@ function Icon({ type }) {
         stroke="currentColor"
         strokeWidth="2"
       >
-        <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+        <path
+          d="M12 5v14M5 12h14"
+          strokeLinecap="round"
+        />
       </svg>
     );
   }
@@ -288,7 +343,12 @@ function Icon({ type }) {
       >
         <circle cx="12" cy="12" r="8.5" />
         <circle cx="12" cy="12" r="4.5" />
-        <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+        <circle
+          cx="12"
+          cy="12"
+          r="1.5"
+          fill="currentColor"
+        />
       </svg>
     );
   }
@@ -321,7 +381,11 @@ function Icon({ type }) {
         strokeWidth="1.8"
       >
         <circle cx="12" cy="12" r="8.5" />
-        <path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M12 7v5l3 2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     );
   }
@@ -361,32 +425,56 @@ function CustomSelect({
 
   useEffect(() => {
     const handleClick = (event) => {
-      if (ref.current && !ref.current.contains(event.target)) {
+      if (
+        ref.current &&
+        !ref.current.contains(event.target)
+      ) {
         setOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClick);
+    document.addEventListener(
+      "mousedown",
+      handleClick
+    );
 
     return () => {
-      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener(
+        "mousedown",
+        handleClick
+      );
     };
   }, []);
 
   return (
-    <div ref={ref} className="relative">
-      <label className="goal-form-label">{label}</label>
+    <div
+      ref={ref}
+      className="relative"
+    >
+      <label className="goal-form-label">
+        {label}
+      </label>
 
       <button
         type="button"
         disabled={disabled}
         onClick={() => setOpen((current) => !current)}
-        className={`goal-select ${open ? "goal-select-open" : ""} ${
+        className={`goal-select ${
+          open ? "goal-select-open" : ""
+        } ${
           disabled ? "goal-select-disabled" : ""
         }`}
       >
-        <span className={value ? "text-[#405149]" : "text-[#98a49d]"}>
-          {value ? formatLabel(value) : placeholder}
+        <span
+          className={
+            value
+              ? "text-[#405149]"
+              : "text-[#98a49d]"
+          }
+        >
+          {value
+            ? formatLabel(value)
+            : placeholder}
         </span>
 
         <svg
@@ -410,19 +498,27 @@ function CustomSelect({
         <div className="goal-options">
           {options.map((option) => {
             const optionValue =
-              typeof option === "object" ? option.value : option;
+              typeof option === "object"
+                ? option.value
+                : option;
 
             const optionLabel =
-              typeof option === "object" ? option.label : formatLabel(option);
+              typeof option === "object"
+                ? option.label
+                : formatLabel(option);
 
-            const selected = String(optionValue) === String(value);
+            const selected =
+              String(optionValue) ===
+              String(value);
 
             return (
               <button
                 key={String(optionValue)}
                 type="button"
                 className={`goal-option ${
-                  selected ? "goal-option-selected" : ""
+                  selected
+                    ? "goal-option-selected"
+                    : ""
                 }`}
                 onClick={() => {
                   onChange(optionValue);
@@ -431,7 +527,11 @@ function CustomSelect({
               >
                 <span>{optionLabel}</span>
 
-                {selected && <span className="text-[#27834d]">✓</span>}
+                {selected && (
+                  <span className="text-[#27834d]">
+                    ✓
+                  </span>
+                )}
               </button>
             );
           })}
@@ -441,12 +541,106 @@ function CustomSelect({
   );
 }
 
-function ProgressCircle({ percentage }) {
-  if (typeof percentage !== "number" || !Number.isFinite(percentage)) {
+function GoalDatePicker({
+  value,
+  period,
+  startDate,
+  onChange,
+}) {
+  const today = useMemo(() => getToday(), []);
+  const todayDate = parseDateInput(today);
+  const actualStartDate = parseDateInput(startDate || today);
+
+  const getMinimumDate = () => {
+    if (period === "Daily") {
+      const minimum = new Date(actualStartDate);
+      minimum.setDate(minimum.getDate() + 1);
+      return minimum;
+    }
+
+    if (period === "Weekly") {
+      return getWeekEnd(todayDate);
+    }
+
+    if (period === "Monthly") {
+      return getMonthEnd(todayDate);
+    }
+
+    return todayDate;
+  };
+
+  const filterDate = (date) => {
+    if (period === "Daily") {
+      return date > actualStartDate;
+    }
+
+    if (period === "Weekly") {
+      return (
+        date >= getWeekEnd(todayDate) &&
+        date.getDay() === 0
+      );
+    }
+
+    if (period === "Monthly") {
+      return (
+        date >= getMonthEnd(todayDate) &&
+        date.getDate() === getMonthEnd(date).getDate()
+      );
+    }
+
+    return date >= todayDate;
+  };
+
+  const selectedDate = value
+    ? parseDateInput(value)
+    : null;
+
+  return (
+    <div className="goal-date-picker">
+      <label className="goal-form-label">
+        End Date
+      </label>
+
+      <DatePicker
+        selected={selectedDate}
+        onChange={(date) => {
+          if (date) {
+            onChange(formatDateInput(date));
+          }
+        }}
+        minDate={getMinimumDate()}
+        filterDate={filterDate}
+        dateFormat="dd MMM yyyy"
+        placeholderText="Select end date"
+        className="goal-date-input"
+        wrapperClassName="goal-date-picker-wrapper"
+        popperClassName="goal-date-popper"
+        showPopperArrow={false}
+        isClearable
+        onChangeRaw={(event) => {
+          if (event?.preventDefault) {
+            event.preventDefault();
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+function ProgressCircle({
+  percentage,
+}) {
+  if (
+    typeof percentage !== "number" ||
+    !Number.isFinite(percentage)
+  ) {
     return null;
   }
 
-  const safePercentage = Math.max(0, Math.min(100, percentage));
+  const safePercentage = Math.max(
+    0,
+    Math.min(100, percentage)
+  );
 
   return (
     <div
@@ -463,7 +657,12 @@ function ProgressCircle({ percentage }) {
   );
 }
 
-function GoalCard({ goal, onCancel, onEdit, onDelete }) {
+function GoalCard({
+  goal,
+  onCancel,
+  onEdit,
+  onDelete,
+}) {
   const hasProgress =
     typeof goal.progressPercentage === "number" &&
     Number.isFinite(goal.progressPercentage);
@@ -474,53 +673,85 @@ function GoalCard({ goal, onCancel, onEdit, onDelete }) {
 
   const isPrevious =
     goal.status === "failed" ||
-    goal.status === "cancelled" ||
-    goal.status === "not have entry";
+    goal.status === "cancelled";
 
   return (
-    <article className={`goal-card ${isPrevious ? "goal-card-previous" : ""}`}>
+    <article
+      className={`goal-card ${
+        isPrevious
+          ? "goal-card-previous"
+          : ""
+      }`}
+    >
       <div className="goal-card-main">
         <div className="goal-card-content">
-          <p className={`goal-category ${isPrevious ? "text-red-500" : ""}`}>
+          <p
+            className={`goal-category ${
+              isPrevious
+                ? "text-red-500"
+                : ""
+            }`}
+          >
             {formatLabel(goal.category)}
           </p>
 
-          <h3 className={isPrevious ? "text-red-600" : ""}>{goal.title}</h3>
+          <h3
+            className={
+              isPrevious
+                ? "text-red-600"
+                : ""
+            }
+          >
+            {goal.title}
+          </h3>
 
-          {goal.trackingType && goal.category === "Carbon Emissions" && (
-            <p className="goal-tracking">
-              Tracking: {formatLabel(goal.trackingType)}
-            </p>
-          )}
-
-          {(goal.status === "failed" ||
-            goal.status === "cancelled" ||
-            goal.status === "not have entry") && (
-            <strong>Status : {goal.status} </strong>
+          {goal.trackingType &&
+            goal.category ===
+              "Carbon Emissions" && (
+              <p className="goal-tracking">
+                Tracking:{" "}
+                {formatLabel(
+                  goal.trackingType
+                )}
+              </p>
           )}
 
           <div className="goal-meta">
-            {goal.target !== undefined && goal.target !== null && (
+            {goal.target !== undefined &&
+              goal.target !== null && (
+                <span>
+                  Target:{" "}
+                  <strong>
+                    {goal.target}{" "}
+                    {goal.unit}
+                  </strong>
+                </span>
+              )}
+
+            {goal.period && (
               <span>
-                Target:{" "}
-                <strong>
-                  {goal.target} {goal.unit}
-                </strong>
+                {formatLabel(
+                  goal.period
+                )}
               </span>
             )}
 
-            {goal.period && <span>{formatLabel(goal.period)}</span>}
-
             {goal.endDate && (
               <span>
-                End Date :{" "}
-                {goal.endDate.split("T")[0].split("-").reverse().join("/")}
+                Ends:{" "}
+                {goal.endDate}
               </span>
             )}
           </div>
         </div>
 
-        {hasProgress && <ProgressCircle percentage={goal.progressPercentage} />}
+        {hasProgress && (
+          <ProgressCircle
+            percentage={
+              goal.progressPercentage
+            }
+          />
+        )}
       </div>
 
       {hasProgress && hasCurrent && (
@@ -529,7 +760,8 @@ function GoalCard({ goal, onCancel, onEdit, onDelete }) {
             <span>Current progress</span>
 
             <strong>
-              {goal.currentProgress} {goal.unit}
+              {goal.currentProgress}{" "}
+              {goal.unit}
             </strong>
           </div>
 
@@ -539,7 +771,10 @@ function GoalCard({ goal, onCancel, onEdit, onDelete }) {
               style={{
                 width: `${Math.max(
                   0,
-                  Math.min(100, goal.progressPercentage),
+                  Math.min(
+                    100,
+                    goal.progressPercentage
+                  )
                 )}%`,
               }}
             />
@@ -547,8 +782,8 @@ function GoalCard({ goal, onCancel, onEdit, onDelete }) {
         </div>
       )}
 
-      <div className="goal-card-actions">
-        {goal.status !== "completed" && goal.status !== "cancelled" && (
+      {goal.status === "active" && (
+        <div className="goal-card-actions">
           <button
             type="button"
             onClick={() => onEdit(goal)}
@@ -556,28 +791,24 @@ function GoalCard({ goal, onCancel, onEdit, onDelete }) {
           >
             Edit Goal
           </button>
-        )}
 
-        {goal.status !== "completed" &&
-          goal.status !== "cancelled" &&
-          goal.status !== "failed" && (
-            <button
-              type="button"
-              onClick={() => onCancel(goal)}
-              className="cancel-goal-button"
-            >
-              Cancel Goal
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => onCancel(goal)}
+            className="cancel-goal-button"
+          >
+            Cancel Goal
+          </button>
 
-        <button
-          type="button"
-          onClick={() => onDelete(goal)}
-          className="cancel-goal-button"
-        >
-          Delete Goal
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => onDelete(goal)}
+            className="cancel-goal-button"
+          >
+            Delete Goal
+          </button>
+        </div>
+      )}
     </article>
   );
 }
@@ -604,7 +835,11 @@ function GoalCarousel({
         <div className="section-heading">
           <div className="section-heading-left">
             <div
-              className={`section-icon ${previous ? "section-icon-red" : ""}`}
+              className={`section-icon ${
+                previous
+                  ? "section-icon-red"
+                  : ""
+              }`}
             >
               <Icon type={icon} />
             </div>
@@ -616,7 +851,13 @@ function GoalCarousel({
           </div>
         </div>
 
-        <div className={`empty-card ${previous ? "empty-card-previous" : ""}`}>
+        <div
+          className={`empty-card ${
+            previous
+              ? "empty-card-previous"
+              : ""
+          }`}
+        >
           <div className="empty-card-icon">
             <Icon type={icon} />
           </div>
@@ -624,17 +865,19 @@ function GoalCarousel({
           <h3>
             {title === "Active Goals"
               ? "No active goals yet"
-              : title === "Completed Goals"
-                ? "No completed goals yet"
-                : "No previous goals yet"}
+              : title ===
+                "Completed Goals"
+              ? "No completed goals yet"
+              : "No previous goals yet"}
           </h3>
 
           <p>
             {title === "Active Goals"
               ? "Start a goal to begin tracking your sustainability progress."
-              : title === "Completed Goals"
-                ? "Completed goals will appear here."
-                : "Failed or cancelled goals will appear here."}
+              : title ===
+                "Completed Goals"
+              ? "Completed goals will appear here."
+              : "Failed or cancelled goals will appear here."}
           </p>
         </div>
       </section>
@@ -647,7 +890,13 @@ function GoalCarousel({
     <section className="goals-section">
       <div className="section-heading">
         <div className="section-heading-left">
-          <div className={`section-icon ${previous ? "section-icon-red" : ""}`}>
+          <div
+            className={`section-icon ${
+              previous
+                ? "section-icon-red"
+                : ""
+            }`}
+          >
             <Icon type={icon} />
           </div>
 
@@ -662,7 +911,11 @@ function GoalCarousel({
             <button
               type="button"
               disabled={index === 0}
-              onClick={() => setIndex((current) => Math.max(0, current - 1))}
+              onClick={() =>
+                setIndex((current) =>
+                  Math.max(0, current - 1)
+                )
+              }
               className="carousel-button"
               aria-label="Previous goal"
             >
@@ -675,9 +928,16 @@ function GoalCarousel({
 
             <button
               type="button"
-              disabled={index === goals.length - 1}
+              disabled={
+                index === goals.length - 1
+              }
               onClick={() =>
-                setIndex((current) => Math.min(goals.length - 1, current + 1))
+                setIndex((current) =>
+                  Math.min(
+                    goals.length - 1,
+                    current + 1
+                  )
+                )
               }
               className="carousel-button"
               aria-label="Next goal"
@@ -699,14 +959,21 @@ function GoalCarousel({
 }
 
 export default function SustainabilityGoals() {
-  const today = useMemo(() => getToday(), []);
+  const today = useMemo(
+    () => getToday(),
+    []
+  );
 
   const [goals, setGoals] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
+  const [saving, setSaving] =
+    useState(false);
   const [targetError, setTargetError] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [editingGoal, setEditingGoal] = useState(null);
+  const [showForm, setShowForm] =
+    useState(false);
+  const [editingGoal, setEditingGoal] =
+    useState(null);
 
   const [form, setForm] = useState({
     category: "",
@@ -718,11 +985,14 @@ export default function SustainabilityGoals() {
     endDate: "",
   });
 
-  const categoryConfig = goalConfig[form.category];
+  const categoryConfig =
+    goalConfig[form.category];
 
-  const selectedType = categoryConfig?.types.find(
-    (item) => item.label === form.goalType,
-  );
+  const selectedType =
+    categoryConfig?.types.find(
+      (item) =>
+        item.label === form.goalType
+    );
 
   const goalTitle = getGoalTitle({
     category: form.category,
@@ -730,17 +1000,19 @@ export default function SustainabilityGoals() {
     goalType: form.goalType,
     target: form.target,
     unit: form.unit,
-    period: form.period,
   });
 
-  const activeGoals = goals.filter((goal) => goal.status === "active");
+  const activeGoals = goals.filter(
+    (goal) =>
+      goal.status === "active"
+  );
 
   const completedGoals = goals.filter(
     (goal) =>
       goal.status === "complete" ||
       goal.status === "completed" ||
       goal.status === "achieve" ||
-      goal.status === "achieved",
+      goal.status === "achieved"
   );
 
   const previousGoals = goals.filter(
@@ -749,18 +1021,26 @@ export default function SustainabilityGoals() {
       goal.status !== "complete" &&
       goal.status !== "completed" &&
       goal.status !== "achieve" &&
-      goal.status !== "achieved",
+      goal.status !== "achieved"
   );
 
   const loadGoals = async () => {
     try {
       setLoading(true);
 
-      const { data } = await axios.get(`${GOALS_URL}/`, {
-        withCredentials: true,
-      });
+      const { data } =
+        await axios.get(
+          `${GOALS_URL}/`,
+          {
+            withCredentials: true,
+          }
+        );
 
-      const { success, message, result } = data;
+      const {
+        success,
+        message,
+        result,
+      } = data;
 
       if (success) {
         const activeGoal = Array.isArray(result?.activeGoal)
@@ -776,13 +1056,23 @@ export default function SustainabilityGoals() {
           : [];
 
         setGoals(
-          [...activeGoal, ...completeGoal, ...otherGoal].map(normalizeGoal),
+          [
+            ...activeGoal,
+            ...completeGoal,
+            ...otherGoal,
+          ].map(normalizeGoal)
         );
       } else {
-        toast.error(message || "Unable to load goals.");
+        toast.error(
+          message ||
+            "Unable to load goals."
+        );
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to load goals.");
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to load goals."
+      );
     } finally {
       setLoading(false);
     }
@@ -820,11 +1110,18 @@ export default function SustainabilityGoals() {
     if (!goal?.id) return;
 
     try {
-      const { data } = await axios.get(`${GOALS_URL}/${goal.id}`, {
-        withCredentials: true,
-      });
+      const { data } = await axios.get(
+        `${GOALS_URL}/${goal.id}`,
+        {
+          withCredentials: true,
+        }
+      );
 
-      const { success, message, goal: responseGoal } = data;
+      const {
+        success,
+        message,
+        goal: responseGoal,
+      } = data;
 
       if (success) {
         const normalizedGoal = normalizeGoal(responseGoal);
@@ -846,14 +1143,21 @@ export default function SustainabilityGoals() {
         });
         setShowForm(true);
       } else {
-        toast.error(message || "Unable to load goal.");
+        toast.error(
+          message || "Unable to load goal."
+        );
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to load goal.");
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to load goal."
+      );
     }
   };
 
-  const handleCategoryChange = (value) => {
+  const handleCategoryChange = (
+    value
+  ) => {
     setTargetError("");
     setForm({
       category: value,
@@ -866,7 +1170,9 @@ export default function SustainabilityGoals() {
     });
   };
 
-  const handleTrackingTypeChange = (value) => {
+  const handleTrackingTypeChange = (
+    value
+  ) => {
     setForm((current) => ({
       ...current,
       trackingType: value,
@@ -876,8 +1182,14 @@ export default function SustainabilityGoals() {
     }));
   };
 
-  const handleGoalTypeChange = (value) => {
-    const type = categoryConfig?.types.find((item) => item.label === value);
+  const handleGoalTypeChange = (
+    value
+  ) => {
+    const type =
+      categoryConfig?.types.find(
+        (item) =>
+          item.label === value
+      );
 
     setTargetError("");
     setForm((current) => ({
@@ -921,21 +1233,26 @@ export default function SustainabilityGoals() {
     setTargetError("");
   };
 
-  const handlePeriodChange = (value) => {
+  const handlePeriodChange = (
+    value
+  ) => {
     setForm((current) => ({
       ...current,
       period: value,
+      endDate: "",
     }));
   };
 
-  const handleEndDateChange = (event) => {
+  const handleEndDateChange = (value) => {
     setForm((current) => ({
       ...current,
-      endDate: event.target.value,
+      endDate: value,
     }));
   };
 
-  const saveGoal = async (event) => {
+  const saveGoal = async (
+    event
+  ) => {
     event.preventDefault();
 
     if (!form.category || !form.goalType || !form.period || !form.endDate) {
@@ -949,8 +1266,14 @@ export default function SustainabilityGoals() {
       return;
     }
 
-    if (form.category === "Carbon Emissions" && !form.trackingType) {
-      toast.error("Please select a tracking type.");
+    if (
+      form.category ===
+        "Carbon Emissions" &&
+      !form.trackingType
+    ) {
+      toast.error(
+        "Please select a tracking type."
+      );
       return;
     }
 
@@ -974,11 +1297,6 @@ export default function SustainabilityGoals() {
       return;
     }
 
-    if (form.endDate < today) {
-      toast.error("End date cannot be before today.");
-      return;
-    }
-
     try {
       setSaving(true);
 
@@ -990,12 +1308,37 @@ export default function SustainabilityGoals() {
         target: targetValue,
         unit: unitApiMap[form.unit],
         period: form.period.toLowerCase(),
-        ...(editingGoal ? { startDate: editingGoal.startDate } : {}),
+        startDate: editingGoal?.startDate || today,
         endDate: form.endDate,
       };
 
+      if (form.period === "Weekly") {
+        const selectedDate = parseDateInput(form.endDate);
+        body.startDate = formatDateInput(
+          new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth(),
+            selectedDate.getDate() - 6
+          )
+        );
+        body.endDate = form.endDate;
+      }
+
+      if (form.period === "Monthly") {
+        const selectedDate = parseDateInput(form.endDate);
+        body.startDate = formatDateInput(
+          new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth(),
+            1
+          )
+        );
+        body.endDate = form.endDate;
+      }
+
       if (form.category === "Carbon Emissions") {
-        body.trackingType = trackingTypeApiMap[form.trackingType];
+        body.trackingType =
+          trackingTypeApiMap[form.trackingType];
       }
 
       const { data } = editingGoal
@@ -1006,51 +1349,75 @@ export default function SustainabilityGoals() {
             withCredentials: true,
           });
 
-      const { success, message } = data;
+      const {
+        success,
+        message,
+      } = data;
 
       if (success) {
         toast.success(
           message ||
             (editingGoal
               ? "Goal updated successfully."
-              : "Goal started successfully."),
+              : "Goal started successfully.")
         );
 
         closeForm();
         await loadGoals();
       } else {
-        toast.error(message || "Unable to start goal.");
+        toast.error(
+          message ||
+            "Unable to start goal."
+        );
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to start goal.");
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to start goal."
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const cancelGoal = async (goal) => {
+  const cancelGoal = async (
+    goal
+  ) => {
     if (!goal?.id) return;
 
     try {
-      const { data } = await axios.patch(
-        `${GOALS_URL}/${goal.id}`,
-        {},
-        {
-          withCredentials: true,
-        },
-      );
+      const { data } =
+        await axios.patch(
+          `${GOALS_URL}/${goal.id}`,
+          {},
+          {
+            withCredentials: true,
+          }
+        );
 
-      const { success, message } = data;
+      const {
+        success,
+        message,
+      } = data;
 
       if (success) {
-        toast.success(message || "Goal cancelled.");
+        toast.success(
+          message ||
+            "Goal cancelled."
+        );
 
         await loadGoals();
       } else {
-        toast.error(message || "Unable to cancel goal.");
+        toast.error(
+          message ||
+            "Unable to cancel goal."
+        );
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to cancel goal.");
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to cancel goal."
+      );
     }
   };
 
@@ -1058,27 +1425,40 @@ export default function SustainabilityGoals() {
     if (!goal?.id) return;
 
     const confirmed = window.confirm(
-      "Are you sure you want to delete this goal?",
+      "Are you sure you want to delete this goal?"
     );
 
     if (!confirmed) return;
 
     try {
-      const { data } = await axios.delete(`${GOALS_URL}/${goal.id}`, {
-        withCredentials: true,
-      });
+      const { data } = await axios.delete(
+        `${GOALS_URL}/${goal.id}`,
+        {
+          withCredentials: true,
+        }
+      );
 
-      const { success, message } = data;
+      const {
+        success,
+        message,
+      } = data;
 
       if (success) {
-        toast.success(message || "Goal deleted successfully.");
+        toast.success(
+          message || "Goal deleted successfully."
+        );
 
         await loadGoals();
       } else {
-        toast.error(message || "Unable to delete goal.");
+        toast.error(
+          message || "Unable to delete goal."
+        );
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Unable to delete goal.");
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to delete goal."
+      );
     }
   };
 
@@ -1087,12 +1467,15 @@ export default function SustainabilityGoals() {
       <div className="sustainability-goals-container">
         <header className="goals-topbar">
           <div>
-            <p className="goals-eyebrow">SUSTAINABILITY</p>
+            <p className="goals-eyebrow">
+              SUSTAINABILITY
+            </p>
 
             <h1>Goals</h1>
 
             <p className="goals-subtitle">
-              Set meaningful goals and track your sustainability progress.
+              Set meaningful goals and track your
+              sustainability progress.
             </p>
           </div>
 
@@ -1145,16 +1528,26 @@ export default function SustainabilityGoals() {
                   value={form.category}
                   options={categories}
                   placeholder="Select category"
-                  onChange={handleCategoryChange}
+                  onChange={
+                    handleCategoryChange
+                  }
                 />
 
-                {form.category === "Carbon Emissions" && (
+                {form.category ===
+                  "Carbon Emissions" && (
                   <CustomSelect
                     label="Choose Tracking Type"
-                    value={form.trackingType}
-                    options={categoryConfig?.trackingTypes || []}
+                    value={
+                      form.trackingType
+                    }
+                    options={
+                      categoryConfig?.trackingTypes ||
+                      []
+                    }
                     placeholder="Select tracking type"
-                    onChange={handleTrackingTypeChange}
+                    onChange={
+                      handleTrackingTypeChange
+                    }
                   />
                 )}
 
@@ -1162,18 +1555,27 @@ export default function SustainabilityGoals() {
                   label="Goal Type"
                   value={form.goalType}
                   options={
-                    categoryConfig?.types.map((item) => item.label) || []
+                    categoryConfig?.types.map(
+                      (item) =>
+                        item.label
+                    ) || []
                   }
                   placeholder="Select goal type"
                   disabled={
                     !form.category ||
-                    (form.category === "Carbon Emissions" && !form.trackingType)
+                    (form.category ===
+                      "Carbon Emissions" &&
+                      !form.trackingType)
                   }
-                  onChange={handleGoalTypeChange}
+                  onChange={
+                    handleGoalTypeChange
+                  }
                 />
 
                 <div>
-                  <label className="goal-form-label">Target</label>
+                  <label className="goal-form-label">
+                    Target
+                  </label>
 
                   <input
                     type="number"
@@ -1183,22 +1585,30 @@ export default function SustainabilityGoals() {
                     inputMode="numeric"
                     value={form.target}
                     placeholder={
-                      form.unit === "%" ? "Enter 1-100" : "Enter target"
+                      form.unit === "%"
+                        ? "Enter 1-100"
+                        : "Enter target"
                     }
                     disabled={!selectedType}
                     onChange={handleTargetChange}
                     className={`goal-input ${
-                      targetError ? "goal-input-error" : ""
+                      targetError
+                        ? "goal-input-error"
+                        : ""
                     }`}
                   />
 
                   {targetError && (
-                    <p className="goal-input-error-message">{targetError}</p>
+                    <p className="goal-input-error-message">
+                      {targetError}
+                    </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="goal-form-label">Unit</label>
+                  <label className="goal-form-label">
+                    Unit
+                  </label>
 
                   <input
                     type="text"
@@ -1212,26 +1622,30 @@ export default function SustainabilityGoals() {
                 <CustomSelect
                   label="Period"
                   value={form.period}
-                  options={categoryConfig?.periods || []}
+                  options={
+                    categoryConfig?.periods ||
+                    []
+                  }
                   placeholder="Select period"
-                  disabled={!selectedType}
-                  onChange={handlePeriodChange}
+                  disabled={
+                    !selectedType
+                  }
+                  onChange={
+                    handlePeriodChange
+                  }
                 />
 
-                <div>
-                  <label className="goal-form-label">End Date</label>
-
-                  <input
-                    type="date"
-                    min={today}
-                    value={form.endDate}
-                    onChange={handleEndDateChange}
-                    className="goal-input"
-                  />
-                </div>
+                <GoalDatePicker
+                  value={form.endDate}
+                  period={form.period}
+                  startDate={editingGoal?.startDate || today}
+                  onChange={handleEndDateChange}
+                />
 
                 <div className="goal-title-field">
-                  <label className="goal-form-label">Goal Title</label>
+                  <label className="goal-form-label">
+                    Goal Title
+                  </label>
 
                   <input
                     type="text"
@@ -1261,8 +1675,9 @@ export default function SustainabilityGoals() {
                     !form.target ||
                     !form.period ||
                     !form.endDate ||
-                    form.endDate < today ||
-                    (form.category === "Carbon Emissions" && !form.trackingType)
+                    (form.category ===
+                      "Carbon Emissions" &&
+                      !form.trackingType)
                   }
                   className="start-goal-button"
                 >
@@ -1271,8 +1686,8 @@ export default function SustainabilityGoals() {
                       ? "Updating..."
                       : "Starting..."
                     : editingGoal
-                      ? "Update Goal"
-                      : "Start Goal"}
+                    ? "Update Goal"
+                    : "Start Goal"}
                 </button>
               </div>
             </form>
@@ -1282,7 +1697,9 @@ export default function SustainabilityGoals() {
             {loading ? (
               <div className="loading-card">
                 <div className="loading-spinner" />
-                <p>Loading your goals...</p>
+                <p>
+                  Loading your goals...
+                </p>
               </div>
             ) : (
               <>
@@ -1301,16 +1718,16 @@ export default function SustainabilityGoals() {
                   description="Goals you have successfully achieved."
                   icon="check"
                   goals={completedGoals}
+                  onCancel={cancelGoal}
                   onDelete={deleteGoal}
                 />
 
                 <GoalCarousel
                   title="Previous Goals"
-                  description="Failed , Not have entry or cancelled goals."
+                  description="Failed and cancelled goals."
                   icon="clock"
                   goals={previousGoals}
                   previous
-                  onEdit={openEditForm}
                   onCancel={cancelGoal}
                   onDelete={deleteGoal}
                 />
@@ -1774,6 +2191,202 @@ export default function SustainabilityGoals() {
           color: #173f2a;
           font-size: 11px;
           font-weight: 600;
+        }
+
+        .goal-date-picker {
+          position: relative;
+        }
+
+        .goal-date-picker-wrapper {
+          display: block;
+          width: 100%;
+        }
+
+        .goal-date-picker-wrapper .react-datepicker-wrapper {
+          display: block;
+          width: 100%;
+        }
+
+        .goal-date-picker-wrapper .react-datepicker__input-container {
+          display: block;
+          width: 100%;
+        }
+
+        .goal-date-picker-wrapper .goal-date-input {
+          display: block;
+          width: 100%;
+          min-height: 44px;
+          box-sizing: border-box;
+          border: 1px solid #dce7df;
+          border-radius: 10px;
+          outline: none;
+          background: white;
+          padding: 0 13px;
+          color: #405149;
+          cursor: pointer;
+          font-size: 11px;
+          transition: .22s ease;
+        }
+
+        .goal-date-picker-wrapper .goal-date-input:hover,
+        .goal-date-picker-wrapper .goal-date-input:focus {
+          border-color: #72a988;
+          box-shadow: 0 0 0 4px rgba(114,169,136,.11);
+        }
+
+        .goal-date-popper {
+          z-index: 100;
+        }
+
+        .goal-date-popper .react-datepicker {
+          border: 1px solid #dce8df;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 14px 35px rgba(25,67,42,.14);
+          font-family: inherit;
+        }
+
+        .goal-date-popper .react-datepicker__header {
+          background: #f2f7f3;
+          border-bottom: 1px solid #dce8df;
+        }
+
+        .goal-date-popper .react-datepicker__day--selected,
+        .goal-date-popper .react-datepicker__day--keyboard-selected {
+          background: #27834d;
+          color: white;
+        }
+
+        .goal-date-popper .react-datepicker__day--selected:hover,
+        .goal-date-popper .react-datepicker__day--keyboard-selected:hover {
+          background: #216b42;
+        }
+
+        .goal-date-popper .react-datepicker__day--disabled {
+          color: #c8d0cb;
+          cursor: not-allowed;
+        }
+
+        .goal-date-input {
+          width: 100%;
+          min-height: 44px;
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          border: 1px solid #dce7df;
+          border-radius: 10px;
+          outline: none;
+          background: white;
+          padding: 0 13px;
+          color: #405149;
+          cursor: pointer;
+          font-size: 11px;
+          text-align: left;
+          transition: .22s ease;
+        }
+
+        .goal-date-input:hover,
+        .goal-date-input:focus-visible {
+          border-color: #72a988;
+          box-shadow: 0 0 0 4px rgba(114,169,136,.11);
+          outline: none;
+        }
+
+        .goal-calendar-icon {
+          color: #27834d;
+          font-size: 15px;
+        }
+
+        .goal-calendar {
+          position: absolute;
+          z-index: 30;
+          top: calc(100% + 7px);
+          left: 0;
+          width: 292px;
+          box-sizing: border-box;
+          border: 1px solid #dce8df;
+          border-radius: 12px;
+          background: white;
+          padding: 13px;
+          box-shadow: 0 14px 35px rgba(25,67,42,.14);
+        }
+
+        .goal-calendar-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+          color: #173f2a;
+          font-size: 12px;
+        }
+
+        .goal-calendar-nav {
+          width: 30px;
+          height: 30px;
+          border: 0;
+          border-radius: 7px;
+          background: #f2f7f3;
+          color: #27834d;
+          cursor: pointer;
+          font-size: 20px;
+          line-height: 1;
+        }
+
+        .goal-calendar-nav:disabled {
+          opacity: .35;
+          cursor: not-allowed;
+        }
+
+        .goal-calendar-weekdays,
+        .goal-calendar-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 4px;
+        }
+
+        .goal-calendar-weekdays {
+          margin-bottom: 5px;
+        }
+
+        .goal-calendar-weekdays span {
+          color: #91a097;
+          font-size: 9px;
+          font-weight: 700;
+          text-align: center;
+        }
+
+        .goal-calendar-day {
+          width: 34px;
+          height: 34px;
+          justify-self: center;
+          border: 0;
+          border-radius: 8px;
+          font-size: 11px;
+          transition: .15s ease;
+        }
+
+        .goal-calendar-day-enabled {
+          background: #edf7f0;
+          color: #216b42;
+          cursor: pointer;
+        }
+
+        .goal-calendar-day-enabled:hover {
+          background: #d7eddf;
+        }
+
+        .goal-calendar-day-disabled {
+          background: transparent;
+          color: #c8d0cb;
+          cursor: not-allowed;
+        }
+
+        .goal-calendar-day-selected {
+          background: #27834d;
+          color: white;
+          font-weight: 700;
         }
 
         .goal-input,

@@ -4,7 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { FiBell, FiChevronDown } from "react-icons/fi";
 import { toast } from "react-toastify";
 
+const API_URL = import.meta.env.VITE_API_URL;
 const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
+const GOALS_URL = import.meta.env.VITE_GOAL_API;
 
 const trackerPeriods = {
   All: [
@@ -91,27 +93,56 @@ const getApiDuration = (tracker, period) => {
   return "year";
 };
 
+const formatCardNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "0.00";
+  }
+
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return value;
+  }
+
+  return number.toFixed(2);
+};
+
+const formatCardText = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  if (value === "—") {
+    return "—";
+  }
+
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+
 const createStatsFromSummary = (tracker, summary) => {
   if (tracker === "All") {
     return [
       {
         title: "Total Carbon Emissions",
-        value: summary?.emission ?? 0,
+        value: formatCardNumber(summary?.emission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Transportation Carbon Emissions",
-        value: summary?.transportationEmission ?? 0,
+        value: formatCardNumber(summary?.transportationEmission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Electricity Carbon Emissions",
-        value: summary?.electricityEmission ?? 0,
+        value: formatCardNumber(summary?.electricityEmission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Waste Management Carbon Emissions",
-        value: summary?.wasteEmission ?? 0,
+        value: formatCardNumber(summary?.wasteEmission ?? 0),
         unit: "kg CO₂e",
       },
     ];
@@ -121,22 +152,22 @@ const createStatsFromSummary = (tracker, summary) => {
     return [
       {
         title: "Carbon Emissions",
-        value: summary?.emission ?? 0,
+        value: formatCardNumber(summary?.emission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Total Distance Travelled",
-        value: summary?.distance ?? 0,
+        value: formatCardNumber(summary?.distance ?? 0),
         unit: "km",
       },
       {
         title: "Most Used Transport Mode",
-        value: summary?.mostUsedTransportMode?.mode || "—",
+        value: formatCardText(summary?.mostUsedTransportMode?.mode),
         unit: "",
       },
       {
         title: "Most Used Fuel Type",
-        value: summary?.mostUsedFuelType?.fuel || "—",
+        value: formatCardText(summary?.mostUsedFuelType?.fuel),
         unit: "",
       },
     ];
@@ -146,17 +177,19 @@ const createStatsFromSummary = (tracker, summary) => {
     return [
       {
         title: "Carbon Emissions",
-        value: summary?.emission ?? 0,
+        value: formatCardNumber(summary?.emission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Total Consumption",
-        value: summary?.consumption ?? 0,
+        value: formatCardNumber(summary?.consumption ?? 0),
         unit: "kWh",
       },
       {
         title: "No. of Entries",
-        value: summary?.entries ?? 0,
+        value: Number.isFinite(Number(summary?.entries))
+          ? Number(summary.entries)
+          : 0,
         unit: "entries",
       },
     ];
@@ -165,27 +198,27 @@ const createStatsFromSummary = (tracker, summary) => {
   return [
     {
       title: "Carbon Emissions",
-      value: summary?.emission ?? 0,
+      value: formatCardNumber(summary?.emission ?? 0),
       unit: "kg CO₂e",
     },
     {
       title: "Carbon Saved",
-      value: summary?.carbonSave ?? 0,
+      value: formatCardNumber(summary?.carbonSave ?? 0),
       unit: "kg CO₂e",
     },
     {
       title: "Total Waste Generated",
-      value: summary?.wasteAmount ?? 0,
+      value: formatCardNumber(summary?.wasteAmount ?? 0),
       unit: "kg",
     },
     {
       title: "Most Tracked Waste Type",
-      value: summary?.mostUsedWasteType?.type || "—",
+      value: formatCardText(summary?.mostUsedWasteType?.type),
       unit: "",
     },
     {
       title: "Most Used Disposal/Handling Method",
-      value: summary?.mostUsedDisposalMethod?.method || "—",
+      value: formatCardText(summary?.mostUsedDisposalMethod?.method),
       unit: "",
     },
   ];
@@ -208,7 +241,9 @@ const getDurationData = (duration, durationSummary) => {
 function Dashboard() {
   const navigate = useNavigate();
 
-  const [selectedPeriod, setSelectedPeriod] = useState("This Month (Day-wise)");
+  const [selectedPeriod, setSelectedPeriod] = useState(
+    "This Month (Day-wise)",
+  );
   const [selectedTracker, setSelectedTracker] = useState("All");
   const [periodOpen, setPeriodOpen] = useState(false);
   const [trackerOpen, setTrackerOpen] = useState(false);
@@ -221,14 +256,17 @@ function Dashboard() {
   const [chartData, setChartData] = useState([]);
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [noActivity, setNoActivity] = useState(false);
+  const [goals, setGoals] = useState([]);
+  const [goalsLoading, setGoalsLoading] = useState(true);
 
   useEffect(() => {
     const handleDocumentClick = (event) => {
       if (!event.target.closest(".period-dropdown")) setPeriodOpen(false);
       if (!event.target.closest(".tracking-dropdown")) setTrackerOpen(false);
       if (!event.target.closest(".profile-wrapper")) setProfileOpen(false);
-      if (!event.target.closest(".notification-wrapper"))
+      if (!event.target.closest(".notification-wrapper")) {
         setNotificationOpen(false);
+      }
     };
 
     document.addEventListener("click", handleDocumentClick);
@@ -291,7 +329,10 @@ function Dashboard() {
           result?.typeSummary,
         );
 
-        const durationData = getDurationData(duration, result?.durationSummary);
+        const durationData = getDurationData(
+          duration,
+          result?.durationSummary,
+        );
 
         setDashboardStats((current) => ({
           ...current,
@@ -318,6 +359,65 @@ function Dashboard() {
 
     fetchDashboardData();
   }, [selectedTracker, selectedPeriod]);
+
+  useEffect(() => {
+    const fetchGoals = async () => {
+      try {
+        setGoalsLoading(true);
+
+        const { data } = await axios.get(`${GOALS_URL}/`, {
+          withCredentials: true,
+        });
+
+        const { success, message, result } = data;
+
+        if (success) {
+          const activeGoals = Array.isArray(result?.activeGoal)
+            ? result.activeGoal
+            : [];
+
+          const completeGoals = Array.isArray(result?.completeGoal)
+            ? result.completeGoal
+            : [];
+
+          const otherGoals = Array.isArray(result?.otherGoal)
+            ? result.otherGoal
+            : [];
+
+          setGoals([...activeGoals, ...completeGoals, ...otherGoals]);
+        } else {
+          setGoals([]);
+          toast.error(message || "Unable to load goals.");
+        }
+      } catch (error) {
+        setGoals([]);
+        toast.error(error.response?.data?.message || "Unable to load goals.");
+      } finally {
+        setGoalsLoading(false);
+      }
+    };
+
+    fetchGoals();
+  }, []);
+
+  const activeGoals = goals.filter((goal) => goal.status === "active");
+
+  const completedGoals = goals.filter(
+    (goal) =>
+      goal.status === "complete" ||
+      goal.status === "completed" ||
+      goal.status === "achieve" ||
+      goal.status === "achieved",
+  );
+
+  const otherGoals = goals.filter(
+    (goal) =>
+      goal.status !== "active" &&
+      goal.status !== "complete" &&
+      goal.status !== "completed" &&
+      goal.status !== "achieve" &&
+      goal.status !== "achieved",
+  );
 
   const stats =
     dashboardStats[selectedTracker] || overviewData[selectedTracker];
@@ -412,14 +512,17 @@ function Dashboard() {
       step = magnitude * 2;
     }
 
-    const maximumWithPadding = Math.ceil((maximum * 1.15) / step) * step;
+    const maximumWithPadding =
+      Math.ceil((maximum * 1.15) / step) * step;
 
     const tickStep = maximumWithPadding / 5;
 
     const ticks = Array.from(
       { length: 6 },
       (_, index) =>
-        Math.round((maximumWithPadding - index * tickStep) * 100) / 100,
+        Math.round(
+          (maximumWithPadding - index * tickStep) * 100,
+        ) / 100,
     );
 
     return {
@@ -466,21 +569,104 @@ function Dashboard() {
     if (route) navigate(route);
   };
 
-  const handleLogout = () => {
-    window.location.href = "/";
+  const handleLogout = async () => {
+    try {
+      const { data } = await axios.get(`${API_URL}/logout`, {
+        withCredentials: true,
+      });
+
+      if (data.success) {
+        toast.success(data.message || "Logout successfully");
+        navigate("/");
+      } else {
+        toast.info(data.message || "Already you are logged out");
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to logout. Please try again.",
+      );
+    }
   };
 
   return (
     <>
       <style>{`
-                @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes sidebarReveal { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
-                @keyframes topbarReveal { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes heroFadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes cardFadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes progressReveal { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: scale(1); } }
-                @keyframes barGrow { from { transform: scaleY(0); transform-origin: bottom; } to { transform: scaleY(1); transform-origin: bottom; } }
-            `}</style>
+        @keyframes pageFadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes sidebarReveal {
+          from {
+            opacity: 0;
+            transform: translateX(-18px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes topbarReveal {
+          from {
+            opacity: 0;
+            transform: translateY(-12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes heroFadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(18px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes cardFadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes progressReveal {
+          from {
+            opacity: 0;
+            transform: scale(.88);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes barGrow {
+          from {
+            transform: scaleY(0);
+            transform-origin: bottom;
+          }
+          to {
+            transform: scaleY(1);
+            transform-origin: bottom;
+          }
+        }
+      `}</style>
 
       <div className="min-h-screen bg-[#f7fbf8] text-[#173f2a] animate-[pageFadeIn_.7s_ease_both] lg:flex">
         <aside className="fixed inset-y-0 left-0 z-40 flex w-[250px] shrink-0 flex-col overflow-hidden border-r border-[#e2ece5] bg-white px-[18px] py-5 animate-[sidebarReveal_.6s_ease_.05s_both] max-lg:w-[220px] max-md:w-[190px] max-sm:relative max-sm:w-full max-sm:border-b max-sm:border-r-0 max-sm:py-5">
@@ -501,7 +687,11 @@ function Dashboard() {
                 <Link
                   key={label}
                   to={href}
-                  className={`rounded-lg px-3.5 py-3 text-sm font-medium transition-all duration-200 hover:translate-x-[3px] hover:bg-[#f1f8f3] hover:text-[#27834d] ${label === "Dashboard" ? "bg-[#eaf5ed] font-semibold text-[#27834d]" : "text-[#5c7064]"}`}
+                  className={`rounded-lg px-3.5 py-3 text-sm font-medium transition-all duration-200 hover:translate-x-[3px] hover:bg-[#f1f8f3] hover:text-[#27834d] ${
+                    label === "Dashboard"
+                      ? "bg-[#eaf5ed] font-semibold text-[#27834d]"
+                      : "text-[#5c7064]"
+                  }`}
                 >
                   {label}
                 </Link>
@@ -566,7 +756,11 @@ function Dashboard() {
                         notifications.slice(0, 5).map((notification) => (
                           <div
                             key={notification.id}
-                            className={`border-b border-[#f0f4f1] px-4 py-3 text-xs text-[#53685b] ${!notification.read ? "bg-[#f3f9f4] font-semibold" : ""}`}
+                            className={`border-b border-[#f0f4f1] px-4 py-3 text-xs text-[#53685b] ${
+                              !notification.read
+                                ? "bg-[#f3f9f4] font-semibold"
+                                : ""
+                            }`}
                           >
                             {notification.message}
                           </div>
@@ -605,11 +799,15 @@ function Dashboard() {
                       Eco User
                     </strong>
 
-                    <span className="text-[10px] text-[#8a998f]">Member</span>
+                    <span className="text-[10px] text-[#8a998f]">
+                      Member
+                    </span>
                   </div>
 
                   <FiChevronDown
-                    className={`text-[#718277] transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+                    className={`text-[#718277] transition-transform duration-200 ${
+                      profileOpen ? "rotate-180" : ""
+                    }`}
                     size={15}
                   />
                 </button>
@@ -687,7 +885,9 @@ function Dashboard() {
                       <span>{selectedPeriod}</span>
 
                       <FiChevronDown
-                        className={`transition-transform duration-200 ${periodOpen ? "rotate-180" : ""}`}
+                        className={`transition-transform duration-200 ${
+                          periodOpen ? "rotate-180" : ""
+                        }`}
                         size={13}
                       />
                     </button>
@@ -724,7 +924,9 @@ function Dashboard() {
                       <span>{selectedTracker}</span>
 
                       <FiChevronDown
-                        className={`transition-transform duration-200 ${trackerOpen ? "rotate-180" : ""}`}
+                        className={`transition-transform duration-200 ${
+                          trackerOpen ? "rotate-180" : ""
+                        }`}
                         size={13}
                       />
                     </button>
@@ -752,13 +954,21 @@ function Dashboard() {
 
               <div
                 key={`stats-${refreshKey}`}
-                className={`grid gap-[18px] ${selectedTracker === "Electricity" ? "grid-cols-3 max-xl:grid-cols-3 max-md:grid-cols-1" : selectedTracker === "Waste Management" ? "grid-cols-5 max-2xl:grid-cols-3 max-xl:grid-cols-2 max-sm:grid-cols-1" : "grid-cols-4 max-xl:grid-cols-2 max-sm:grid-cols-1"}`}
+                className={`grid gap-[18px] ${
+                  selectedTracker === "Electricity"
+                    ? "grid-cols-3 max-xl:grid-cols-3 max-md:grid-cols-1"
+                    : selectedTracker === "Waste Management"
+                      ? "grid-cols-5 max-2xl:grid-cols-3 max-xl:grid-cols-2 max-sm:grid-cols-1"
+                      : "grid-cols-4 max-xl:grid-cols-2 max-sm:grid-cols-1"
+                }`}
               >
                 {stats.map((stat, index) => (
                   <button
                     key={stat.title}
                     type="button"
-                    onClick={() => handleStatClick(selectedTracker, stat.title)}
+                    onClick={() =>
+                      handleStatClick(selectedTracker, stat.title)
+                    }
                     disabled={dashboardLoading}
                     className="group w-full rounded-[15px] border border-[#e1ebe4] bg-white p-[21px] text-left shadow-[0_10px_30px_rgba(33,78,50,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-[#d4e4da] hover:shadow-[0_16px_35px_rgba(33,78,50,0.09)] animate-[cardFadeUp_.6s_ease_both] disabled:cursor-wait disabled:opacity-70"
                     style={{
@@ -776,7 +986,11 @@ function Dashboard() {
                     </p>
 
                     <h3 className="text-[27px] font-semibold text-[#173f2a]">
-                      {dashboardLoading ? "..." : noActivity ? "—" : stat.value}{" "}
+                      {dashboardLoading
+                        ? "..."
+                        : noActivity
+                          ? "—"
+                          : stat.value}{" "}
                       {!noActivity && !dashboardLoading && stat.unit && (
                         <span className="text-xs font-medium text-[#8a998f]">
                           {stat.unit}
@@ -788,10 +1002,7 @@ function Dashboard() {
               </div>
             </section>
 
-            <section
-              key={`dynamic-${refreshKey}`}
-              className="mb-[22px] grid grid-cols-[2fr_1fr] gap-[22px] max-xl:grid-cols-1"
-            >
+            <section key={`dynamic-${refreshKey}`} className="mb-[22px]">
               <button
                 type="button"
                 onClick={() => navigate("/analytics")}
@@ -816,13 +1027,13 @@ function Dashboard() {
                 </div>
 
                 {dashboardLoading ? (
-                  <div className="mt-8 flex h-[300px] items-center justify-center">
+                  <div className="mt-8 flex h-[340px] items-center justify-center">
                     <div className="text-sm text-[#8a998f] animate-pulse">
                       Loading activity data...
                     </div>
                   </div>
                 ) : noActivity ? (
-                  <div className="mt-8 flex h-[300px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                  <div className="mt-8 flex h-[340px] items-center justify-center rounded-xl bg-[#f8faf9]">
                     <div className="px-6 text-center">
                       <p className="text-sm font-semibold text-[#294a36]">
                         No activity found for this duration.
@@ -835,11 +1046,13 @@ function Dashboard() {
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-8 flex h-[300px] gap-4">
+                  <div className="mt-8 flex h-[340px] gap-4">
                     <div className="flex flex-col justify-between py-1 text-[10px] text-[#8a998f]">
                       {chartScale.ticks.map((tick, index) => (
                         <span key={index}>
-                          {Number.isInteger(tick) ? tick : tick.toFixed(1)}
+                          {Number.isInteger(tick)
+                            ? tick
+                            : tick.toFixed(1)}
                         </span>
                       ))}
                     </div>
@@ -869,10 +1082,12 @@ function Dashboard() {
                               className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
                             >
                               <div
-                                className="w-full max-w-[34px] origin-bottom rounded-t-md bg-[#27834d] animate-[barGrow_.7s_ease_both]"
+                                className="w-full max-w-[46px] origin-bottom rounded-t-md bg-[#27834d] animate-[barGrow_.7s_ease_both]"
                                 style={{
                                   height: `${percentage}%`,
-                                  animationDelay: `${0.7 + index * 0.05}s`,
+                                  animationDelay: `${
+                                    0.7 + index * 0.05
+                                  }s`,
                                 }}
                               />
 
@@ -888,58 +1103,135 @@ function Dashboard() {
                 )}
               </button>
 
-              <div className="scroll-reveal flex flex-col rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.66s_both] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(33,78,50,0.08)]">
-                <div className="flex items-center justify-between gap-5">
+              <section className="mt-[22px] scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.66s_both]">
+                <div className="flex items-center justify-between gap-5 max-sm:flex-col max-sm:items-start">
                   <div>
                     <p className="mb-1 text-[11px] font-bold tracking-[.15em] text-[#27834d]">
-                      PROGRESS
+                      SUSTAINABILITY GOALS
                     </p>
 
                     <h2 className="text-[21px] font-semibold text-[#173f2a]">
-                      {goalTitle}
+                      Your Goals
                     </h2>
                   </div>
 
-                  <img
-                    src="/assets/goals.jpg"
-                    alt="Goals"
-                    className="h-[52px] w-[52px] rounded-xl object-contain"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => navigate("/sustainability-goals")}
+                    className="h-[40px] rounded-lg border border-[#cfe0d4] bg-white px-4 text-[12px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
+                  >
+                    View All Goals
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => navigate("/sustainability-goals")}
-                  className="mx-auto my-[25px] flex h-[155px] w-[155px] items-center justify-center rounded-full border-0 bg-[conic-gradient(#27834d_0deg_0deg,#e5eee8_0deg_360deg)] p-0 animate-[progressReveal_.7s_ease_.82s_both] transition-transform duration-300 hover:scale-105"
-                >
-                  <div className="flex h-[119px] w-[119px] flex-col items-center justify-center rounded-full bg-white">
-                    <strong className="text-[28px] text-[#173f2a]">0%</strong>
-
-                    <span className="mt-1 text-[11px] text-[#8a998f]">
-                      Complete
+                {goalsLoading ? (
+                  <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                    <span className="text-sm text-[#8a998f] animate-pulse">
+                      Loading goals...
                     </span>
                   </div>
-                </button>
+                ) : goals.length === 0 ? (
+                  <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                    <div className="px-6 text-center">
+                      <p className="text-sm font-semibold text-[#294a36]">
+                        No sustainability goals yet
+                      </p>
 
-                <div className="flex flex-col gap-1.5 text-center animate-[heroFadeUp_.55s_ease_.92s_both]">
-                  <strong className="text-sm text-[#294a36]">
-                    No goal progress yet
-                  </strong>
+                      <p className="mt-2 text-xs leading-5 text-[#8a998f]">
+                        Create a goal to start tracking your sustainability
+                        progress.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {activeGoals.slice(0, 3).map((goal, index) => {
+                      const isCompleted =
+                        goal.status === "complete" ||
+                        goal.status === "completed" ||
+                        goal.status === "achieve" ||
+                        goal.status === "achieved";
 
-                  <span className="text-[11px] leading-5 text-[#8a998f]">
-                    Start tracking your activities to begin your sustainability
-                    journey.
-                  </span>
-                </div>
+                      return (
+                        <button
+                          key={
+                            goal._id ||
+                            goal.id ||
+                            `${goal.title}-${index}`
+                          }
+                          type="button"
+                          onClick={() =>
+                            navigate("/sustainability-goals")
+                          }
+                          className="rounded-xl border border-[#e1ebe4] bg-[#fbfdfb] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#d1e3d7] hover:bg-white hover:shadow-[0_12px_28px_rgba(33,78,50,0.07)]"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-bold tracking-[.12em] text-[#27834d]">
+                                {goal.category || "SUSTAINABILITY"}
+                              </p>
 
-                <button
-                  type="button"
-                  onClick={() => navigate("/sustainability-goals")}
-                  className="mt-5 h-[42px] w-full rounded-lg border border-[#cfe0d4] bg-white text-[13px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
-                >
-                  View Goal
-                </button>
-              </div>
+                              <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
+                                {goal.title || "Sustainability Goal"}
+                              </h3>
+                            </div>
+
+                            <span
+                              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                                isCompleted
+                                  ? "bg-[#eaf5ed] text-[#27834d]"
+                                  : "bg-[#f3f8f4] text-[#53685b]"
+                              }`}
+                            >
+                              {isCompleted
+                                ? "Completed"
+                                : goal.status === "active"
+                                  ? "Active"
+                                  : "Previous"}
+                            </span>
+                          </div>
+
+                          <div className="mt-5 grid grid-cols-2 gap-3">
+                            <div>
+                              <p className="text-[10px] text-[#8a998f]">
+                                Target
+                              </p>
+
+                              <p className="mt-1 text-sm font-semibold text-[#173f2a]">
+                                {goal.target ?? "—"} {goal.unit || ""}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-[10px] text-[#8a998f]">
+                                Period
+                              </p>
+
+                              <p className="mt-1 text-sm font-semibold text-[#173f2a]">
+                                {goal.period || "—"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 border-t border-[#edf2ee] pt-3">
+                            <p className="text-[10px] text-[#8a998f]">
+                              End date
+                            </p>
+
+                            <p className="mt-1 text-xs font-medium text-[#53685b]">
+                              {goal.endDate
+                                .split("T")[0]
+                                .split("-")
+                                .reverse()
+                                .join("/") || "—"}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
             </section>
 
             <section
