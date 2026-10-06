@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiBell, FiChevronDown } from "react-icons/fi";
+import axios from "axios";
+import { FiChevronDown } from "react-icons/fi";
 import {
   FaCar,
   FaBolt,
@@ -11,7 +12,7 @@ import transportationImage from "../assets/transportation.png";
 import electricityImage from "../assets/electricity.png";
 import wasteImage from "../assets/waste.svg";
 
-
+const API_URL = import.meta.env.VITE_API_URL;
 
 const navItems = [
     ["Dashboard", "/dashboard"],
@@ -29,11 +30,7 @@ const navItems = [
 function Tracking() {
     const navigate = useNavigate();
     const [profileOpen, setProfileOpen] = useState(false);
-    const [notificationOpen, setNotificationOpen] = useState(false);
-    const [notifications] = useState([]);
-const unreadNotifications = notifications.filter(
-  (notification) => !notification.read
-);
+
     const trackingCards = [
   {
     title: "Transportation",
@@ -67,21 +64,31 @@ const unreadNotifications = notifications.filter(
 
     useEffect(() => {
         const handleDocumentClick = (event) => {
-            
-           
             if (!event.target.closest(".profile-wrapper")) setProfileOpen(false);
-            if (!event.target.closest(".notification-wrapper")) setNotificationOpen(false);
         };
 
         document.addEventListener("click", handleDocumentClick);
         return () => document.removeEventListener("click", handleDocumentClick);
     }, []);
 
-    const handleLogout = () => {
-        window.location.href = "/";
-    };
+    const handleLogout = async () => {
+    try {
+        const { data } = await axios.get(`${API_URL}/logout`, {
+            withCredentials: true,
+        });
 
-
+        if (data.success) {
+            navigate("/");
+        } else {
+            console.log(data.message);
+        }
+    } catch (error) {
+        console.error(
+            "Logout error:",
+            error.response?.data?.message || error.message
+        );
+    }
+};
 
     return (
         <>
@@ -130,73 +137,57 @@ const unreadNotifications = notifications.filter(
                 <div className="w-full lg:ml-[250px] lg:w-[calc(100%-250px)] max-lg:ml-[220px] max-lg:w-[calc(100%-220px)] max-md:ml-[190px] max-md:w-[calc(100%-190px)] max-sm:ml-0 max-sm:w-full">
                     <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-[#e2ece5] bg-white px-[4%] animate-[topbarReveal_.6s_ease_.12s_both]">
                         <div className="text-lg font-semibold text-[#173f2a]">Carbon Tracking System</div>
-                        <div className="flex items-center gap-3.5">
-                            <div className="notification-wrapper relative">
-                                <button
-                                    type="button"
-                                    aria-label="Notifications"
-                                    onClick={(event) => {
-                                        event.stopPropagation();
-                                        setNotificationOpen(!notificationOpen);
-                                    }}
-                                    className="relative flex h-[38px] w-[38px] items-center justify-center rounded-[9px] border-0 bg-transparent text-[#53685b] transition-all duration-200 hover:bg-[#f1f8f3] hover:text-[#27834d] active:scale-95"
-                                >
-                                    <FiBell size={19} />
-                                    {unreadNotifications.length > 0 && (
-                                        <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#27834d] px-1 text-[10px] font-bold text-white">
-                                            {unreadNotifications.length > 99 ? "99+" : unreadNotifications.length}
-                                        </span>
-                                      )}
-                                </button>
 
-                                {notificationOpen && (
-                                    <div className="absolute right-0 top-[47px] z-50 w-[310px] overflow-hidden rounded-xl border border-[#e1ebe4] bg-white shadow-[0_12px_30px_rgba(23,63,42,0.12)]">
-                                        <div className="border-b border-[#edf2ee] px-4 py-3 text-sm font-semibold text-[#294a36]">Recent Notifications</div>
-                                        <div className="max-h-[280px] overflow-y-auto">
-                                            {notifications.length === 0 ? (
-                                                <div className="px-4 py-7 text-center text-xs text-[#8a998f]">No notifications</div>
-                                            ) : (
-                                                notifications.slice(0, 5).map((notification) => (
-                                                    <div key={notification.id} className={`border-b border-[#f0f4f1] px-4 py-3 text-xs text-[#53685b] ${!notification.read ? "bg-[#f3f9f4] font-semibold" : ""}`}>
-                                                        {notification.message}
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                        <div className="border-t border-[#edf2ee] px-4 py-3 text-center">
-                                            <Link to="/notifications" className="text-xs font-semibold text-[#27834d] hover:underline">See All Notifications</Link>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                        {/* Profile */}
+                        <div className="profile-wrapper relative">
+                            <button
+                                type="button"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    setProfileOpen(!profileOpen);
+                                }}
+                                className="flex items-center gap-2.5 rounded-lg border-0 bg-transparent px-1 py-1.5 text-left"
+                            >
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf5ed] text-sm font-semibold text-[#27834d]">E</div>
 
-                            <div className="profile-wrapper relative">
-                                <button
-                                    type="button"
-                                    onClick={(event) => {
-                                        event.stopPropagation();
-                                        setProfileOpen(!profileOpen);
-                                        setNotificationOpen(false);
-                                    }}
-                                    className="flex items-center gap-2.5 rounded-lg border-0 bg-transparent px-1 py-1.5 text-left"
-                                >
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf5ed] text-sm font-semibold text-[#27834d]">E</div>
-                                    <div className="profile-info flex min-w-0 flex-col max-md:hidden">
-                                        <strong className="text-xs font-semibold text-[#294a36]">Eco User</strong>
-                                        <span className="text-[10px] text-[#8a998f]">Member</span>
-                                    </div>
-                                    <FiChevronDown className={`text-[#718277] transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} size={15} />
-                                </button>
+                                <div className="profile-info flex min-w-0 flex-col max-md:hidden">
+                                    <strong className="text-xs font-semibold text-[#294a36]">Eco User</strong>
+                                    <span className="text-[10px] text-[#8a998f]">Member</span>
+                                </div>
 
-                                {profileOpen && (
-                                    <div className="absolute right-0 top-[47px] z-50 w-[180px] overflow-hidden rounded-xl border border-[#e1ebe4] bg-white p-1.5 shadow-[0_12px_30px_rgba(23,63,42,0.12)]">
-                                        <Link to="/profile" className="block rounded-lg px-3 py-2.5 text-xs text-[#53685b] hover:bg-[#f1f8f3] hover:text-[#27834d]">My Profile</Link>
-                                        <Link to="/settings" className="block rounded-lg px-3 py-2.5 text-xs text-[#53685b] hover:bg-[#f1f8f3] hover:text-[#27834d]">Settings</Link>
-                                        <div className="my-1 h-px bg-[#edf2ee]" />
-                                        <button type="button" onClick={handleLogout} className="w-full rounded-lg px-3 py-2.5 text-left text-xs text-[#53685b] hover:bg-[#fdf2f2] hover:text-[#b34b4b]">Logout</button>
-                                    </div>
-                                )}
-                            </div>
+                                <FiChevronDown
+                                    className={`text-[#718277] transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+                                    size={15}
+                                />
+                            </button>
+
+                            {profileOpen && (
+                                <div className="absolute right-0 top-[47px] z-50 w-[180px] overflow-hidden rounded-xl border border-[#e1ebe4] bg-white p-1.5 shadow-[0_12px_30px_rgba(23,63,42,0.12)]">
+                                    <Link
+                                        to="/profile"
+                                        className="block rounded-lg px-3 py-2.5 text-xs text-[#53685b] hover:bg-[#f1f8f3] hover:text-[#27834d]"
+                                    >
+                                        My Profile
+                                    </Link>
+
+                                    <Link
+                                        to="/settings"
+                                        className="block rounded-lg px-3 py-2.5 text-xs text-[#53685b] hover:bg-[#f1f8f3] hover:text-[#27834d]"
+                                    >
+                                        Settings
+                                    </Link>
+
+                                    <div className="my-1 h-px bg-[#edf2ee]" />
+
+                                    <button
+                                        type="button"
+                                        onClick={handleLogout}
+                                        className="w-full rounded-lg px-3 py-2.5 text-left text-xs text-[#53685b] hover:bg-[#fdf2f2] hover:text-[#b34b4b]"
+                                    >
+                                        Logout
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </header>
 
@@ -231,19 +222,20 @@ const unreadNotifications = notifications.filter(
     <div
       key={card.title}
       className="
-rounded-3xl 
-border border-[#e2ece5] 
-bg-white 
+rounded-3xl
+border border-[#e2ece5]
+bg-white
 p-8
-transition-all 
-duration-300 
-hover:-translate-y-2 
-hover:shadow-[0_20px_40px_rgba(23,63,42,0.12)] 
+transition-all
+duration-300
+hover:-translate-y-2
+hover:shadow-[0_20px_40px_rgba(23,63,42,0.12)]
 "
     >
         <div className="mb-6 flex h-38 items-center justify-center rounded-2xl bg-[#eef7f0] p-4">
           <img src={card.image} alt={`${card.title} illustration`} className="h-full w-full object-contain" />
     </div>
+
       <h3 className="mb-6 text-2xl font-bold">
         {card.title}
       </h3>

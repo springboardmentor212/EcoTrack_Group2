@@ -4,7 +4,7 @@ const {sendGoalSuggestion,sendDailyGoalReminderNotification,
        sendWeeklyGoalReminderNotification,sendMonthlyGoalReminderNotification} = require("../service/notification/goalNotificationService");
 
 const sendDailyGoalSuggestion = () => {
-  cron.schedule('0 0 9 * *', async() => {
+  cron.schedule('0 0 5 * * *', async() => {
     try{
       await sendGoalSuggestion();
       console.log("Daily goal suggestion completed");

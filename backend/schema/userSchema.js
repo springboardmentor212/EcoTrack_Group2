@@ -38,7 +38,7 @@ const userSchema = new Schema({
     },
     role : {
         type : String,
-        enum : ['user','administrator '],
+        enum : ['user','admin'],
         lowercase : true,
         trim : true,
     },
@@ -93,6 +93,22 @@ const userSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "Goal"
     }],
+
+  joinChallenges : [
+  {
+    challengeId: {
+      type: Schema.Types.ObjectId,
+      ref: "Challenge",
+      required: true
+    },
+
+    status: {
+      type: String,
+      enum: ["not start","active","completed","failed","cancelled","not have entry"],
+      default: "not start"
+    }
+  },{ _id: false }
+]
 } , { timestamps: true });
 
 userSchema.pre("save",async function(){

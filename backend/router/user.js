@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {register,login,verifyEmail,resendOtp,logOut,resetPassword,verifyEmailForResetPassword,deleteAccount} = require('../controller/user');
+const {register,login,verifyEmail,resendOtp,logOut,resetPassword,verifyEmailForResetPassword,deleteAccount,checkUser} = require('../controller/user');
 const {validateLogin,validateRegister,validateVerifyEmail,validateResendOtp,validateResetPassword,userCheck} = require("../middleware/userMiddleware");
 
 router.route('/register')
@@ -28,5 +28,8 @@ router.route("/")
        
 router.route("/logout")
        .get(logOut);
+
+router.route("/checkUser")
+        .get(checkUser);
 
 module.exports = router;

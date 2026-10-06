@@ -10,13 +10,15 @@ const goalSchema = new Schema({
         type : String,
         required : true,
         lowerCase : true,
+        trim : true
     },
     
     category : {
         type: String,
         enum: ["transportation","electricity","waste management","carbon emission","carbon save"],
         lowerCase : true,
-        required: true
+        required: true,
+        trim : true
     },
 
     goalType : {
@@ -34,13 +36,15 @@ const goalSchema = new Schema({
                 "increase carbon saved"
                ],
         lowerCase : true,
-        required:true
+        required:true,
+        trim : true
     },
 
     trackingType : {
         type : String,
         enum : ["all","transportation","electricity","waste management"],
-        lowerCase : true
+        lowerCase : true,
+        trim : true
     },
 
     target: {
@@ -52,13 +56,17 @@ const goalSchema = new Schema({
     unit: {
         type: String,
         enum : ["km","kg","kwh","kgco2","%","trips"],
-        required: true
+        required: true,
+        lowerCase : true,
+        trim : true
     },
 
     period: {
         type: String,
         enum: ["daily","weekly","monthly"],
-        required: true
+        required: true,
+        lowerCase : true,
+        trim : true
     },
 
     startDate: {
@@ -73,14 +81,17 @@ const goalSchema = new Schema({
         type: String,
         enum: ["active","completed","failed","cancelled","not have entry"],
         default: "active",
-        required : true
+        required : true,
+        lowerCase : true,
+        trim : true
     },
 
     goalDirection: {
        type: String,
        enum: ["maximum", "minimum"],
-       required: true
-       
+       required: true,
+       lowerCase : true,
+       trim : true 
   },
 
   baseValue : {

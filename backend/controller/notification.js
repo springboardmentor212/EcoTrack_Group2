@@ -3,6 +3,7 @@ const {getNotificationIds} = require("../utills/filterNotification");
 
 //read
 module.exports.getNotification = async(req,res) => {
+   try{
     const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to get notification"});
@@ -49,9 +50,10 @@ module.exports.getNotification = async(req,res) => {
     const notifications = await userNotificationModel.find(query).populate("notificationId")
                 .sort({ createdAt: -1 });
    
-    if(!notifications){
+    if(!notifications || notifications.length === 0){
        return res.status(400).json({success : false, message : "doesn't get the notifications"});
     }
+
     const notificationData = notifications.map(item => ({
             id: item._id,
             isRead: item.isRead,
@@ -65,12 +67,16 @@ module.exports.getNotification = async(req,res) => {
             createdAt: item.createdAt
     }));
 
-    res.status(200).json({success : true, message: "notifications get successfully", notificationData})
+    res.status(200).json({success : true, message: "notifications get successfully", notificationData});
+  }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+  }
 };
 
 
 //update
 module.exports.readNotification = async(req,res) => {
+  try{
    const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to read notification"});
@@ -103,11 +109,15 @@ module.exports.readNotification = async(req,res) => {
     } 
 
     return res.status(200).json({success: true, message: "notification marked as read"});
+   }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+   }
 };
 
 
 //delete
 module.exports.deleteNotifications = async(req,res) => {
+  try{
    const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to delete notification"});
@@ -126,9 +136,13 @@ module.exports.deleteNotifications = async(req,res) => {
     });
 
     return res.status(200).json({success: true, message: "notifications delete successfully"});
+ }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+  }
 };
 
 module.exports.deleteAllNotification =async(req,res) => {
+ try{
    const userId = req.currUser;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to delete notification"});
@@ -136,5 +150,8 @@ module.exports.deleteAllNotification =async(req,res) => {
 
     await userNotificationModel.deleteMany({userId}); 
     return res.status(200).json({success: true, message: "All notification delete successfully"});
+  }catch(error){
+       return res.status(500).json({success : false , message : "internal server error"}); 
+  }
 };
 

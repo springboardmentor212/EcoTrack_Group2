@@ -1,6 +1,7 @@
 const {goalModel} = require("../model/goalModel");
 const {unitMap,getBaseValue} = require("../utills/getUnitAndBaseValue");
-const {currDates,utcDates} = require("../utills/getDate");
+const {currDates,utcDates,goalCurrentWeekDates,goalCurrentMonthDates,checkWeekEndDate,checkMonthEndDate}
+      = require("../utills/getDate");
 const updateGoalStatus = require("../service/goal/updateGoalStatus");
 //read
 module.exports.getGoals = async(req,res)=>{
@@ -83,7 +84,29 @@ module.exports.createGoal = async(req,res)=>{
     }
     
    const goalData =  req.body;
-   goalData.startDate = currDates(),goalData.endDate = utcDates(goalData.endDate);
+   goalData.endDate = utcDates(goalData.endDate);
+
+   let isValidEndDate = true;
+   if(goalData.period === "daily"){
+      goalData.startDate = currDates();
+   }else if(goalData.period === "weekly"){
+      const {weekStart} = goalCurrentWeekDates();
+      goalData.startDate = weekStart;
+      isValidEndDate = checkWeekEndDate(goalData.endDate);
+   }else if(goalData.period === "monthly"){
+      const {monthStart} = goalCurrentMonthDates();
+      goalData.startDate = monthStart;
+      isValidEndDate = checkMonthEndDate(goalData.endDate);
+   }
+
+   if(!isValidEndDate){
+      const formate = new Intl.DateTimeFormat('en-GB',{
+         timeZone : 'UTC' , dateStyle : 'medium' , timeStyle : 'short' , hour12 : true
+      });
+      const formattedDate = formate.format(new Date(goalData.endDate));
+      return res.status(400).json({success : false, message : `goals endDate ${formattedDate.split(",")[0]} is unvaild for period ${goalData.period}`});
+   }
+
    goalData.unit = unitMap(goalData.goalType),goalData.goalDirection = "maximum",goalData.userId = userId;
    let baseValue = 0;
 
@@ -141,6 +164,40 @@ module.exports.updateGoal = async(req,res)=>{
     }
     
    const goalData =  req.body;
+
+   const currDate = currDates();
+   goalData.endDate = utcDates(goalData.endDate);
+
+   const goal = await goalModel.findById(goalData.id);
+   if(goal.status==="completed" || goal.status==="cancelled"){
+     return res.status(400).json({success : false, message : "goal is completed or cancelled so you can't update it"});
+   }
+
+   if(goal.status === "failed" && goal.endDate < currDate){
+      return res.status(400).json({success : false, message : "goal has failed and its end date has passed so you can't update it"});
+   }
+
+   let isValidEndDate = true;
+   if(goalData.period === "daily"){
+      goalData.startDate = currDates();
+   }else if(goalData.period === "weekly"){
+      const {weekStart} = goalCurrentWeekDates();
+      goalData.startDate = weekStart;
+      isValidEndDate = checkWeekEndDate(goalData.endDate);
+   }else if(goalData.period === "monthly"){
+      const {monthStart} = goalCurrentMonthDates();
+      goalData.startDate = monthStart;
+      isValidEndDate = checkMonthEndDate(goalData.endDate);
+   }
+
+   if(!isValidEndDate){
+      const formate = new Intl.DateTimeFormat('en-GB',{
+         timeZone : 'UTC' , dateStyle : 'medium' , timeStyle : 'short' , hour12 : true
+      });
+      const formattedDate = formate.format(new Date(goalData.endDate));
+      return res.status(400).json({success : false, message : `goals endDate ${formattedDate.split(",")[0]} is unvaild for period ${goalData.period}`});
+   }
+
    goalData.unit = unitMap(goalData.goalType),goalData.goalDirection = "maximum";
    goalData.endDate = utcDates(goalData.endDate);
    let baseValue = 0;
@@ -182,11 +239,6 @@ module.exports.updateGoal = async(req,res)=>{
    }
    goalData.baseValue = baseValue;
 
-  const goal = await goalModel.findById(goalData.id);
-  if(goal.status==="completed" || goal.status==="cancelled"){
-     return res.status(400).json({success : false, message : "goal is completed or cancelled so you can't update it"});
-  }
-
   const newGoal = await goalModel.findByIdAndUpdate(goalData.id,goalData);
    if(newGoal){
     return res.status(200).json({success : true , message  : "goal updated successfully"});
@@ -213,12 +265,17 @@ module.exports.cancelGoal = async(req,res)=>{
        return res.status(400).json({success : false, message : "goal doesn't exist"}); 
     }
 
-    if(goal.status !== "completed" || goal.status !== "failed" || goal.status !== "cancelled"){
-       await goalModel.findByIdAndUpdate(id ,{status : "cancelled"});
-       return res.status(200).json({success : false , message : "goal cancelled successfully"});
-    }else{
-       return res.status(200).json({success : false , message : "goal is completed or failed or cancelled so you can't cancelled it"});
+    if(goal.status === "completed" || goal.status === "cancelled"){
+       return res.status(200).json({success : false , message : "goal is completed or cancelled so you can't cancelled it"});
     }
+
+    const currDate = currDates();
+    if(goal.status === "failed" && goal.endDate < currDate){
+      return res.status(400).json({success : false, message : "goal has failed and its end date has passed so you can't cancelled it"});
+    }
+
+    await goalModel.findByIdAndUpdate(id ,{status : "cancelled"});
+    return res.status(200).json({success : false , message : "goal cancelled successfully"});
    }catch(error){
        return res.status(500).json({success : false , message : "internal server error"}); 
    }

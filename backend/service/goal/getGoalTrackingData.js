@@ -15,7 +15,7 @@ module.exports.getGoalTrackingData = async (goal) => {
    }
 
    const endD = currDay < endDate ? currDay : endDate;
-   let values,goalValue; 
+   let values = [],goalValue; 
     goalValue = (goalType === "reduce travelling distance" || goalType === "reduce electricity consumption" 
                  ||  goalType === "reduce waste generated" || goalType === "reduce carbon emissions"  
                     ) ? baseValue : target;
@@ -29,7 +29,7 @@ module.exports.getGoalTrackingData = async (goal) => {
               values = transportationData.map(el => el.cngCount);
         }
     }else if(category === "electricity"){
-        const electricityData = await getElectricityData(startDate,endDate,userId);
+        const electricityData = await getElectricityData(startDate,endD,userId);
         values = electricityData.map(el => el.consumption);
     }else if(category === "waste management" || category === "carbon save"){
         const wasteData = await getWasteData(startDate,endD,unit,userId);

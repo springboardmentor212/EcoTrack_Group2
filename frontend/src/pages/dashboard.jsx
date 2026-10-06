@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { FiBell, FiChevronDown } from "react-icons/fi";
 import { toast } from "react-toastify";
 
+const API_URL = import.meta.env.VITE_API_URL;
 const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
 const GOALS_URL = import.meta.env.VITE_GOAL_API;
 
@@ -92,27 +93,56 @@ const getApiDuration = (tracker, period) => {
   return "year";
 };
 
+const formatCardNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "0.00";
+  }
+
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return value;
+  }
+
+  return number.toFixed(2);
+};
+
+const formatCardText = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  if (value === "—") {
+    return "—";
+  }
+
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+
 const createStatsFromSummary = (tracker, summary) => {
   if (tracker === "All") {
     return [
       {
         title: "Total Carbon Emissions",
-        value: summary?.emission ?? 0,
+        value: formatCardNumber(summary?.emission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Transportation Carbon Emissions",
-        value: summary?.transportationEmission ?? 0,
+        value: formatCardNumber(summary?.transportationEmission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Electricity Carbon Emissions",
-        value: summary?.electricityEmission ?? 0,
+        value: formatCardNumber(summary?.electricityEmission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Waste Management Carbon Emissions",
-        value: summary?.wasteEmission ?? 0,
+        value: formatCardNumber(summary?.wasteEmission ?? 0),
         unit: "kg CO₂e",
       },
     ];
@@ -122,22 +152,22 @@ const createStatsFromSummary = (tracker, summary) => {
     return [
       {
         title: "Carbon Emissions",
-        value: summary?.emission ?? 0,
+        value: formatCardNumber(summary?.emission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Total Distance Travelled",
-        value: summary?.distance ?? 0,
+        value: formatCardNumber(summary?.distance ?? 0),
         unit: "km",
       },
       {
         title: "Most Used Transport Mode",
-        value: summary?.mostUsedTransportMode?.mode || "—",
+        value: formatCardText(summary?.mostUsedTransportMode?.mode),
         unit: "",
       },
       {
         title: "Most Used Fuel Type",
-        value: summary?.mostUsedFuelType?.fuel || "—",
+        value: formatCardText(summary?.mostUsedFuelType?.fuel),
         unit: "",
       },
     ];
@@ -147,17 +177,19 @@ const createStatsFromSummary = (tracker, summary) => {
     return [
       {
         title: "Carbon Emissions",
-        value: summary?.emission ?? 0,
+        value: formatCardNumber(summary?.emission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Total Consumption",
-        value: summary?.consumption ?? 0,
+        value: formatCardNumber(summary?.consumption ?? 0),
         unit: "kWh",
       },
       {
         title: "No. of Entries",
-        value: summary?.entries ?? 0,
+        value: Number.isFinite(Number(summary?.entries))
+          ? Number(summary.entries)
+          : 0,
         unit: "entries",
       },
     ];
@@ -166,27 +198,27 @@ const createStatsFromSummary = (tracker, summary) => {
   return [
     {
       title: "Carbon Emissions",
-      value: summary?.emission ?? 0,
+      value: formatCardNumber(summary?.emission ?? 0),
       unit: "kg CO₂e",
     },
     {
       title: "Carbon Saved",
-      value: summary?.carbonSave ?? 0,
+      value: formatCardNumber(summary?.carbonSave ?? 0),
       unit: "kg CO₂e",
     },
     {
       title: "Total Waste Generated",
-      value: summary?.wasteAmount ?? 0,
+      value: formatCardNumber(summary?.wasteAmount ?? 0),
       unit: "kg",
     },
     {
       title: "Most Tracked Waste Type",
-      value: summary?.mostUsedWasteType?.type || "—",
+      value: formatCardText(summary?.mostUsedWasteType?.type),
       unit: "",
     },
     {
       title: "Most Used Disposal/Handling Method",
-      value: summary?.mostUsedDisposalMethod?.method || "—",
+      value: formatCardText(summary?.mostUsedDisposalMethod?.method),
       unit: "",
     },
   ];
@@ -230,8 +262,9 @@ function Dashboard() {
       if (!event.target.closest(".period-dropdown")) setPeriodOpen(false);
       if (!event.target.closest(".tracking-dropdown")) setTrackerOpen(false);
       if (!event.target.closest(".profile-wrapper")) setProfileOpen(false);
-      if (!event.target.closest(".notification-wrapper"))
+      if (!event.target.closest(".notification-wrapper")) {
         setNotificationOpen(false);
+      }
     };
 
     document.addEventListener("click", handleDocumentClick);
@@ -527,21 +560,103 @@ function Dashboard() {
     if (route) navigate(route);
   };
 
-  const handleLogout = () => {
-    window.location.href = "/";
+  const handleLogout = async () => {
+    try {
+      const { data } = await axios.get(`${API_URL}/logout`, {
+        withCredentials: true,
+      });
+
+      if (data.success) {
+        toast.success(data.message || "Logout successfully");
+        navigate("/");
+      } else {
+        toast.info(data.message || "Already you are logged out");
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Unable to logout. Please try again.",
+      );
+    }
   };
 
   return (
     <>
       <style>{`
-                @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes sidebarReveal { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
-                @keyframes topbarReveal { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes heroFadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes cardFadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes progressReveal { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: scale(1); } }
-                @keyframes barGrow { from { transform: scaleY(0); transform-origin: bottom; } to { transform: scaleY(1); transform-origin: bottom; } }
-            `}</style>
+        @keyframes pageFadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes sidebarReveal {
+          from {
+            opacity: 0;
+            transform: translateX(-18px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes topbarReveal {
+          from {
+            opacity: 0;
+            transform: translateY(-12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes heroFadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(18px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes cardFadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes progressReveal {
+          from {
+            opacity: 0;
+            transform: scale(.88);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes barGrow {
+          from {
+            transform: scaleY(0);
+            transform-origin: bottom;
+          }
+          to {
+            transform: scaleY(1);
+            transform-origin: bottom;
+          }
+        }
+      `}</style>
 
       <div className="min-h-screen bg-[#f7fbf8] text-[#173f2a] animate-[pageFadeIn_.7s_ease_both] lg:flex">
         <aside className="fixed inset-y-0 left-0 z-40 flex w-[250px] shrink-0 flex-col overflow-hidden border-r border-[#e2ece5] bg-white px-[18px] py-5 animate-[sidebarReveal_.6s_ease_.05s_both] max-lg:w-[220px] max-md:w-[190px] max-sm:relative max-sm:w-full max-sm:border-b max-sm:border-r-0 max-sm:py-5">
@@ -562,7 +677,11 @@ function Dashboard() {
                 <Link
                   key={label}
                   to={href}
-                  className={`rounded-lg px-3.5 py-3 text-sm font-medium transition-all duration-200 hover:translate-x-[3px] hover:bg-[#f1f8f3] hover:text-[#27834d] ${label === "Dashboard" ? "bg-[#eaf5ed] font-semibold text-[#27834d]" : "text-[#5c7064]"}`}
+                  className={`rounded-lg px-3.5 py-3 text-sm font-medium transition-all duration-200 hover:translate-x-[3px] hover:bg-[#f1f8f3] hover:text-[#27834d] ${
+                    label === "Dashboard"
+                      ? "bg-[#eaf5ed] font-semibold text-[#27834d]"
+                      : "text-[#5c7064]"
+                  }`}
                 >
                   {label}
                 </Link>
@@ -627,7 +746,11 @@ function Dashboard() {
                         notifications.slice(0, 5).map((notification) => (
                           <div
                             key={notification.id}
-                            className={`border-b border-[#f0f4f1] px-4 py-3 text-xs text-[#53685b] ${!notification.read ? "bg-[#f3f9f4] font-semibold" : ""}`}
+                            className={`border-b border-[#f0f4f1] px-4 py-3 text-xs text-[#53685b] ${
+                              !notification.read
+                                ? "bg-[#f3f9f4] font-semibold"
+                                : ""
+                            }`}
                           >
                             {notification.message}
                           </div>
@@ -670,7 +793,9 @@ function Dashboard() {
                   </div>
 
                   <FiChevronDown
-                    className={`text-[#718277] transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+                    className={`text-[#718277] transition-transform duration-200 ${
+                      profileOpen ? "rotate-180" : ""
+                    }`}
                     size={15}
                   />
                 </button>
@@ -748,7 +873,9 @@ function Dashboard() {
                       <span>{selectedPeriod}</span>
 
                       <FiChevronDown
-                        className={`transition-transform duration-200 ${periodOpen ? "rotate-180" : ""}`}
+                        className={`transition-transform duration-200 ${
+                          periodOpen ? "rotate-180" : ""
+                        }`}
                         size={13}
                       />
                     </button>
@@ -785,7 +912,9 @@ function Dashboard() {
                       <span>{selectedTracker}</span>
 
                       <FiChevronDown
-                        className={`transition-transform duration-200 ${trackerOpen ? "rotate-180" : ""}`}
+                        className={`transition-transform duration-200 ${
+                          trackerOpen ? "rotate-180" : ""
+                        }`}
                         size={13}
                       />
                     </button>
@@ -813,7 +942,13 @@ function Dashboard() {
 
               <div
                 key={`stats-${refreshKey}`}
-                className={`grid gap-[18px] ${selectedTracker === "Electricity" ? "grid-cols-3 max-xl:grid-cols-3 max-md:grid-cols-1" : selectedTracker === "Waste Management" ? "grid-cols-5 max-2xl:grid-cols-3 max-xl:grid-cols-2 max-sm:grid-cols-1" : "grid-cols-4 max-xl:grid-cols-2 max-sm:grid-cols-1"}`}
+                className={`grid gap-[18px] ${
+                  selectedTracker === "Electricity"
+                    ? "grid-cols-3 max-xl:grid-cols-3 max-md:grid-cols-1"
+                    : selectedTracker === "Waste Management"
+                      ? "grid-cols-5 max-2xl:grid-cols-3 max-xl:grid-cols-2 max-sm:grid-cols-1"
+                      : "grid-cols-4 max-xl:grid-cols-2 max-sm:grid-cols-1"
+                }`}
               >
                 {stats.map((stat, index) => (
                   <button
@@ -979,6 +1114,7 @@ function Dashboard() {
                       <p className="text-sm font-semibold text-[#294a36]">
                         No sustainability goals yet
                       </p>
+
                       <p className="mt-2 text-xs leading-5 text-[#8a998f]">
                         Create a goal to start tracking your sustainability
                         progress.
@@ -1006,6 +1142,7 @@ function Dashboard() {
                               <p className="text-[10px] font-bold tracking-[.12em] text-[#27834d]">
                                 {goal.category || "SUSTAINABILITY"}
                               </p>
+
                               <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
                                 {goal.title || "Sustainability Goal"}
                               </h3>

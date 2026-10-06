@@ -247,3 +247,13 @@ module.exports.deleteAccount = async(req,res)=>{
     await userModel.findOneAndDelete({_id : userId});
     return res.status(200).json({success : true, message : "user account delete successfully"});
 };
+
+module.exports.checkUser = async(req,res)=>{
+   try{
+         const id = req.currUser;
+         const user = await userModel.findById(id);
+         return res.status(200).json({success : true, role : user.role});
+     }catch(err){
+        return res.status(500).json({success : false , message : "internal server error"});
+     }
+};

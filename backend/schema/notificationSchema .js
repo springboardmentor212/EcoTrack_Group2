@@ -1,4 +1,5 @@
-const {Schema} = require("mongoose");
+const mongoose = require("mongoose");
+const {Schema} = mongoose;
 
 const notificationSchema = new Schema({
       type : {
@@ -8,7 +9,8 @@ const notificationSchema = new Schema({
                 "goal suggestion",
                 "challenge suggestion",
                 "goal reminder",
-                "challenge reminder"
+                "challenge reminder",
+                "challenge information"
          ],
          required: true,
          trim: true,
@@ -38,12 +40,28 @@ const notificationSchema = new Schema({
                    "complete profile",
                    "create goal",
                    "join challenge",
-                   "entry activity"
+                   "entry activity",
+                   "informational notification"
           ],
           trim: true,
           required : true
       }
     },{ timestamps: true });
+
+notificationSchema.pre("deleteMany", async function() {
+    const filter = this.getFilter();
+    const notifications = await this.model.find(filter).select("_id");
+    const notificationIds = notifications.map(
+        item => item._id
+    );
+      
+    if(notificationIds.length > 0){
+        const userNotificationModel = mongoose.model("UserNotification");
+        await userNotificationModel.deleteMany({
+            notificationId: { $in: notificationIds }
+        });
+    }
+});
 
 module.exports = {notificationSchema};
 

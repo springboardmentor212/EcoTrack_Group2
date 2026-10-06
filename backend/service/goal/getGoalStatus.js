@@ -8,6 +8,7 @@ module.exports.getGoalStatus = async (goal) => {
       if (currDay < startDate) {
         return "active";
     }
+    
   
     const {values,goalValue} = await getGoalTrackingData(goal);
 

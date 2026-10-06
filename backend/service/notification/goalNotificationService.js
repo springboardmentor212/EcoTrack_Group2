@@ -180,10 +180,22 @@ const sendDailyGoalReminderNotification = async() => {
         console.log("Notification creation for daily goal reminder failed for user:", user._id);
         continue;
       }
-      const userNotification = await userNotificationModel.create({
-        userId : user._id,
-        notificationId : notification._id,
-      });
+      const userNotification = await userNotificationModel.findOneAndUpdate(
+        {
+            userId: user._id,
+            notificationId: notification._id
+        },
+        {
+            $setOnInsert: {
+                userId: user._id,
+                notificationId: notification._id
+            }
+        },
+        {
+            upsert: true,
+            new: true
+        }
+       );
     }
 };
 
@@ -230,10 +242,22 @@ const sendWeeklyGoalReminderNotification = async() => {
         console.log("Notification creation for weekly goal reminder failed for user:", user._id);
         continue;
       }
-      const userNotification = await userNotificationModel.create({
-        userId : user._id,
-        notificationId : notification._id,
-      });
+      const userNotification = await userNotificationModel.findOneAndUpdate(
+        {
+            userId: user._id,
+            notificationId: notification._id
+        },
+        {
+            $setOnInsert: {
+                userId: user._id,
+                notificationId: notification._id
+            }
+        },
+        {
+            upsert: true,
+            new: true
+        }
+       );
    }  
 }
 
@@ -280,10 +304,22 @@ const sendMonthlyGoalReminderNotification = async() => {
         console.log("Notification creation for monthly goal reminder failed for user:", user._id);
         continue;
       }
-      const userNotification = await userNotificationModel.create({
-        userId : user._id,
-        notificationId : notification._id,
-      });
+      const userNotification = await userNotificationModel.findOneAndUpdate(
+        {
+            userId: user._id,
+            notificationId: notification._id
+        },
+        {
+            $setOnInsert: {
+                userId: user._id,
+                notificationId: notification._id
+            }
+        },
+        {
+            upsert: true,
+            new: true
+        }
+       );
    }  
 }
 

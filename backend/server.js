@@ -25,9 +25,17 @@ const profileRouter = require("./router/profile");
 const carbonRouter = require("./router/carbonActivity");
 const goalRouter = require("./router/goal");
 const notificationRouter = require("./router/notification");
+const challengeRouter = require("./router/challenge");
+
 const {sendDailyGoalSuggestion,sendGoalReminder} = require("./jobs/goalSuggestionAndGoalReminder");
+const {updateChallengesStatus} = require("./jobs/challengeUpdate");
+const {sendChallengeReminder} = require("./jobs/challengeReminder");
+
 const {sendGoalSuggestion,sendDailyGoalReminderNotification,
        sendWeeklyGoalReminderNotification,sendMonthlyGoalReminderNotification} = require("./service/notification/goalNotificationService");
+const {sendDailyChallengeReminderNotification,sendWeeklyChallengeReminderNotification,sendMonthlyChallengeReminderNotification}
+     = require("./service/notification/challengeNotificationService");
+const {updateAllChallengesStatus} = require("./service/challenge/challengesStatus");
 
 async function main(){
         await mongoose.connect(url);
@@ -41,18 +49,25 @@ main().then(()=>{
 
 sendDailyGoalSuggestion();
 sendGoalReminder();
+updateChallengesStatus();
+sendChallengeReminder();
 
 app.use("/user",userRouter);
 app.use("/profile",profileRouter);
 app.use("/carbonActivity",carbonRouter);
 app.use("/goal",goalRouter);
 app.use("/notification",notificationRouter);
+app.use("/challenge",challengeRouter);
 
 app.get("/",async (req,res)=>{
-    await sendGoalSuggestion();
-    await sendDailyGoalReminderNotification();
-    await sendWeeklyGoalReminderNotification();
-    await sendMonthlyGoalReminderNotification();
+    // await sendGoalSuggestion();
+    // await sendDailyGoalReminderNotification();
+    // await sendWeeklyGoalReminderNotification();
+    // await sendMonthlyGoalReminderNotification();
+    await updateAllChallengesStatus();
+    //await sendDailyChallengeReminderNotification();
+    //await sendWeeklyChallengeReminderNotification();
+    await sendMonthlyChallengeReminderNotification();
     res.send("work complete");
 });
 app.listen(port,()=>{
