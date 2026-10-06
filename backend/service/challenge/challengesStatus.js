@@ -26,7 +26,7 @@ const getChallengeTrackingData = async(user,challenge) => {
         if(challengeType === "distance limit challenge"){ 
             values = transportationData.map(el => el.totalDistance);
         }else if(challengeType === "ev travel challenge"){
-            values = transportationData.map(el => el.electricCount);
+            values = transportationData.map(el => el.electricDistance);
         }else if(challengeType === "cng commute challenge"){
             values = transportationData.map(el => el.cngCount);
         }
@@ -35,8 +35,11 @@ const getChallengeTrackingData = async(user,challenge) => {
         values = electricityData.map(el => el.consumption);
     }else if(category === "waste management" || category === "carbon save"){
         const wasteData = await getWasteData(startDate,endD,unit,user._id);
-        if(category === "waste management"){
+        if(category === "waste management" && 
+           (challengeType === "waste reduction week" || challengeType === "zero waste day")){
            values = wasteData.map(el => el.totalWasteAmount);
+        }else if(category === "waste management" && challengeType === "recycle and save"){
+           values = wasteData.map(el => el.totalRecycleWaste);
         }else{
            values = wasteData.map(el => el.totalCarbonSave);     
         }

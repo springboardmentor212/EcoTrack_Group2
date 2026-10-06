@@ -159,6 +159,8 @@ module.exports.getChallenge = async (req,res) => {
         period : challenge.period,
         startDate : challenge.startDate,
         endDate : challenge.endDate,
+        status : challenge.status,
+        direction : challenge.direction
     };
 
     if(challenge.category === "carbon emission"){

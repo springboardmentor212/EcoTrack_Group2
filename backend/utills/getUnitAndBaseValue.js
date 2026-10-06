@@ -17,7 +17,7 @@ const unitMap = (goalType)=>{
 };
 
 const challengeUnitMap = (challengeType)=>{
-   if(challengeType === "distance limit challenge"){
+   if(challengeType === "distance limit challenge" || challengeType === "ev travel challenge"){
      return "km";
    }else if(challengeType === "power saving month"){
      return "kwh";
@@ -25,7 +25,7 @@ const challengeUnitMap = (challengeType)=>{
      return "kg";
    }else if(challengeType === "carbon control challenge" || challengeType === "carbon saving challenge"){
      return "kgco2";
-   }else if(challengeType === "ev travel challenge" || challengeType ===  "cng commute challenge"){
+   }else if(challengeType ===  "cng commute challenge"){
      return "trips";
    }
 };

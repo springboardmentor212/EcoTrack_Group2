@@ -88,7 +88,22 @@ const getTransportationData = async(startDate,endDate,period,userId) => {
                     0
                 ]
             }
+        },
+
+        electricDistance: {
+           $sum: {
+               $cond: [
+              {
+                  $eq: [
+                     "$transportation.fuelType",
+                     "electric"
+                  ]
+              },
+              "$transportation.distance",
+               0
+           ]
         }
+       },
     }
 },
 
@@ -229,7 +244,20 @@ const getTransportationData = async(startDate,endDate,period,userId) => {
                                           "$$currentData.electricCount",
                                             -1
                                          ]
-                                       }
+                                       },
+
+                                       electricDistance: {
+                                          $cond: [
+                                           {
+                                               $eq: [
+                                                 "$$currentData.electricExists",
+                                                  1
+                                              ]
+                                          },
+                                          "$$currentData.electricDistance",
+                                          -1
+                                        ]
+                                      },
                                     }
                                 }
                             }
@@ -475,7 +503,37 @@ const getWasteData = async (startDate, endDate,period, userId) => {
                      0
                  ]
               }
-           }
+           },
+
+           totalRecycleWaste : {
+              "$sum" : {
+                  $cond: [
+                   {
+                      $eq: [
+                        "$waste.disposalMethod",
+                        "recycled"
+                     ]
+                   },
+                  "$waste.wasteAmount",
+                   0
+                 ]
+              }
+           },
+
+           recycleExists: {
+            $max: {
+              $cond: [
+                 {
+                   $eq: [
+                     "$waste.disposalMethod",
+                      "recycled"
+                   ]
+                 },
+                 1,
+                 0
+              ]
+            }
+          },
         }
     },
 
@@ -595,7 +653,20 @@ const getWasteData = async (startDate, endDate,period, userId) => {
                                              "$$currentData.totalCarbonSave",
                                              -1
                                            ]
-                                          }
+                                          } ,
+
+                                           totalRecycleWaste: {
+                                             $cond: [
+                                                {
+                                                  $eq: [
+                                                       "$$currentData.recycleExists",
+                                                       1
+                                                   ]
+                                               },
+                                                  "$$currentData.totalRecycleWaste",
+                                                  -1
+                                              ]
+                                          },
                                         }
                                     }
                                 }

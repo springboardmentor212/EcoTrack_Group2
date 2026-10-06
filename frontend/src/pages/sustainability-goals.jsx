@@ -156,7 +156,13 @@ const getToday = () => {
 
 const parseDateInput = (value) => {
   if (!value) return null;
-  const [year, month, day] = String(value).split("-").map(Number);
+
+  const datePart = String(value).split("T")[0];
+
+  const [year, month, day] = datePart.split("-").map(Number);
+
+  if (!year || !month || !day) return null;
+
   return new Date(year, month - 1, day);
 };
 
@@ -938,7 +944,6 @@ export default function SustainabilityGoals() {
 
       if (success) {
         const normalizedGoal = normalizeGoal(responseGoal);
-
         setTargetError("");
         setEditingGoal(normalizedGoal);
         setForm({
@@ -1096,27 +1101,34 @@ export default function SustainabilityGoals() {
         target: targetValue,
         unit: unitApiMap[form.unit],
         period: form.period.toLowerCase(),
-        startDate: editingGoal?.startDate || today,
         endDate: form.endDate,
       };
 
+      if (editingGoal) {
+        body.startDate = form.startDate || today;
+      }
+
       if (form.period === "Weekly") {
         const selectedDate = parseDateInput(form.endDate);
-        body.startDate = formatDateInput(
-          new Date(
-            selectedDate.getFullYear(),
-            selectedDate.getMonth(),
-            selectedDate.getDate() - 6,
-          ),
-        );
+        if (editingGoal) {
+          body.startDate = formatDateInput(
+            new Date(
+              selectedDate.getFullYear(),
+              selectedDate.getMonth(),
+              selectedDate.getDate() - 6,
+            ),
+          );
+        }
         body.endDate = form.endDate;
       }
 
       if (form.period === "Monthly") {
         const selectedDate = parseDateInput(form.endDate);
-        body.startDate = formatDateInput(
-          new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1),
-        );
+        if (editingGoal) {
+          body.startDate = formatDateInput(
+            new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1),
+          );
+        }
         body.endDate = form.endDate;
       }
 

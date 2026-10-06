@@ -21,10 +21,7 @@ const formatLabel = (value) => {
     .map((word) => {
       if (!word) return word;
 
-      return (
-        word.charAt(0).toUpperCase() +
-        word.slice(1).toLowerCase()
-      );
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     })
     .join(" ");
 };
@@ -183,9 +180,7 @@ function ChallengeCard({
 
         {challenge.status && (
           <span
-            className={`challenge-status ${getStatusClass(
-              challenge.status
-            )}`}
+            className={`challenge-status ${getStatusClass(challenge.status)}`}
           >
             {formatLabel(challenge.status)}
           </span>
@@ -194,9 +189,7 @@ function ChallengeCard({
 
       <h3>{challenge.title || "Untitled Challenge"}</h3>
 
-      <p className="challenge-type">
-        {formatLabel(challenge.challengeType)}
-      </p>
+      <p className="challenge-type">{formatLabel(challenge.challengeType)}</p>
 
       <div className="challenge-highlight">
         <div className="highlight-icon">
@@ -260,9 +253,7 @@ function ChallengeCard({
             onClick={() => onJoin(challenge)}
             disabled={actionLoading === challengeId}
           >
-            {actionLoading === challengeId
-              ? "Joining..."
-              : "Join Challenge"}
+            {actionLoading === challengeId ? "Joining..." : "Join Challenge"}
           </button>
         )}
 
@@ -308,8 +299,7 @@ function ChallengeSection({
     setCanScrollLeft(slider.scrollLeft > 5);
 
     setCanScrollRight(
-      slider.scrollLeft + slider.clientWidth <
-        slider.scrollWidth - 5
+      slider.scrollLeft + slider.clientWidth < slider.scrollWidth - 5,
     );
   };
 
@@ -441,21 +431,17 @@ function CommunityChallenges() {
     try {
       setLoading(true);
 
-      const { data } = await axios.get(`${CHALLENGE_URL}/`, {
+      const { data } = await axios.get(`${CHALLENGE_URL}/user`, {
         withCredentials: true,
       });
 
-      if (data.success === "user") {
+      if (data.success === true) {
         setMyChallenges(
-          Array.isArray(data.userChallengesData)
-            ? data.userChallengesData
-            : []
+          Array.isArray(data.userChallengesData) ? data.userChallengesData : [],
         );
 
         setAvailableChallenges(
-          Array.isArray(data.otherChallenges)
-            ? data.otherChallenges
-            : []
+          Array.isArray(data.otherChallenges) ? data.otherChallenges : [],
         );
 
         return;
@@ -467,7 +453,7 @@ function CommunityChallenges() {
 
       toast.error(
         error.response?.data?.message ||
-          "Unable to load challenges. Please try again."
+          "Unable to load challenges. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -491,26 +477,22 @@ function CommunityChallenges() {
         {},
         {
           withCredentials: true,
-        }
+        },
       );
 
       if (data.success) {
-        toast.success(
-          data.message || "Challenge joined successfully"
-        );
+        toast.success(data.message || "Challenge joined successfully");
 
         await loadChallenges();
       } else {
-        toast.error(
-          data.message || "Challenge could not be joined."
-        );
+        toast.error(data.message || "Challenge could not be joined.");
       }
     } catch (error) {
       console.error("Join challenge error:", error);
 
       toast.error(
         error.response?.data?.message ||
-          "Unable to join challenge. Please try again."
+          "Unable to join challenge. Please try again.",
       );
     } finally {
       setActionLoading(null);
@@ -523,7 +505,7 @@ function CommunityChallenges() {
     if (!challengeId) return;
 
     const confirmed = window.confirm(
-      "Are you sure you want to cancel this challenge?"
+      "Are you sure you want to cancel this challenge?",
     );
 
     if (!confirmed) return;
@@ -536,26 +518,22 @@ function CommunityChallenges() {
         {},
         {
           withCredentials: true,
-        }
+        },
       );
 
       if (data.success) {
-        toast.success(
-          data.message || "Challenge cancelled successfully"
-        );
+        toast.success(data.message || "Challenge cancelled successfully");
 
         await loadChallenges();
       } else {
-        toast.error(
-          data.message || "Challenge could not be cancelled."
-        );
+        toast.error(data.message || "Challenge could not be cancelled.");
       }
     } catch (error) {
       console.error("Cancel challenge error:", error);
 
       toast.error(
         error.response?.data?.message ||
-          "Unable to cancel challenge. Please try again."
+          "Unable to cancel challenge. Please try again.",
       );
     } finally {
       setActionLoading(null);
@@ -572,19 +550,14 @@ function CommunityChallenges() {
     setDetailsLoading(true);
 
     try {
-      const { data } = await axios.get(
-        `${CHALLENGE_URL}/${challengeId}`,
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await axios.get(`${CHALLENGE_URL}/${challengeId}`, {
+        withCredentials: true,
+      });
 
       if (data.success) {
         setSelectedChallenge(data.challengeData);
       } else {
-        toast.error(
-          data.message || "Unable to get challenge details."
-        );
+        toast.error(data.message || "Unable to get challenge details.");
 
         setDetailsOpen(false);
       }
@@ -592,8 +565,7 @@ function CommunityChallenges() {
       console.error("Get challenge details error:", error);
 
       toast.error(
-        error.response?.data?.message ||
-          "Unable to get challenge details."
+        error.response?.data?.message || "Unable to get challenge details.",
       );
 
       setDetailsOpen(false);
@@ -613,16 +585,13 @@ function CommunityChallenges() {
         <main className="community-challenges-container">
           <header className="challenges-topbar">
             <div className="challenges-heading">
-              <span className="challenges-eyebrow">
-                COMMUNITY
-              </span>
+              <span className="challenges-eyebrow">COMMUNITY</span>
 
               <h1>Community Challenges</h1>
 
               <p className="challenges-subtitle">
-                Take part in sustainability challenges, build
-                better habits, and make an environmental impact
-                together.
+                Take part in sustainability challenges, build better habits, and
+                make an environmental impact together.
               </p>
             </div>
 
@@ -665,10 +634,7 @@ function CommunityChallenges() {
       </div>
 
       {detailsOpen && (
-        <div
-          className="challenge-modal-overlay"
-          onClick={closeDetails}
-        >
+        <div className="challenge-modal-overlay" onClick={closeDetails}>
           <div
             className="challenge-modal"
             onClick={(event) => event.stopPropagation()}
@@ -701,9 +667,7 @@ function CommunityChallenges() {
 
                 <div className="modal-detail-grid">
                   <div className="modal-detail-item highlight-detail">
-                    <span className="modal-detail-label">
-                      Target
-                    </span>
+                    <span className="modal-detail-label">Target</span>
 
                     <strong>
                       {selectedChallenge.target ?? "—"}{" "}
@@ -712,59 +676,39 @@ function CommunityChallenges() {
                   </div>
 
                   <div className="modal-detail-item">
-                    <span className="modal-detail-label">
-                      Period
-                    </span>
+                    <span className="modal-detail-label">Period</span>
 
-                    <strong>
-                      {formatLabel(selectedChallenge.period)}
-                    </strong>
+                    <strong>{formatLabel(selectedChallenge.period)}</strong>
                   </div>
 
                   <div className="modal-detail-item">
-                    <span className="modal-detail-label">
-                      Start Date
-                    </span>
+                    <span className="modal-detail-label">Start Date</span>
 
-                    <strong>
-                      {formatDate(selectedChallenge.startDate)}
-                    </strong>
+                    <strong>{formatDate(selectedChallenge.startDate)}</strong>
                   </div>
 
                   <div className="modal-detail-item">
-                    <span className="modal-detail-label">
-                      End Date
-                    </span>
+                    <span className="modal-detail-label">End Date</span>
 
-                    <strong>
-                      {formatDate(selectedChallenge.endDate)}
-                    </strong>
+                    <strong>{formatDate(selectedChallenge.endDate)}</strong>
                   </div>
 
                   {selectedChallenge.trackingType && (
                     <div className="modal-detail-item">
-                      <span className="modal-detail-label">
-                        Tracking Type
-                      </span>
+                      <span className="modal-detail-label">Tracking Type</span>
 
                       <strong>
-                        {formatLabel(
-                          selectedChallenge.trackingType
-                        )}
+                        {formatLabel(selectedChallenge.trackingType)}
                       </strong>
                     </div>
                   )}
 
                   {selectedChallenge.direction && (
                     <div className="modal-detail-item">
-                      <span className="modal-detail-label">
-                        Goal Direction
-                      </span>
+                      <span className="modal-detail-label">Goal Direction</span>
 
                       <strong>
-                        {formatLabel(
-                          selectedChallenge.direction
-                        )}
+                        {formatLabel(selectedChallenge.direction)}
                       </strong>
                     </div>
                   )}
@@ -776,7 +720,7 @@ function CommunityChallenges() {
 
                     <span
                       className={`challenge-status ${getStatusClass(
-                        selectedChallenge.status
+                        selectedChallenge.status,
                       )}`}
                     >
                       {formatLabel(selectedChallenge.status)}

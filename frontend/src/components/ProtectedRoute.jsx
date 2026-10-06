@@ -47,15 +47,19 @@ function ProtectedRoute({ children }) {
 
         // Admin
         if (data.role === "admin") {
-          // Admin can stay only on admin dashboard
-          if (location.pathname === "/admin-dashboard") {
-            setAuthorized(true);
-            return;
-          }
+          const adminRoutes = [
+            "/admin-dashboard",
+            "/admin-challenge-management",
+        ];
 
-          navigate("/admin-dashboard", { replace: true });
+        if (adminRoutes.includes(location.pathname)) {
+          setAuthorized(true);
           return;
         }
+
+        navigate("/admin-dashboard", { replace: true });
+        return;
+      }
 
         // Unknown role
         navigate("/", { replace: true });
