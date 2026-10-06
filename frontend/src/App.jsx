@@ -108,14 +108,16 @@ function App() {
           </ProtectedRoute>
       }
     />
+    {/* Admin Pages */}
+
     <Route
-    path="/admin-challenge-management"
-    element={
+     path="/admin-challenge-management"
+     element={
         <ProtectedRoute>
           <AdminChallengeManagement />
         </ProtectedRoute>
-    }
-  />
+      }
+    />
     </Routes>
   );
 }

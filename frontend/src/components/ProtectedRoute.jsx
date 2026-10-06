@@ -23,25 +23,36 @@ function ProtectedRoute({ children }) {
 
         // User is not logged in
         if (!data.success) {
-          if (location.pathname === "/") {
-            setAuthorized(true);
-          } else {
-            navigate("/", { replace: true });
-          }
-
+          navigate("/", { replace: true });
           return;
         }
 
         // Normal user
         if (data.role === "user") {
-          // Home → Dashboard
-          if (location.pathname === "/") {
-            navigate("/dashboard", { replace: true });
+          const userRoutes = [
+            "/",
+            "/profile",
+            "/dashboard",
+            "/sustainability-goals",
+            "/tracking",
+            "/tracking/transportation",
+            "/tracking/electricity",
+            "/tracking/waste",
+            "/community-challenges",
+          ];
+
+          if (userRoutes.includes(location.pathname)) {
+            if (location.pathname === "/") {
+              navigate("/dashboard", { replace: true });
+              return;
+            }
+
+            setAuthorized(true);
             return;
           }
 
-          // All other user pages are allowed
-          setAuthorized(true);
+          // User trying to access admin page
+          navigate("/dashboard", { replace: true });
           return;
         }
 
@@ -50,27 +61,23 @@ function ProtectedRoute({ children }) {
           const adminRoutes = [
             "/admin-dashboard",
             "/admin-challenge-management",
-        ];
+          ];
 
-        if (adminRoutes.includes(location.pathname)) {
-          setAuthorized(true);
+          if (adminRoutes.includes(location.pathname)) {
+            setAuthorized(true);
+            return;
+          }
+
+          // Admin trying to access user page
+          navigate("/admin-dashboard", { replace: true });
           return;
         }
-
-        navigate("/admin-dashboard", { replace: true });
-        return;
-      }
 
         // Unknown role
         navigate("/", { replace: true });
       } catch (error) {
         console.error("checkUser error:", error);
-
-        if (location.pathname === "/") {
-          setAuthorized(true);
-        } else {
-          navigate("/", { replace: true });
-        }
+        navigate("/", { replace: true });
       } finally {
         setLoading(false);
       }
