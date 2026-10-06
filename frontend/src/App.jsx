@@ -11,11 +11,9 @@ import WasteManagement from "./pages/waste-management";
 import Electricity from "./pages/electricity";
 import Profile from "./pages/profile";
 import SustainabilityGoals from "./pages/sustainability-goals";
-<<<<<<< HEAD
-=======
+import CommunityChallenges from "./pages/community-challenges";
 
 import ProtectedRoute from "./components/ProtectedRoute";
->>>>>>> 2527304c88e770269d0904ecbd309dcd9e99b55e
 
 function App() {
   return (
@@ -24,15 +22,6 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-<<<<<<< HEAD
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/tracking" element={<Tracking />} />
-      <Route path="/tracking/transportation" element={<Transportation />} />
-      <Route path="/tracking/electricity" element={<Electricity />} />
-      <Route path="/tracking/waste" element={<WasteManagement />} />
-      <Route path="/sustainability-goals" element={<SustainabilityGoals />} />
-=======
 
       {/* Home */}
       <Route
@@ -109,7 +98,15 @@ function App() {
           </ProtectedRoute>
         }
       />
->>>>>>> 2527304c88e770269d0904ecbd309dcd9e99b55e
+
+      <Route
+        path="/community-challenges"
+        element={
+          <ProtectedRoute>
+            <CommunityChallenges />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }
