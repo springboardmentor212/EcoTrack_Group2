@@ -1000,6 +1000,7 @@ export default function SustainabilityGoals() {
     goalType: form.goalType,
     target: form.target,
     unit: form.unit,
+    period: form.period,
   });
 
   const activeGoals = goals.filter(
@@ -1179,6 +1180,11 @@ export default function SustainabilityGoals() {
       goalType: "",
       target: "",
       unit: "",
+      period:
+        value === "Electricity"
+          ? "Monthly"
+          : "",
+      endDate: "",
     }));
   };
 
@@ -1623,8 +1629,10 @@ export default function SustainabilityGoals() {
                   label="Period"
                   value={form.period}
                   options={
-                    categoryConfig?.periods ||
-                    []
+                    form.category === "Carbon Emissions" &&
+                    form.trackingType === "Electricity"
+                      ? ["Monthly"]
+                      : categoryConfig?.periods || []
                   }
                   placeholder="Select period"
                   disabled={
