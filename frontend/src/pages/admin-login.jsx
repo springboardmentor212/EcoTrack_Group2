@@ -176,7 +176,7 @@ function AdminLogin() {
             {/* Forgot Password */}
             <div className="text-right -mt-[5px]">
               <Link
-                to="/forgot-password"
+                to="/forgot-password?from=admin"
                 className="text-[#27834d] text-[13px] font-semibold no-underline hover:underline"
               >
                 Forgot Password?
