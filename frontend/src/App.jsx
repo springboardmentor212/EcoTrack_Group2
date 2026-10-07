@@ -14,6 +14,7 @@ import SustainabilityGoals from "./pages/sustainability-goals";
 import CommunityChallenges from "./pages/community-challenges";
 import AdminDashboard from "./pages/admin-dashboard";
 import AdminChallengeManagement from "./pages/admin-challenge-management";
+import AdminLogin from "./pages/admin-login";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -24,7 +25,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-
+      <Route path="/admin-login" element={<AdminLogin />} />
       {/* Home */}
       <Route
         path="/"

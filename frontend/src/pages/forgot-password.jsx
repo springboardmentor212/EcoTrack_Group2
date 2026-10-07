@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -15,6 +15,10 @@ function ForgotPassword() {
   const [step, setStep] = useState("forgot");
   const [otpExpired, setOtpExpired] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+const isAdminReset =
+  new URLSearchParams(location.search).get("from") === "admin";
 
   const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
@@ -209,7 +213,7 @@ function ForgotPassword() {
         toast.success(data.message);
 
         setTimeout(() => {
-          navigate("/login");
+          navigate(isAdminReset ? "/admin-login" : "/login");
         }, 1500);
 
         return;
