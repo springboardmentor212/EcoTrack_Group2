@@ -61,6 +61,7 @@ const STATUS_CLASS = {
   continue: "status-continue",
   close: "status-close",
   active: "status-active",
+  ongoing: "status-ongoing",
   completed: "status-completed",
   failed: "status-failed",
   cancelled: "status-cancelled",
@@ -70,10 +71,7 @@ const STATUS_CLASS = {
 const formatLabel = (value = "") =>
   value
     .split(" ")
-    .map(
-      (word) =>
-        word.charAt(0).toUpperCase() + word.slice(1)
-    )
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
 const formatDate = (date) => {
@@ -84,6 +82,7 @@ const formatDate = (date) => {
   if (Number.isNaN(d.getTime())) return date;
 
   return d.toLocaleDateString("en-IN", {
+    timeZone: "UTC",
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -115,9 +114,9 @@ const parseLocalDate = (value) => {
 const formatDateForPayload = (value) => {
   if (!value) return "";
 
-  const date = parseLocalDate(value);
+  const [year, month, day] = value.split("-").map(Number);
 
-  return date.toISOString();
+  return new Date(Date.UTC(year, month - 1, day)).toISOString();
 };
 
 const startOfToday = () => {
@@ -140,8 +139,7 @@ const startOfNextWeek = () => {
   const today = startOfToday();
   const day = today.getDay();
 
-  const daysUntilMonday =
-    day === 0 ? 1 : 8 - day;
+  const daysUntilMonday = day === 0 ? 1 : 8 - day;
 
   return addDays(today, daysUntilMonday);
 };
@@ -149,15 +147,10 @@ const startOfNextWeek = () => {
 const startOfNextMonth = () => {
   const today = startOfToday();
 
-  return new Date(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    1
-  );
+  return new Date(today.getFullYear(), today.getMonth() + 1, 1);
 };
 
-const endOfMonth = (year, month) =>
-  new Date(year, month + 1, 0);
+const endOfMonth = (year, month) => new Date(year, month + 1, 0);
 
 const isSameDate = (a, b) =>
   a &&
@@ -184,11 +177,7 @@ const getSunday = (date) => {
   return addDays(monday, 6);
 };
 
-const generateTitle = (
-  challengeType,
-  target,
-  period
-) => {
+const generateTitle = (challengeType, target, period) => {
   switch (challengeType) {
     case "distance limit challenge":
       return `Limit Your Travel Distance to ${target} km${
@@ -225,9 +214,7 @@ const generateTitle = (
       }`;
 
     case "carbon saving challenge":
-      return `Save ${target} kgco2${
-        period ? ` ${formatLabel(period)}` : ""
-      }`;
+      return `Save ${target} kgco2${period ? ` ${formatLabel(period)}` : ""}`;
 
     default:
       return "";
@@ -246,32 +233,21 @@ function CustomSelect({
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(event.target)
-      ) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
         setOpen(false);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleOutsideClick
-    );
+    document.addEventListener("mousedown", handleOutsideClick);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleOutsideClick
-      );
+      document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, []);
 
   return (
     <div
-      className={`custom-select-wrapper ${
-        disabled ? "select-disabled" : ""
-      }`}
+      className={`custom-select-wrapper ${disabled ? "select-disabled" : ""}`}
       ref={wrapperRef}
     >
       <button
@@ -280,21 +256,21 @@ function CustomSelect({
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span
-          className={
-            value
-              ? "select-value"
-              : "select-placeholder"
-          }
-        >
-          {value ? formatLabel(value) : placeholder}
+        <span className={value ? "select-value" : "select-placeholder"}>
+          {value
+            ? value === "all"
+              ? "All Challenges"
+              : value === "not start"
+                ? "Not Started"
+                : value === "ongoing"
+                  ? "Ongoing"
+                  : value === "close"
+                    ? "Closed"
+                    : formatLabel(value)
+              : placeholder}
         </span>
 
-        <span
-          className={`select-chevron ${
-            open ? "chevron-up" : ""
-          }`}
-        />
+        <span className={`select-chevron ${open ? "chevron-up" : ""}`} />
       </button>
 
       {open && !disabled && (
@@ -304,16 +280,22 @@ function CustomSelect({
               type="button"
               key={option}
               className={`custom-select-option ${
-                option === value
-                  ? "selected-option"
-                  : ""
+                option === value ? "selected-option" : ""
               }`}
               onClick={() => {
                 onChange(option);
                 setOpen(false);
               }}
             >
-              {formatLabel(option)}
+              {option === "all"
+                ? "All Challenges"
+                : option === "not start"
+                  ? "Not Started"
+                  : option === "ongoing"
+                    ? "Ongoing"
+                    : option === "close"
+                      ? "Closed"
+                      : formatLabel(option)}
             </button>
           ))}
         </div>
@@ -322,33 +304,21 @@ function CustomSelect({
   );
 }
 
-function DatePicker({
-  value,
-  onChange,
-  period,
-  startDate,
-  isStart,
-}) {
+function DatePicker({ value, onChange, period, startDate, isStart }) {
   const wrapperRef = useRef(null);
   const inputRef = useRef(null);
 
   const [open, setOpen] = useState(false);
 
-  const [calendarMonth, setCalendarMonth] = useState(
-    () => {
-      const initial = value
-        ? parseLocalDate(value)
-        : startDate
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const initial = value
+      ? parseLocalDate(value)
+      : startDate
         ? parseLocalDate(startDate)
         : new Date();
 
-      return new Date(
-        initial.getFullYear(),
-        initial.getMonth(),
-        1
-      );
-    }
-  );
+    return new Date(initial.getFullYear(), initial.getMonth(), 1);
+  });
 
   const [popupStyle, setPopupStyle] = useState({});
 
@@ -356,8 +326,7 @@ function DatePicker({
     if (!open || !inputRef.current) return;
 
     const updatePosition = () => {
-      const rect =
-        inputRef.current.getBoundingClientRect();
+      const rect = inputRef.current.getBoundingClientRect();
 
       const popupWidth = 310;
       const popupHeight = 360;
@@ -365,26 +334,14 @@ function DatePicker({
 
       let left = rect.left;
 
-      if (
-        left + popupWidth >
-        window.innerWidth - 12
-      ) {
-        left =
-          window.innerWidth -
-          popupWidth -
-          12;
+      if (left + popupWidth > window.innerWidth - 12) {
+        left = window.innerWidth - popupWidth - 12;
       }
 
       let top = rect.bottom + gap;
 
-      if (
-        top + popupHeight >
-        window.innerHeight - 12
-      ) {
-        top =
-          rect.top -
-          popupHeight -
-          gap;
+      if (top + popupHeight > window.innerHeight - 12) {
+        top = rect.top - popupHeight - gap;
       }
 
       if (top < 12) {
@@ -399,75 +356,46 @@ function DatePicker({
 
     updatePosition();
 
-    window.addEventListener(
-      "resize",
-      updatePosition
-    );
+    window.addEventListener("resize", updatePosition);
 
-    window.addEventListener(
-      "scroll",
-      updatePosition,
-      true
-    );
+    window.addEventListener("scroll", updatePosition, true);
 
     return () => {
-      window.removeEventListener(
-        "resize",
-        updatePosition
-      );
+      window.removeEventListener("resize", updatePosition);
 
-      window.removeEventListener(
-        "scroll",
-        updatePosition,
-        true
-      );
+      window.removeEventListener("scroll", updatePosition, true);
     };
   }, [open]);
 
   useEffect(() => {
     const handleOutside = (event) => {
-      const clickedInsideInput =
-        wrapperRef.current?.contains(
-          event.target
-        );
+      const clickedInsideInput = wrapperRef.current?.contains(event.target);
 
       const clickedInsideCalendar =
         event.target instanceof Element &&
-        event.target.closest(
-          ".date-picker-popup"
-        );
+        event.target.closest(".date-picker-popup");
 
-      if (
-        !clickedInsideInput &&
-        !clickedInsideCalendar
-      ) {
+      if (!clickedInsideInput && !clickedInsideCalendar) {
         setOpen(false);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleOutside
-    );
+    document.addEventListener("mousedown", handleOutside);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleOutside
-      );
+      document.removeEventListener("mousedown", handleOutside);
     };
   }, []);
 
-  const monthName =
-    calendarMonth.toLocaleDateString("en-IN", {
-      month: "long",
-      year: "numeric",
-    });
+  const monthName = calendarMonth.toLocaleDateString("en-IN", {
+    month: "long",
+    year: "numeric",
+  });
 
   const firstDay = new Date(
     calendarMonth.getFullYear(),
     calendarMonth.getMonth(),
-    1
+    1,
   );
 
   const firstWeekday = firstDay.getDay();
@@ -475,7 +403,7 @@ function DatePicker({
   const daysInMonth = new Date(
     calendarMonth.getFullYear(),
     calendarMonth.getMonth() + 1,
-    0
+    0,
   ).getDate();
 
   const days = [];
@@ -486,11 +414,7 @@ function DatePicker({
 
   for (let day = 1; day <= daysInMonth; day++) {
     days.push(
-      new Date(
-        calendarMonth.getFullYear(),
-        calendarMonth.getMonth(),
-        day
-      )
+      new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), day),
     );
   }
 
@@ -502,80 +426,58 @@ function DatePicker({
 
     if (period === "daily") {
       if (isStart) {
-        return (
-          currentDate <
-          addDays(startOfToday(), 1)
-        );
+        return currentDate < addDays(startOfToday(), 1);
       }
 
       if (startDate) {
-        const selectedStart =
-          parseLocalDate(startDate);
+        const selectedStart = parseLocalDate(startDate);
 
         selectedStart.setHours(0, 0, 0, 0);
 
         return currentDate <= selectedStart;
       }
 
-      return (
-        currentDate <
-        addDays(startOfToday(), 1)
-      );
+      return currentDate < addDays(startOfToday(), 1);
     }
 
     if (period === "weekly") {
       if (isStart) {
         const nextWeek = startOfNextWeek();
 
-        return (
-          currentDate < nextWeek ||
-          currentDate.getDay() !== 1
-        );
+        return currentDate < nextWeek || currentDate.getDay() !== 1;
       }
 
       if (startDate) {
-        const selectedStart =
-          parseLocalDate(startDate);
+        const selectedStart = parseLocalDate(startDate);
 
-        const requiredSunday =
-          addDays(selectedStart, 6);
+        const requiredSunday = addDays(selectedStart, 6);
 
-        return !isSameDate(
-          currentDate,
-          requiredSunday
-        );
+        return !isSameDate(currentDate, requiredSunday);
       }
 
       return currentDate.getDay() !== 0;
     }
 
     if (period === "monthly") {
-  if (isStart) {
-    const nextMonth = startOfNextMonth();
+      if (isStart) {
+        const nextMonth = startOfNextMonth();
 
-    return (
-      currentDate < nextMonth ||
-      currentDate.getDate() !== 1
-    );
-  }
+        return currentDate < nextMonth || currentDate.getDate() !== 1;
+      }
 
-  if (startDate) {
-    const selectedStart =
-      parseLocalDate(startDate);
+      if (startDate) {
+        const selectedStart = parseLocalDate(startDate);
 
-    const lastDay = endOfMonth(
-      selectedStart.getFullYear(),
-      selectedStart.getMonth()
-    );
+        const lastDay = endOfMonth(
+          selectedStart.getFullYear(),
+          selectedStart.getMonth(),
+        );
 
-    return !isSameDate(
-      currentDate,
-      lastDay
-    );
-  }
+        return !isSameDate(currentDate, lastDay);
+      }
 
-  return true;
-}
+      return true;
+    }
     return false;
   };
 
@@ -584,13 +486,9 @@ function DatePicker({
 
     const year = date.getFullYear();
 
-    const month = String(
-      date.getMonth() + 1
-    ).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
 
-    const day = String(
-      date.getDate()
-    ).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
 
     onChange(`${year}-${month}-${day}`);
 
@@ -598,159 +496,85 @@ function DatePicker({
   };
 
   const moveMonth = (amount) => {
-    setCalendarMonth((previous) =>
-      new Date(
-        previous.getFullYear(),
-        previous.getMonth() + amount,
-        1
-      )
+    setCalendarMonth(
+      (previous) =>
+        new Date(previous.getFullYear(), previous.getMonth() + amount, 1),
     );
   };
 
   return (
-    <div
-      className="date-picker-wrapper"
-      ref={wrapperRef}
-    >
+    <div className="date-picker-wrapper" ref={wrapperRef}>
       <button
         type="button"
         ref={inputRef}
         className="date-input"
-        onClick={() =>
-          setOpen((prev) => !prev)
-        }
+        onClick={() => setOpen((prev) => !prev)}
       >
-        <span
-          className={
-            value
-              ? "date-value"
-              : "date-placeholder"
-          }
-        >
-          {value
-            ? formatDate(value)
-            : "Select date"}
+        <span className={value ? "date-value" : "date-placeholder"}>
+          {value ? formatDate(value) : "Select date"}
         </span>
 
-        <span className="calendar-icon">
-          ▣
-        </span>
+        <span className="calendar-icon">▣</span>
       </button>
 
       {open &&
         createPortal(
-          <div
-            className="date-picker-popup"
-            style={popupStyle}
-          >
+          <div className="date-picker-popup" style={popupStyle}>
             <div className="calendar-header">
-              <button
-                type="button"
-                onClick={() =>
-                  moveMonth(-1)
-                }
-              >
+              <button type="button" onClick={() => moveMonth(-1)}>
                 ‹
               </button>
 
-              <strong>
-                {monthName}
-              </strong>
+              <strong>{monthName}</strong>
 
-              <button
-                type="button"
-                onClick={() =>
-                  moveMonth(1)
-                }
-              >
+              <button type="button" onClick={() => moveMonth(1)}>
                 ›
               </button>
             </div>
 
             <div className="calendar-weekdays">
-              {[
-                "Sun",
-                "Mon",
-                "Tue",
-                "Wed",
-                "Thu",
-                "Fri",
-                "Sat",
-              ].map((day) => (
-                <span key={day}>
-                  {day}
-                </span>
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                <span key={day}>{day}</span>
               ))}
             </div>
 
             <div className="calendar-grid">
-              {days.map(
-                (date, index) => {
-                  const disabled = date
-                    ? isDisabledDate(date)
-                    : true;
+              {days.map((date, index) => {
+                const disabled = date ? isDisabledDate(date) : true;
 
-                  const selected =
-                    date &&
-                    value &&
-                    isSameDate(
-                      date,
-                      parseLocalDate(value)
-                    );
+                const selected =
+                  date && value && isSameDate(date, parseLocalDate(value));
 
-                  return (
-                    <button
-                      type="button"
-                      key={index}
-                      disabled={disabled}
-                      className={`calendar-day ${
-                        disabled
-                          ? "calendar-disabled"
-                          : ""
-                      } ${
-                        selected
-                          ? "calendar-selected"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        date &&
-                        handleDateSelect(date)
-                      }
-                    >
-                      {date
-                        ? date.getDate()
-                        : ""}
-                    </button>
-                  );
-                }
-              )}
+                return (
+                  <button
+                    type="button"
+                    key={index}
+                    disabled={disabled}
+                    className={`calendar-day ${
+                      disabled ? "calendar-disabled" : ""
+                    } ${selected ? "calendar-selected" : ""}`}
+                    onClick={() => date && handleDateSelect(date)}
+                  >
+                    {date ? date.getDate() : ""}
+                  </button>
+                );
+              })}
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );
 }
 
-function ChallengeCard({
-  challenge,
-  onView,
-  onEdit,
-  onDelete,
-}) {
-  const statusClass =
-    STATUS_CLASS[challenge.status] ||
-    "status-not-start";
-
+function ChallengeCard({ challenge, onView, onEdit, onDelete }) {
+  const statusClass = STATUS_CLASS[challenge.status] || "status-not-start";
   const canEdit =
     challenge.status === "not start" &&
-    new Date(challenge.startDate) >
-      new Date();
+    new Date(challenge.startDate) > new Date();
 
   const canDelete =
-    challenge.status !== "close" &&
-    new Date(challenge.endDate) >=
-      new Date();
+    challenge.status !== "close" && new Date(challenge.endDate) >= new Date();
 
   return (
     <div className="challenge-card">
@@ -759,9 +583,7 @@ function ChallengeCard({
           {formatLabel(challenge.category)}
         </span>
 
-        <span
-          className={`challenge-status ${statusClass}`}
-        >
+        <span className={`challenge-status ${statusClass}`}>
           {formatLabel(challenge.status)}
         </span>
       </div>
@@ -769,54 +591,36 @@ function ChallengeCard({
       <h3>{challenge.title}</h3>
 
       <div className="challenge-type">
-        {formatLabel(
-          challenge.challengeType
-        )}
+        {formatLabel(challenge.challengeType)}
       </div>
 
       <div className="challenge-info-grid">
         <div>
           <span>Target</span>
           <strong>
-            {challenge.target}{" "}
-            {challenge.unit}
+            {challenge.target} {challenge.unit}
           </strong>
         </div>
 
         <div>
           <span>Period</span>
-          <strong>
-            {formatLabel(
-              challenge.period
-            )}
-          </strong>
+          <strong>{formatLabel(challenge.period)}</strong>
         </div>
 
         <div>
           <span>Start</span>
-          <strong>
-            {formatDate(
-              challenge.startDate
-            )}
-          </strong>
+          <strong>{formatDate(challenge.startDate)}</strong>
         </div>
 
         <div>
           <span>End</span>
-          <strong>
-            {formatDate(
-              challenge.endDate
-            )}
-          </strong>
+          <strong>{formatDate(challenge.endDate)}</strong>
         </div>
       </div>
 
       {challenge.trackingType && (
         <div className="tracking-badge">
-          Tracking:{" "}
-          {formatLabel(
-            challenge.trackingType
-          )}
+          Tracking: {formatLabel(challenge.trackingType)}
         </div>
       )}
 
@@ -824,9 +628,7 @@ function ChallengeCard({
         <button
           type="button"
           className="secondary-action"
-          onClick={() =>
-            onView(challenge)
-          }
+          onClick={() => onView(challenge)}
         >
           View
         </button>
@@ -835,9 +637,7 @@ function ChallengeCard({
           type="button"
           className="edit-action"
           disabled={!canEdit}
-          onClick={() =>
-            onEdit(challenge)
-          }
+          onClick={() => onEdit(challenge)}
         >
           Edit
         </button>
@@ -846,9 +646,7 @@ function ChallengeCard({
           type="button"
           className="delete-action"
           disabled={!canDelete}
-          onClick={() =>
-            onDelete(challenge)
-          }
+          onClick={() => onDelete(challenge)}
         >
           Delete
         </button>
@@ -857,10 +655,7 @@ function ChallengeCard({
   );
 }
 
-function ChallengeViewModal({
-  challenge,
-  onClose,
-}) {
+function ChallengeViewModal({ challenge, onClose }) {
   if (!challenge) return null;
 
   return createPortal(
@@ -868,20 +663,12 @@ function ChallengeViewModal({
       <div className="view-modal">
         <div className="modal-header">
           <div>
-            <span className="modal-eyebrow">
-              Challenge Details
-            </span>
+            <span className="modal-eyebrow">Challenge Details</span>
 
-            <h2>
-              {challenge.title}
-            </h2>
+            <h2>{challenge.title}</h2>
           </div>
 
-          <button
-            type="button"
-            className="modal-close"
-            onClick={onClose}
-          >
+          <button type="button" className="modal-close" onClick={onClose}>
             ×
           </button>
         </div>
@@ -889,89 +676,52 @@ function ChallengeViewModal({
         <div className="view-grid">
           <div className="view-item">
             <span>Category</span>
-            <strong>
-              {formatLabel(
-                challenge.category
-              )}
-            </strong>
+            <strong>{formatLabel(challenge.category)}</strong>
           </div>
 
           <div className="view-item">
-            <span>
-              Challenge Type
-            </span>
-            <strong>
-              {formatLabel(
-                challenge.challengeType
-              )}
-            </strong>
+            <span>Challenge Type</span>
+            <strong>{formatLabel(challenge.challengeType)}</strong>
           </div>
 
           {challenge.trackingType && (
             <div className="view-item">
-              <span>
-                Tracking Type
-              </span>
+              <span>Tracking Type</span>
 
-              <strong>
-                {formatLabel(
-                  challenge.trackingType
-                )}
-              </strong>
+              <strong>{formatLabel(challenge.trackingType)}</strong>
             </div>
           )}
 
           <div className="view-item">
             <span>Target</span>
             <strong>
-              {challenge.target}{" "}
-              {challenge.unit}
+              {challenge.target} {challenge.unit}
             </strong>
           </div>
 
           <div className="view-item">
             <span>Period</span>
-            <strong>
-              {formatLabel(
-                challenge.period
-              )}
-            </strong>
+            <strong>{formatLabel(challenge.period)}</strong>
           </div>
 
           <div className="view-item">
             <span>Direction</span>
-            <strong>
-              {formatLabel(
-                challenge.direction
-              )}
-            </strong>
+            <strong>{formatLabel(challenge.direction)}</strong>
           </div>
 
           <div className="view-item">
             <span>Status</span>
-            <strong>
-              {formatLabel(
-                challenge.status
-              )}
-            </strong>
+            <strong>{formatLabel(challenge.status)}</strong>
           </div>
 
           <div className="view-item">
             <span>Start Date</span>
-            <strong>
-              {formatDate(
-                challenge.startDate
-              )}
-            </strong>
+            <strong>{formatDate(challenge.startDate)}</strong>
           </div>
 
           <div className="view-item">
             <span>End Date</span>
-            <strong>
-              {formatDate(
-                challenge.endDate
-              )}
-            </strong>
+            <strong>{formatDate(challenge.endDate)}</strong>
           </div>
         </div>
 
@@ -984,16 +734,11 @@ function ChallengeViewModal({
         </button>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
-function ChallengeFormModal({
-  mode,
-  initialChallenge,
-  onClose,
-  onSuccess,
-}) {
+function ChallengeFormModal({ mode, initialChallenge, onClose, onSuccess }) {
   const isEdit = mode === "edit";
 
   const emptyForm = {
@@ -1007,49 +752,33 @@ function ChallengeFormModal({
     endDate: "",
   };
 
-  const [form, setForm] =
-    useState(emptyForm);
+  const [form, setForm] = useState(emptyForm);
 
-  const [submitting, setSubmitting] =
-    useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (isEdit && initialChallenge) {
       setForm({
-        title:
-          initialChallenge.title || "",
+        title: initialChallenge.title || "",
 
-        category:
-          initialChallenge.category || "",
+        category: initialChallenge.category || "",
 
-        challengeType:
-          initialChallenge.challengeType ||
-          "",
+        challengeType: initialChallenge.challengeType || "",
 
-        trackingType:
-          initialChallenge.trackingType ||
-          "",
+        trackingType: initialChallenge.trackingType || "",
 
         target:
-          initialChallenge.target !==
-          undefined
-            ? String(
-                initialChallenge.target
-              )
+          initialChallenge.target !== undefined
+            ? String(initialChallenge.target)
             : "",
 
-        period:
-          initialChallenge.period || "",
+        period: initialChallenge.period || "",
 
-        startDate: toInputDate(
-          initialChallenge.startDate
-        ),
+        startDate: toInputDate(initialChallenge.startDate),
 
-        endDate: toInputDate(
-          initialChallenge.endDate
-        ),
+        endDate: toInputDate(initialChallenge.endDate),
       });
 
       setErrors({});
@@ -1061,70 +790,37 @@ function ChallengeFormModal({
     setErrors({});
   }, [isEdit, initialChallenge]);
 
-  const availableChallengeTypes =
-    useMemo(() => {
-      if (!form.category) return [];
+  const availableChallengeTypes = useMemo(() => {
+    if (!form.category) return [];
 
-      return (
-        CHALLENGE_TYPES[
-          form.category
-        ] || []
-      );
-    }, [form.category]);
+    return CHALLENGE_TYPES[form.category] || [];
+  }, [form.category]);
 
-  const availablePeriods =
-    useMemo(() => {
-      if (!form.challengeType) {
-        return [];
-      }
+  const availablePeriods = useMemo(() => {
+    if (!form.challengeType) {
+      return [];
+    }
 
-      if (
-        form.category ===
-          "carbon emission" &&
-        form.trackingType ===
-          "electricity"
-      ) {
-        return ["monthly"];
-      }
+    if (
+      form.category === "carbon emission" &&
+      form.trackingType === "electricity"
+    ) {
+      return ["monthly"];
+    }
 
-      if (
-        FIXED_PERIODS[
-          form.challengeType
-        ]
-      ) {
-        return [
-          FIXED_PERIODS[
-            form.challengeType
-          ],
-        ];
-      }
+    if (FIXED_PERIODS[form.challengeType]) {
+      return [FIXED_PERIODS[form.challengeType]];
+    }
 
-      return PERIODS;
-    }, [
-      form.category,
-      form.challengeType,
-      form.trackingType,
-    ]);
+    return PERIODS;
+  }, [form.category, form.challengeType, form.trackingType]);
 
   const generatedTitle = useMemo(
-    () =>
-      generateTitle(
-        form.challengeType,
-        form.target,
-        form.period
-      ),
-    [
-      form.challengeType,
-      form.target,
-      form.period,
-    ]
+    () => generateTitle(form.challengeType, form.target, form.period),
+    [form.challengeType, form.target, form.period],
   );
 
-  const unit = form.challengeType
-    ? UNIT_MAP[
-        form.challengeType
-      ] || ""
-    : "";
+  const unit = form.challengeType ? UNIT_MAP[form.challengeType] || "" : "";
 
   const handleCategoryChange = (category) => {
     setForm({
@@ -1135,43 +831,28 @@ function ChallengeFormModal({
     setErrors({});
   };
 
-  const handleChallengeTypeChange = (
-    challengeType
-  ) => {
+  const handleChallengeTypeChange = (challengeType) => {
     setForm((previous) => ({
       ...emptyForm,
       category: previous.category,
       challengeType,
-      trackingType:
-        previous.category ===
-        "carbon emission"
-          ? ""
-          : "",
-      period:
-        FIXED_PERIODS[
-          challengeType
-        ] || "",
+      trackingType: previous.category === "carbon emission" ? "" : "",
+      period: FIXED_PERIODS[challengeType] || "",
     }));
 
     setErrors({});
   };
 
-  const handleTrackingTypeChange = (
-    trackingType
-  ) => {
+  const handleTrackingTypeChange = (trackingType) => {
     setForm((previous) => ({
       ...previous,
       trackingType,
 
       period:
-        trackingType ===
-          "electricity" &&
-        previous.category ===
-          "carbon emission"
+        trackingType === "electricity" &&
+        previous.category === "carbon emission"
           ? "monthly"
-          : FIXED_PERIODS[
-              previous.challengeType
-            ] || "",
+          : FIXED_PERIODS[previous.challengeType] || "",
 
       startDate: "",
       endDate: "",
@@ -1191,9 +872,7 @@ function ChallengeFormModal({
     }));
   };
 
-  const handlePeriodChange = (
-    period
-  ) => {
+  const handlePeriodChange = (period) => {
     setForm((previous) => ({
       ...previous,
       period,
@@ -1227,9 +906,7 @@ function ChallengeFormModal({
     }));
   };
 
-  const handleStartDateChange = (
-    value
-  ) => {
+  const handleStartDateChange = (value) => {
     setForm((previous) => ({
       ...previous,
       startDate: value,
@@ -1243,9 +920,7 @@ function ChallengeFormModal({
     }));
   };
 
-  const handleEndDateChange = (
-    value
-  ) => {
+  const handleEndDateChange = (value) => {
     setForm((previous) => ({
       ...previous,
       endDate: value,
@@ -1257,64 +932,49 @@ function ChallengeFormModal({
     }));
   };
 
-  const handleSubmit = async (
-    event
-  ) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const newErrors = {};
 
     if (!form.category) {
-      newErrors.category =
-        "This field is required";
+      newErrors.category = "This field is required";
     }
 
     if (!form.challengeType) {
-      newErrors.challengeType =
-        "This field is required";
+      newErrors.challengeType = "This field is required";
     }
 
-    if (
-      form.category === "carbon emission" &&
-      !form.trackingType
-    ) {
-      newErrors.trackingType =
-        "This field is required";
+    if (form.category === "carbon emission" && !form.trackingType) {
+      newErrors.trackingType = "This field is required";
     }
 
     if (!form.target) {
-      newErrors.target =
-        "This field is required";
+      newErrors.target = "This field is required";
     }
 
     if (!unit) {
-      newErrors.unit =
-        "This field is required";
+      newErrors.unit = "This field is required";
     }
 
     if (!form.period) {
-      newErrors.period =
-        "This field is required";
+      newErrors.period = "This field is required";
     }
 
     if (!form.startDate) {
-      newErrors.startDate =
-        "This field is required";
+      newErrors.startDate = "This field is required";
     }
 
     if (!form.endDate) {
-      newErrors.endDate =
-        "This field is required";
+      newErrors.endDate = "This field is required";
     }
 
     if (!generatedTitle) {
-      newErrors.title =
-        "This field is required";
+      newErrors.title = "This field is required";
     }
 
     if (Number(form.target) < 0) {
-      newErrors.target =
-        "Target must be greater than or equal to 0";
+      newErrors.target = "Target must be greater than or equal to 0";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -1324,90 +984,59 @@ function ChallengeFormModal({
 
     setErrors({});
 
-    const generated =
-      generateTitle(
-        form.challengeType,
-        form.target,
-        form.period
-      );
+    const generated = generateTitle(
+      form.challengeType,
+      form.target,
+      form.period,
+    );
 
     const payload = {
       ...(isEdit && {
-        id:
-          initialChallenge.id ||
-          initialChallenge._id,
+        id: initialChallenge.id || initialChallenge._id,
       }),
 
       title: generated,
 
       category: form.category,
 
-      challengeType:
-        form.challengeType,
+      challengeType: form.challengeType,
 
       target: Number(form.target),
-
+      unit: unit,
       period: form.period,
 
-      startDate:
-        formatDateForPayload(
-          form.startDate
-        ),
+      startDate: formatDateForPayload(form.startDate),
 
-      endDate:
-        formatDateForPayload(
-          form.endDate
-        ),
+      endDate: formatDateForPayload(form.endDate),
     };
 
-    if (
-      form.category ===
-      "carbon emission"
-    ) {
-      payload.trackingType =
-        form.trackingType;
+    if (form.category === "carbon emission") {
+      payload.trackingType = form.trackingType;
     }
 
+    console.log("data = ", payload);
     try {
       setSubmitting(true);
 
       const response = isEdit
-        ? await axios.patch(
-            `${CHALLENGE_URL}/`,
-            payload,
-            {
-              withCredentials: true,
-            }
-          )
-        : await axios.post(
-            `${CHALLENGE_URL}/`,
-            payload,
-            {
-              withCredentials: true,
-            }
-          );
+        ? await axios.patch(`${CHALLENGE_URL}/`, payload, {
+            withCredentials: true,
+          })
+        : await axios.post(`${CHALLENGE_URL}/`, payload, {
+            withCredentials: true,
+          });
 
-      const data =
-        response.data;
-
+      const data = response.data;
+      console.log("data = ", data);
       if (data?.success) {
-        toast.success(
-          data.message
-        );
+        toast.success(data.message);
 
         onSuccess();
       } else {
-        toast.error(
-          data?.message ||
-            "Something went wrong"
-        );
+        toast.error(data?.message || "Something went wrong");
       }
     } catch (error) {
-      toast.error(
-        error.response?.data
-          ?.message ||
-          "Internal server error"
-      );
+      toast.error(error.response?.data?.message || "Internal server error");
     } finally {
       setSubmitting(false);
     }
@@ -1419,141 +1048,91 @@ function ChallengeFormModal({
         <div className="modal-header">
           <div>
             <span className="modal-eyebrow">
-              {isEdit
-                ? "Update Challenge"
-                : "Create Challenge"}
+              {isEdit ? "Update Challenge" : "Create Challenge"}
             </span>
 
-            <h2>
-              {isEdit
-                ? "Edit Challenge"
-                : "Create New Challenge"}
-            </h2>
+            <h2>{isEdit ? "Edit Challenge" : "Create New Challenge"}</h2>
           </div>
 
-          <button
-            type="button"
-            className="modal-close"
-            onClick={onClose}
-          >
+          <button type="button" className="modal-close" onClick={onClose}>
             ×
           </button>
         </div>
 
-        <form
-          className="challenge-form"
-          onSubmit={handleSubmit}
-        >
+        <form className="challenge-form" onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-field">
-              <label>
-                Category
-              </label>
+              <label>Category</label>
 
               <CustomSelect
                 value={form.category}
                 options={CATEGORIES}
                 placeholder="Select category"
-                onChange={
-                  handleCategoryChange
-                }
+                onChange={handleCategoryChange}
               />
 
               {errors.category && (
-                <span className="field-error">
-                  {errors.category}
-                </span>
+                <span className="field-error">{errors.category}</span>
               )}
             </div>
 
             <div className="form-field">
-              <label>
-                Challenge Type
-              </label>
+              <label>Challenge Type</label>
 
               <CustomSelect
-                value={
-                  form.challengeType
-                }
-                options={
-                  availableChallengeTypes
-                }
+                value={form.challengeType}
+                options={availableChallengeTypes}
                 placeholder={
                   form.category
                     ? "Select challenge type"
                     : "Select category first"
                 }
-                disabled={
-                  !form.category
-                }
-                onChange={
-                  handleChallengeTypeChange
-                }
+                disabled={!form.category}
+                onChange={handleChallengeTypeChange}
               />
 
               {errors.challengeType && (
-                <span className="field-error">
-                  {errors.challengeType}
-                </span>
+                <span className="field-error">{errors.challengeType}</span>
               )}
             </div>
           </div>
 
-          {form.category ===
-            "carbon emission" && (
+          {form.category === "carbon emission" && (
             <div className="form-field">
-              <label>
-                Tracking Type
-              </label>
+              <label>Tracking Type</label>
 
               <CustomSelect
-                value={
-                  form.trackingType
-                }
-                options={
-                  TRACKING_TYPES
-                }
+                value={form.trackingType}
+                options={TRACKING_TYPES}
                 placeholder="Select tracking type"
-                onChange={
-                  handleTrackingTypeChange
-                }
+                onChange={handleTrackingTypeChange}
               />
 
               {errors.trackingType && (
-                <span className="field-error">
-                  {errors.trackingType}
-                </span>
+                <span className="field-error">{errors.trackingType}</span>
               )}
             </div>
           )}
 
           <div className="form-row">
             <div className="form-field">
-              <label>
-                Target
-              </label>
+              <label>Target</label>
 
               <input
                 type="text"
                 inputMode="numeric"
                 value={form.target}
-                onChange={
-                  handleTargetChange
-                }
+                onChange={handleTargetChange}
                 placeholder="Enter target"
               />
 
               {errors.target && (
-                <span className="field-error">
-                  {errors.target}
-                </span>
+                <span className="field-error">{errors.target}</span>
               )}
             </div>
 
             <div className="form-field">
-              <label>
-                Unit
-              </label>
+              <label>Unit</label>
 
               <input
                 type="text"
@@ -1563,17 +1142,13 @@ function ChallengeFormModal({
               />
 
               {errors.unit && (
-                <span className="field-error">
-                  {errors.unit}
-                </span>
+                <span className="field-error">{errors.unit}</span>
               )}
             </div>
           </div>
 
           <div className="form-field">
-            <label>
-              Challenge Title
-            </label>
+            <label>Challenge Title</label>
 
             <input
               type="text"
@@ -1583,16 +1158,12 @@ function ChallengeFormModal({
             />
 
             {errors.title && (
-              <span className="field-error">
-                {errors.title}
-              </span>
+              <span className="field-error">{errors.title}</span>
             )}
           </div>
 
           <div className="form-field">
-            <label>
-              Period
-            </label>
+            <label>Period</label>
 
             <CustomSelect
               value={form.period}
@@ -1602,71 +1173,45 @@ function ChallengeFormModal({
                   ? "Select period"
                   : "Select challenge type first"
               }
-              disabled={
-                !form.challengeType
-              }
-              onChange={
-                handlePeriodChange
-              }
+              disabled={!form.challengeType}
+              onChange={handlePeriodChange}
             />
 
             {errors.period && (
-              <span className="field-error">
-                {errors.period}
-              </span>
+              <span className="field-error">{errors.period}</span>
             )}
           </div>
 
           <div className="form-row">
             <div className="form-field">
-              <label>
-                Start Date
-              </label>
+              <label>Start Date</label>
 
               <DatePicker
-                value={
-                  form.startDate
-                }
-                onChange={
-                  handleStartDateChange
-                }
+                value={form.startDate}
+                onChange={handleStartDateChange}
                 period={form.period}
-                startDate={
-                  form.startDate
-                }
+                startDate={form.startDate}
                 isStart
               />
 
               {errors.startDate && (
-                <span className="field-error">
-                  {errors.startDate}
-                </span>
+                <span className="field-error">{errors.startDate}</span>
               )}
             </div>
 
             <div className="form-field">
-              <label>
-                End Date
-              </label>
+              <label>End Date</label>
 
               <DatePicker
-                value={
-                  form.endDate
-                }
-                onChange={
-                  handleEndDateChange
-                }
+                value={form.endDate}
+                onChange={handleEndDateChange}
                 period={form.period}
-                startDate={
-                  form.startDate
-                }
+                startDate={form.startDate}
                 isStart={false}
               />
 
               {errors.endDate && (
-                <span className="field-error">
-                  {errors.endDate}
-                </span>
+                <span className="field-error">{errors.endDate}</span>
               )}
             </div>
           </div>
@@ -1691,44 +1236,30 @@ function ChallengeFormModal({
                   ? "Updating..."
                   : "Creating..."
                 : isEdit
-                ? "Update Challenge"
-                : "Create Challenge"}
+                  ? "Update Challenge"
+                  : "Create Challenge"}
             </button>
           </div>
         </form>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
-function DeleteConfirmModal({
-  challenge,
-  onClose,
-  onConfirm,
-  deleting,
-}) {
+function DeleteConfirmModal({ challenge, onClose, onConfirm, deleting }) {
   if (!challenge) return null;
 
   return createPortal(
     <div className="modal-overlay">
       <div className="delete-modal">
-        <div className="delete-icon">
-          !
-        </div>
+        <div className="delete-icon">!</div>
 
-        <h2>
-          Delete Challenge?
-        </h2>
+        <h2>Delete Challenge?</h2>
 
         <p>
-          Are you sure you want to
-          delete
-          <strong>
-            {" "}
-            {challenge.title}
-          </strong>
-          ?
+          Are you sure you want to delete
+          <strong> {challenge.title}</strong>?
         </p>
 
         <div className="delete-actions">
@@ -1747,227 +1278,154 @@ function DeleteConfirmModal({
             onClick={onConfirm}
             disabled={deleting}
           >
-            {deleting
-              ? "Deleting..."
-              : "Delete"}
+            {deleting ? "Deleting..." : "Delete"}
           </button>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }
 
 function AdminChallengeManagement() {
-  const [challenges, setChallenges] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [page, setPage] =
-    useState(1);
-
-  const [formModal, setFormModal] =
-    useState(null);
-
-  const [viewChallenge, setViewChallenge] =
-    useState(null);
-
-  const [deleteChallenge, setDeleteChallenge] =
-    useState(null);
-
-  const [deleting, setDeleting] =
-    useState(false);
-
+  const [challenges, setChallenges] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState("all");
+  const [formModal, setFormModal] = useState(null);
+  const [viewChallenge, setViewChallenge] = useState(null);
+  const [deleteChallenge, setDeleteChallenge] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const ITEMS_PER_PAGE = 6;
 
-  const totalPages = Math.ceil(
-    challenges.length /
-      ITEMS_PER_PAGE
+const filteredChallenges = useMemo(() => {
+  if (filter === "all") {
+    return challenges;
+  }
+
+  return challenges.filter(
+    (challenge) => challenge.status === filter
   );
+}, [challenges, filter]);
 
-  const currentChallenges =
-    useMemo(() => {
-      const start =
-        (page - 1) *
-        ITEMS_PER_PAGE;
+const totalPages = Math.ceil(
+  filteredChallenges.length / ITEMS_PER_PAGE
+);
 
-      return challenges.slice(
-        start,
-        start + ITEMS_PER_PAGE
-      );
-    }, [challenges, page]);
+const currentChallenges = useMemo(() => {
+  const start = (page - 1) * ITEMS_PER_PAGE;
 
-  const fetchChallenges =
-    async () => {
-      try {
-        setLoading(true);
+  return filteredChallenges.slice(
+    start,
+    start + ITEMS_PER_PAGE
+  );
+}, [filteredChallenges, page]);
 
-        const response =
-          await axios.get(
-            `${CHALLENGE_URL}/admin`,
-            {
-              withCredentials: true,
-            }
-          );
+  const fetchChallenges = async () => {
+    try {
+      setLoading(true);
 
-        const data =
-          response.data;
+      const response = await axios.get(`${CHALLENGE_URL}/admin`, {
+        withCredentials: true,
+      });
 
-        if (
-          data?.success === true
-        ) {
-          setChallenges(
-            data.challenges || []
-          );
+      const data = response.data;
 
-          return;
-        }
+      if (data?.success === true) {
+        setChallenges(data.challenges || []);
 
-        toast.error(
-          data?.message ||
-            "not have any challenges to show"
-        );
-
-        setChallenges([]);
-      } catch (error) {
-        toast.error(
-          error.response?.data
-            ?.message ||
-            "internal server error"
-        );
-
-        setChallenges([]);
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
+
+      toast.error(data?.message || "not have any challenges to show");
+
+      setChallenges([]);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "internal server error");
+
+      setChallenges([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchChallenges();
   }, []);
 
   useEffect(() => {
-    if (
-      page > 1 &&
-      page > totalPages
-    ) {
-      setPage(
-        totalPages || 1
-      );
+    if (page > 1 && page > totalPages) {
+      setPage(totalPages || 1);
     }
-  }, [
-    page,
-    totalPages,
-  ]);
+  }, [page, totalPages]);
 
-  const handleCreateSuccess =
-    async () => {
-      setFormModal(null);
-      setPage(1);
+  const handleCreateSuccess = async () => {
+    setFormModal(null);
+    setPage(1);
 
-      await fetchChallenges();
-    };
+    await fetchChallenges();
+  };
 
-  const handleUpdateSuccess =
-    async () => {
-      setFormModal(null);
-      setPage(1);
+  const handleUpdateSuccess = async () => {
+    setFormModal(null);
+    setPage(1);
 
-      await fetchChallenges();
-    };
+    await fetchChallenges();
+  };
 
-  const handleView = async (
-    challenge
-  ) => {
+  const handleView = async (challenge) => {
     try {
-      const id =
-        challenge._id ||
-        challenge.id;
+      const id = challenge._id || challenge.id;
 
-      const response =
-        await axios.get(
-          `${CHALLENGE_URL}/${id}`,
-          {
-            withCredentials: true,
-          }
-        );
+      const response = await axios.get(`${CHALLENGE_URL}/${id}`, {
+        withCredentials: true,
+      });
 
-      const data =
-        response.data;
+      const data = response.data;
 
       if (data?.success) {
-        setViewChallenge(
-          data.challengeData
-        );
+        setViewChallenge(data.challengeData);
       } else {
-        toast.error(
-          data?.message ||
-            "Challenge doesn't exist"
-        );
+        toast.error(data?.message || "Challenge doesn't exist");
       }
     } catch (error) {
-      toast.error(
-        error.response?.data
-          ?.message ||
-          "Internal server error"
-      );
+      toast.error(error.response?.data?.message || "Internal server error");
     }
   };
 
-  const handleDelete =
-    async () => {
-      if (!deleteChallenge) {
-        return;
+  const handleDelete = async () => {
+    if (!deleteChallenge) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+
+      const id = deleteChallenge._id || deleteChallenge.id;
+
+      const response = await axios.delete(`${CHALLENGE_URL}/${id}`, {
+        withCredentials: true,
+      });
+
+      const data = response.data;
+
+      if (data?.success) {
+        toast.success(data.message);
+
+        setDeleteChallenge(null);
+
+        setPage(1);
+
+        await fetchChallenges();
+      } else {
+        toast.error(data?.message || "Internal server error");
       }
-
-      try {
-        setDeleting(true);
-
-        const id =
-          deleteChallenge._id ||
-          deleteChallenge.id;
-
-        const response =
-          await axios.delete(
-            `${CHALLENGE_URL}/${id}`,
-            {
-              withCredentials: true,
-            }
-          );
-
-        const data =
-          response.data;
-
-        if (data?.success) {
-          toast.success(
-            data.message
-          );
-
-          setDeleteChallenge(
-            null
-          );
-
-          setPage(1);
-
-          await fetchChallenges();
-        } else {
-          toast.error(
-            data?.message ||
-              "Internal server error"
-          );
-        }
-      } catch (error) {
-        toast.error(
-          error.response?.data
-            ?.message ||
-            "Internal server error"
-        );
-      } finally {
-        setDeleting(false);
-      }
-    };
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Internal server error");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <>
@@ -2075,6 +1533,11 @@ function AdminChallengeManagement() {
         .status-not-start {
           background: #edf7f0;
           color: #27834d;
+        }
+
+        .status-ongoing {
+          background: #eef6ff;
+          color: #3573a8;
         }
 
         .status-continue,
@@ -2839,70 +2302,77 @@ function AdminChallengeManagement() {
       <div className="admin-challenge-page">
         <div className="admin-page-header">
           <div>
-            <h1>
-              Challenge Management
-            </h1>
+            <h1>Challenge Management</h1>
 
             <p>
-              Create, manage and monitor
-              community sustainability
-              challenges.
+              Create, manage and monitor community sustainability challenges.
             </p>
           </div>
 
           <button
             type="button"
             className="create-challenge-button"
-            onClick={() =>
-              setFormModal("create")
-            }
+            onClick={() => setFormModal("create")}
           >
             + Create Challenge
           </button>
         </div>
+        <div className="mb-6 flex flex-wrap gap-3">
+  {[
+    { value: "all", label: "All Challenges" },
+    { value: "not start", label: "Not Started" },
+    { value: "ongoing", label: "Ongoing" },
+    { value: "close", label: "Closed" },
+  ].map((status) => (
+    <button
+      key={status.value}
+      type="button"
+      onClick={() => {
+        setFilter(status.value);
+        setPage(1);
+      }}
+      className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 ${
+        filter === status.value
+          ? "bg-[#27834d] text-white shadow-md"
+          : "border border-[#d9e8df] bg-white text-[#557064] hover:border-[#27834d] hover:text-[#27834d]"
+      }`}
+    >
+      {status.label}
+    </button>
+  ))}
+</div>
 
         {loading ? (
-          <div className="loading-state">
-            Loading challenges...
-          </div>
-        ) : challenges.length ===
-          0 ? (
+          <div className="loading-state">Loading challenges...</div>
+        ) : challenges.length === 0 ? (
           <div className="empty-state">
-            <h3>
-              No Challenges Available
-            </h3>
+            <h3>No Challenges Available</h3>
 
-            <p>
-              Create your first challenge
-              to get started.
-            </p>
+            <p>Create your first challenge to get started.</p>
+          </div>
+        ) : filteredChallenges.length === 0 ? (
+          <div className="empty-state">
+            <h3>No Challenges Found</h3>
+
+            <p>No challenges match the selected status.</p>
           </div>
         ) : (
           <>
             <div className="challenge-grid">
-              {currentChallenges.map(
-                (challenge) => (
-                  <ChallengeCard
-                    key={
-                      challenge._id ||
-                      challenge.id
-                    }
-                    challenge={challenge}
-                    onView={
-                      handleView
-                    }
-                    onEdit={(item) =>
-                      setFormModal({
-                        mode: "edit",
-                        challenge: item,
-                      })
-                    }
-                    onDelete={
-                      setDeleteChallenge
-                    }
-                  />
-                )
-              )}
+              {currentChallenges.map((challenge) => (
+                <ChallengeCard
+                  key={challenge._id || challenge.id}
+                  challenge={challenge}
+                  onView={handleView}
+                  onEdit={(item) =>
+                    setFormModal({
+                      mode: "edit",
+                      challenge: item,
+                    })
+                  }
+                  onDelete={setDeleteChallenge}
+                />
+              ))}
             </div>
 
             {totalPages > 1 && (
@@ -2912,13 +2382,7 @@ function AdminChallengeManagement() {
                   className="pagination-arrow"
                   disabled={page === 1}
                   onClick={() =>
-                    setPage(
-                      (previous) =>
-                        Math.max(
-                          1,
-                          previous - 1
-                        )
-                    )
+                    setPage((previous) => Math.max(1, previous - 1))
                   }
                 >
                   ‹
@@ -2926,48 +2390,26 @@ function AdminChallengeManagement() {
 
                 {Array.from(
                   {
-                    length:
-                      totalPages,
+                    length: totalPages,
                   },
-                  (_, index) =>
-                    index + 1
-                ).map(
-                  (pageNumber) => (
-                    <button
-                      type="button"
-                      key={pageNumber}
-                      className={
-                        page ===
-                        pageNumber
-                          ? "active-page"
-                          : ""
-                      }
-                      onClick={() =>
-                        setPage(
-                          pageNumber
-                        )
-                      }
-                    >
-                      {pageNumber}
-                    </button>
-                  )
-                )}
+                  (_, index) => index + 1,
+                ).map((pageNumber) => (
+                  <button
+                    type="button"
+                    key={pageNumber}
+                    className={page === pageNumber ? "active-page" : ""}
+                    onClick={() => setPage(pageNumber)}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
 
                 <button
                   type="button"
                   className="pagination-arrow"
-                  disabled={
-                    page ===
-                    totalPages
-                  }
+                  disabled={page === totalPages}
                   onClick={() =>
-                    setPage(
-                      (previous) =>
-                        Math.min(
-                          totalPages,
-                          previous + 1
-                        )
-                    )
+                    setPage((previous) => Math.min(totalPages, previous + 1))
                   }
                 >
                   ›
@@ -2980,24 +2422,13 @@ function AdminChallengeManagement() {
 
       {formModal && (
         <ChallengeFormModal
-          mode={
-            typeof formModal ===
-            "string"
-              ? formModal
-              : formModal.mode
-          }
+          mode={typeof formModal === "string" ? formModal : formModal.mode}
           initialChallenge={
-            typeof formModal ===
-            "string"
-              ? null
-              : formModal.challenge
+            typeof formModal === "string" ? null : formModal.challenge
           }
-          onClose={() =>
-            setFormModal(null)
-          }
+          onClose={() => setFormModal(null)}
           onSuccess={
-            typeof formModal ===
-            "string"
+            typeof formModal === "string"
               ? handleCreateSuccess
               : handleUpdateSuccess
           }
@@ -3006,27 +2437,17 @@ function AdminChallengeManagement() {
 
       {viewChallenge && (
         <ChallengeViewModal
-          challenge={
-            viewChallenge
-          }
-          onClose={() =>
-            setViewChallenge(null)
-          }
+          challenge={viewChallenge}
+          onClose={() => setViewChallenge(null)}
         />
       )}
 
       {deleteChallenge && (
         <DeleteConfirmModal
-          challenge={
-            deleteChallenge
-          }
+          challenge={deleteChallenge}
           deleting={deleting}
-          onClose={() =>
-            setDeleteChallenge(null)
-          }
-          onConfirm={
-            handleDelete
-          }
+          onClose={() => setDeleteChallenge(null)}
+          onConfirm={handleDelete}
         />
       )}
     </>
