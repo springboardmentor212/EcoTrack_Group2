@@ -60,7 +60,9 @@ function ProtectedRoute({ children }) {
         if (data.role === "admin") {
           const adminRoutes = [
             "/admin-dashboard",
+            "/admin-user-management",
             "/admin-challenge-management",
+            "/admin-profile,",
           ];
 
           if (adminRoutes.includes(location.pathname)) {
