@@ -12,6 +12,7 @@ import Electricity from "./pages/electricity";
 import Profile from "./pages/profile";
 import SustainabilityGoals from "./pages/sustainability-goals";
 import CommunityChallenges from "./pages/community-challenges";
+import AdminProfile from "./pages/admin-profile";
 import AdminChallengeManagement from "./pages/admin-challenge-management";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -110,6 +111,14 @@ function App() {
     />
     {/* Admin Pages */}
 
+    <Route
+    path="/admin-profile"
+    element={
+        <ProtectedRoute>
+          <AdminProfile />
+        </ProtectedRoute>
+      }
+    />  
     <Route
      path="/admin-challenge-management"
      element={
