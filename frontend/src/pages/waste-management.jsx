@@ -123,7 +123,7 @@ export default function WasteManagement() {
 
     if (
       wasteAmount === "" ||
-      Number(wasteAmount) <= 0 ||
+      Number(wasteAmount) < 0 ||
       !wasteType ||
       !disposalMethod ||
       !wasteDate
