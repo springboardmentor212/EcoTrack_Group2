@@ -169,10 +169,31 @@ function ChallengeCard({
 }) {
   const challengeId = challenge?._id || challenge?.id;
 
-  const canCancel =
-    type === "my" &&
-    challenge.status !== "completed" &&
-    challenge.status !== "cancelled";
+const today = new Date();
+today.setHours(23, 59, 59, 999);
+
+const challengeEndDate = challenge.endDate
+  ? new Date(challenge.endDate)
+  : null;
+
+const canCancel =
+  type === "my" &&
+  (
+    challenge.status === "not start" ||
+    challenge.status === "active" ||
+    (
+      challenge.status === "failed" &&
+      challengeEndDate &&
+      challengeEndDate >= today
+    )
+  );
+
+const canJoin =
+  type === "available" &&
+  (
+    challenge.status === "not start" ||
+    challenge.status === "ongoing"
+  );
 
   return (
     <article className="challenge-card">
@@ -253,7 +274,7 @@ function ChallengeCard({
           </span>
         </button>
 
-        {type === "available" && (
+        {canJoin && (
           <button
             type="button"
             className="primary-button"
