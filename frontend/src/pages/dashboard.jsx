@@ -9,6 +9,7 @@ const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
 const GOALS_URL = import.meta.env.VITE_GOAL_API;
 const PROFILE_URL = import.meta.env.VITE_PROFILE_URL;
 const CHALLENGE_URL = import.meta.env.VITE_CHALLENGE_API;
+const Notification_API = import.meta.env.VITE_NOTIFICATION_API;
 
 const trackerPeriods = {
   All: [
@@ -280,7 +281,8 @@ function Dashboard() {
   profilePhoto: "",
 });
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [notifications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [dashboardStats, setDashboardStats] = useState(overviewData);
@@ -421,6 +423,46 @@ function Dashboard() {
   fetchProfile();
 }, []);
 
+useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      setNotificationsLoading(true);
+
+      const { data } = await axios.get(
+        `${Notification_API}/?selected=all&status=all`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (data.success) {
+        setNotifications(
+          Array.isArray(data.notificationData)
+            ? data.notificationData
+            : []
+        );
+      } else {
+        setNotifications([]);
+        console.error(
+          "Notifications fetch error:",
+          data.message
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Notifications fetch error:",
+        error.response?.data?.message || error.message
+      );
+
+      setNotifications([]);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  fetchNotifications();
+}, []);
+
   useEffect(() => {
     const fetchGoals = async () => {
       try {
@@ -522,8 +564,8 @@ function Dashboard() {
       : `${selectedTracker} Overview`;
 
   const unreadNotifications = notifications.filter(
-    (notification) => !notification.read,
-  );
+  (notification) => !notification.isRead,
+);
 
   const periods = trackerPeriods[selectedTracker];
 
@@ -842,7 +884,11 @@ function Dashboard() {
                     </div>
 
                     <div className="max-h-[280px] overflow-y-auto">
-                      {notifications.length === 0 ? (
+                      {notificationsLoading ? (
+                        <div className="px-4 py-7 text-center text-xs text-[#8a998f]">
+                          Loading notifications...
+                        </div>
+                      ) : notifications.length === 0 ? (
                         <div className="px-4 py-7 text-center text-xs text-[#8a998f]">
                           No notifications
                         </div>
@@ -850,18 +896,45 @@ function Dashboard() {
                         notifications.slice(0, 5).map((notification) => (
                           <div
                             key={notification.id}
-                            className={`border-b border-[#f0f4f1] px-4 py-3 text-xs text-[#53685b] ${
-                              !notification.read
-                                ? "bg-[#f3f9f4] font-semibold"
-                                : ""
+                            onClick={() => navigate("/notifications")}
+                            className={`cursor-pointer border-b border-[#f0f4f1] px-4 py-3 transition-colors hover:bg-[#f6faf7] ${
+                              !notification.isRead ? "bg-[#f3f9f4]" : ""
                             }`}
                           >
-                            {notification.message}
+                            <div className="flex items-start justify-between gap-3">
+                              <p
+                                className={`text-xs leading-5 ${
+                                  !notification.isRead
+                                    ? "font-bold text-[#294a36]"
+                                    : "font-semibold text-[#53685b]"
+                                }`}
+                              >
+                                {notification.title}
+                              </p>
+
+                              {!notification.isRead && (
+                                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#27834d]" />
+                              )}
+                            </div>
+
+                            <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-[#7b8b81]">
+                              {notification.message}
+                            </p>
+
+                            <p className="mt-1.5 text-[10px] text-[#a0aaa4]">
+                              {new Date(notification.createdAt).toLocaleString("en-IN", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
                           </div>
                         ))
                       )}
                     </div>
-
+                    
                     <div className="border-t border-[#edf2ee] px-4 py-3 text-center">
                       <Link
                         to="/notifications"
