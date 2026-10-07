@@ -65,9 +65,9 @@ app.get("/",async (req,res)=>{
     // await sendWeeklyGoalReminderNotification();
     // await sendMonthlyGoalReminderNotification();
     await updateAllChallengesStatus();
-    //await sendDailyChallengeReminderNotification();
-    //await sendWeeklyChallengeReminderNotification();
-    await sendMonthlyChallengeReminderNotification();
+    await sendDailyChallengeReminderNotification();
+    // await sendWeeklyChallengeReminderNotification();
+    // await sendMonthlyChallengeReminderNotification();
     res.send("work complete");
 });
 app.listen(port,()=>{

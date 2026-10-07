@@ -38,6 +38,12 @@ userNotificationSchema.index(
 
 userNotificationSchema.pre("deleteMany", async function() {
    const filter = this.getFilter();
+
+   // Internal deletion se middleware ko skip karo
+    if (this.getOptions().skipCascade) {
+        return;
+    }
+
    const userNotifications = await this.model.find(filter).select("notificationId -_id");
 
    const notificationIds = userNotifications.map(
@@ -49,8 +55,12 @@ userNotificationSchema.pre("deleteMany", async function() {
                 _id: { $in: notificationIds },
                 type: {
                     $in: ["goal reminder", "challenge reminder"]
-                }
-            });
+                },
+            },
+            {
+                skipCascade: true
+            }
+     );
     }
 });
 

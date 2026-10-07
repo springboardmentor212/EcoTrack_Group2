@@ -77,8 +77,8 @@ const challengeSchema = new Schema({
 
     status: {
         type: String,
-        enum: ["not start","continue","close"],
-        default: "not start",
+        enum: ["not started","ongoing","closed"],
+        default: "not started",
         required : true,
         trim : true,
         lowerCase : true

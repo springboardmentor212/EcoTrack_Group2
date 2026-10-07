@@ -4,9 +4,17 @@ const {getNotificationIds} = require("../utills/filterNotification");
 //read
 module.exports.getNotification = async(req,res) => {
    try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to get notification"});
+    }
+
+    if(role !== "user"){
+        return res.status(400).json({success : false , message : "only normal user can get notification"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , messag : "block user can't get notification"});
     }
 
     const {selection = "all",status = "all"} = req.query;
@@ -77,9 +85,17 @@ module.exports.getNotification = async(req,res) => {
 //update
 module.exports.readNotification = async(req,res) => {
   try{
-   const userId = req.currUser;
+   const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to read notification"});
+    }
+
+    if(role !== "user"){
+        return res.status(400).json({success : false , message : "only normal user can read notification"});
+    }
+
+     if(isBlocked){
+        return res.status(400).json({success : false , messag : "block user can't read notification"});
     }
 
     const {id} = req.params;
@@ -118,9 +134,17 @@ module.exports.readNotification = async(req,res) => {
 //delete
 module.exports.deleteNotifications = async(req,res) => {
   try{
-   const userId = req.currUser;
+   const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to delete notification"});
+    }
+
+    if(role !== "user"){
+        return res.status(400).json({success : false , message : "only normal user can delete notification"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , messag : "block user can't delete notification"});
     }
 
     const {notifications} = req.body;
@@ -143,9 +167,17 @@ module.exports.deleteNotifications = async(req,res) => {
 
 module.exports.deleteAllNotification =async(req,res) => {
  try{
-   const userId = req.currUser;
+   const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to delete notification"});
+    }
+
+     if(role !== "user"){
+        return res.status(400).json({success : false , message : "only normal user can delete All notification"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , messag : "block user can't delete All notification"});
     }
 
     await userNotificationModel.deleteMany({userId}); 

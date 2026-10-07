@@ -43,10 +43,11 @@ module.exports.login = async(req,res) => {
         return res.status(400).json({success : "false", message : "Email and password are required"});
    }
 
-   const user = await userModel.findOne({email});
+   const user = await userModel.findOne({email , role : "user"});
    if(!user){
-        return res.status(400).json({success : "false", message : "please Enter your registered email"});
+        return res.status(400).json({success : "false", message : "please Enter user registered email"});
    }
+   
    const isMatch = await bcrypt.compare(password,user.password);
    if(!isMatch){
         return res.status(400).json({success : "false", message : "Email or password is wrong"}); 
@@ -252,7 +253,11 @@ module.exports.checkUser = async(req,res)=>{
    try{
          const id = req.currUser;
          const user = await userModel.findById(id);
-         return res.status(200).json({success : true, role : user.role});
+
+         if(user.isBlocked){
+             return res.status(200).json({success : false , message : "user is blocked"});
+         }
+         return res.status(200).json({success : true, role : user.role, isBlocked : user.isBlocked});
      }catch(err){
         return res.status(500).json({success : false , message : "internal server error"});
      }

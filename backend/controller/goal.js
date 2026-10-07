@@ -6,11 +6,19 @@ const updateGoalStatus = require("../service/goal/updateGoalStatus");
 //read
 module.exports.getGoals = async(req,res)=>{
  try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to get update of goals"});
     }
 
+    if(role !==  "user"){
+        return res.status(400).json({success : false, message : "only normal user can get there goals data"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false, message : "blocked user can not get there goals data"});
+    }
+    
     const goals = await goalModel.find({
        userId, 
        $nor : [
@@ -42,9 +50,17 @@ module.exports.getGoals = async(req,res)=>{
 
 module.exports.getGoal = async(req,res)=>{
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to get goal"});
+    }
+
+    if(role !==  "user"){
+        return res.status(400).json({success : false, message : "only normal user can get there specific goal data"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false, message : "blocked user can not get there specific goal data"});
     }
 
     const {id} = req.params;
@@ -78,9 +94,17 @@ module.exports.getGoal = async(req,res)=>{
 //create
 module.exports.createGoal = async(req,res)=>{
  try{
-   const userId = req.currUser;
+   const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to create goal"});
+    }
+    
+    if(role !==  "user"){
+        return res.status(400).json({success : false, message : "only normal user can create new goal"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false, message : "blocked user can not create new goal"});
     }
     
    const goalData =  req.body;
@@ -158,9 +182,17 @@ module.exports.createGoal = async(req,res)=>{
 //update
 module.exports.updateGoal = async(req,res)=>{
  try{
-  const userId = req.currUser;
+  const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to update goals"});
+    }
+
+    if(role !==  "user"){
+        return res.status(400).json({success : false, message : "only normal user can update there existing goal"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false, message : "blocked user can not update goal"});
     }
     
    const goalData =  req.body;
@@ -253,9 +285,17 @@ module.exports.updateGoal = async(req,res)=>{
 //delete
 module.exports.cancelGoal = async(req,res)=>{
  try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to cancel goal"});
+    }
+
+    if(role !==  "user"){
+        return res.status(400).json({success : false, message : "only normal user can cancel there specific goal"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false, message : "blocked user can not cancel there specific goal"});
     }
 
     const {id} = req.params;
@@ -283,9 +323,17 @@ module.exports.cancelGoal = async(req,res)=>{
 
 module.exports.deleteGoal = async(req,res)=>{
  try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to delete goal"});
+    }
+
+    if(role !==  "user"){
+        return res.status(400).json({success : false, message : "only normal user can delete there specific goal data"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false, message : "blocked user can not delete there specific goal data"});
     }
 
     const {id} = req.params;

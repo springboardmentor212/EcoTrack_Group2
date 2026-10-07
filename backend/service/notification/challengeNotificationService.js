@@ -77,7 +77,7 @@ const sendChallengeSuggestion = async (challenge) => {
         action : "join challenge"
    });
 
-   const users = await userModel.find({role : "user"}).select("_id sustainabilityPreferences");;
+   const users = await userModel.find({role : "user" , isBlocked : false}).select("_id sustainabilityPreferences");;
    
    for(const user of users){
         const match = await matchingChallenge(user,challenge);
@@ -112,7 +112,7 @@ const sendUpdateChallengeNotification = async (challenge) => {
         action : "informational notification"
    });
 
-   const users = await userModel.find({role : "user"}).select("_id sustainabilityPreferences joinChallenges");;
+   const users = await userModel.find({role : "user",isBlocked : false}).select("_id sustainabilityPreferences joinChallenges");;
    
    for(const user of users){
         const match = await matchingChallenge(user,challenge);
@@ -148,7 +148,7 @@ const sendDeleteChallengeNotification = async (challenge) => {
    });
 
    const userIds = await userModel.distinct("_id", {
-      role : "user",
+      role : "user", isBlocked : false,
      "joinChallenges.challengeId" : challenge._id
    });
 
@@ -174,7 +174,7 @@ const sendDeleteChallengeNotification = async (challenge) => {
 
 //challenge Remainder
 const sendDailyChallengeReminderNotification = async() => {
-    const users = await userModel.find({role : "user"});
+    const users = await userModel.find({role : "user" , isBlocked : false});
     const {dayStart,dayEnd} = getCurrentDayDates();
 
     for(const user of users){
@@ -186,7 +186,7 @@ const sendDailyChallengeReminderNotification = async() => {
                $in : userChallengeId
             }, 
             period : "daily" ,
-            status : "continue",
+            status : "ongoing",
             startDate : {$lt : dayStart},
             endDate : {$gte : dayEnd},
           });
@@ -238,7 +238,7 @@ const sendDailyChallengeReminderNotification = async() => {
 };
 
 const sendWeeklyChallengeReminderNotification = async() => {
-    const users = await userModel.find({role : "user"});
+    const users = await userModel.find({role : "user", isBlocked : false});
     const {weekStart, weekEnd} = getCurrentWeekDates();
 
     for(const user of users){
@@ -250,7 +250,7 @@ const sendWeeklyChallengeReminderNotification = async() => {
                $in : userChallengeId
             }, 
             period : "weekly" ,
-            status : "continue",
+            status : "ongoing",
             startDate : {$lt : weekStart},
             endDate : {$gte : weekEnd},
           });
@@ -302,7 +302,7 @@ const sendWeeklyChallengeReminderNotification = async() => {
 };
 
 const sendMonthlyChallengeReminderNotification = async() => {
-    const users = await userModel.find({role : "user"});
+    const users = await userModel.find({role : "user", isBlocked : false});
     const {monthStart, monthEnd} = getCurrentMonthDates();
 
     for(const user of users){
@@ -314,7 +314,7 @@ const sendMonthlyChallengeReminderNotification = async() => {
                $in : userChallengeId
             }, 
             period : "monthly" ,
-            status : "continue",
+            status : "ongoing",
             startDate : {$lt : monthStart},
             endDate : {$gte : monthEnd},
           });

@@ -48,6 +48,11 @@ const userSchema = new Schema({
       default : '../utills/user.png'
     },
 
+    isBlocked : {
+       type : Boolean,
+       default : false,
+    },
+    
   sustainabilityPreferences : [{
     type: String,
     enum: [
@@ -104,8 +109,8 @@ const userSchema = new Schema({
 
     status: {
       type: String,
-      enum: ["not start","active","completed","failed","cancelled","not have entry"],
-      default: "not start"
+      enum: ["not started","active","completed","failed","cancelled","not have entry"],
+      default: "not started"
     }
   },{ _id: false }
 ]

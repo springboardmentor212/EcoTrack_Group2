@@ -6,9 +6,17 @@ const {getSummary} = require("../service/carbonActivity/summaryCalculationServic
 //Create Activity
 module.exports.createTransporatationActivity = async(req,res)=>{
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to create Transporatation activity"});
+    }
+
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can Enter his Transportation activity"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not Enter his Transportation activity"});
     }
 
     const {category,date,transportation} = req.body;
@@ -30,9 +38,17 @@ module.exports.createTransporatationActivity = async(req,res)=>{
 
 module.exports.createElectricityActivity = async(req,res)=>{
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to create Electricity activity"});
+    }
+
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can Enter his Electricity activity"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not Enter his Electricity activity"});
     }
 
     const {category,electricity} = req.body;
@@ -57,9 +73,17 @@ module.exports.createElectricityActivity = async(req,res)=>{
 
 module.exports.createWasteActivity = async(req,res)=>{
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to create Waste Management activity"});
+    }
+
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can Enter his Waste Management activity"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not Enter his Waste Management activity"});
     }
 
     const {category,date,waste} = req.body;
@@ -89,11 +113,19 @@ module.exports.createWasteActivity = async(req,res)=>{
 //Read Activity
 module.exports.getTransporatationActivity = async(req,res)=>{
  try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to get Transporatation activity"});
+        return res.status(400).json({success : false, message : "login first to get Transporatation activities"});
     }
     
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can get his Transporatation activities"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not get his Transporatation activities"});
+    }
+
     const {month,year} = req.query;
     const monthIndex = monthMap[month];
 
@@ -122,11 +154,19 @@ module.exports.getTransporatationActivity = async(req,res)=>{
 
 module.exports.getElectricityActivity = async(req,res)=>{
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to get Electricity activity"});
+        return res.status(400).json({success : false, message : "login first to get Electricity activities"});
     }
     
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can get his Electricity activities"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not get his Electricity activities"});
+    }
+
     const year = parseInt(req.query.year);
     const startDate = new Date(Date.UTC(year,0,1));
     const endDate = new Date(Date.UTC(year+1,0,1));
@@ -152,11 +192,19 @@ module.exports.getElectricityActivity = async(req,res)=>{
 
 module.exports.getWasteActivity = async(req,res)=>{
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
-        return res.status(400).json({success : false, message : "login first to get Waste Management activity"});
+        return res.status(400).json({success : false, message : "login first to get Waste Management activities"});
     }
     
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can get his Waste Management activities"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not get his Waste Management activities"});
+    }
+
     const {month,year} = req.query;
     const monthIndex = monthMap[month];
 
@@ -184,11 +232,19 @@ module.exports.getWasteActivity = async(req,res)=>{
 
 module.exports.getActivity = async(req,res)=>{
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to get activity"});
     }
     
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can get his activity"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not get his activity"});
+    }
+
     const {id} = req.params;
     const activity = await carbonActivityModel.findOne({_id : id ,userId});
     if(activity){
@@ -210,9 +266,17 @@ module.exports.getActivity = async(req,res)=>{
 //update Activity
 module.exports.updateTransporatationActivity = async(req,res)=>{
  try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to update Transporatation activity"});
+    }
+
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can update his Transporatation activity"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not udpate his Transportation activity"});
     }
 
     const {id,date,transportation} = req.body;
@@ -243,9 +307,17 @@ module.exports.updateTransporatationActivity = async(req,res)=>{
 
 module.exports.updateElectricityActivity = async(req,res)=>{
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to update Electricity activity"});
+    }
+
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can update his Electricity activity"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not udpate his Electricity activity"});
     }
 
     const {id,electricity} = req.body;
@@ -273,9 +345,17 @@ module.exports.updateElectricityActivity = async(req,res)=>{
 
 module.exports.updateWasteActivity = async(req,res)=>{
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to update Waste Management activity"});
+    }
+     
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can update his Waste Management activity"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not udpate his Waste Management activity"});
     }
 
     const {id,date,waste} = req.body;
@@ -316,11 +396,19 @@ module.exports.updateWasteActivity = async(req,res)=>{
 //delete Activity
 module.exports.deleteActivity = async(req,res)=>{
  try{
-   const userId = req.currUser;
+   const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to delete specific activity"});
     }
-    
+   
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can delete his specific activity"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not delete his specific activity"});
+    }
+
     const {id} = req.params;
     await carbonActivityModel.findByIdAndDelete(id);
     return res.status(200).json({success : true , message : "activity deleted successfully"});
@@ -333,9 +421,18 @@ module.exports.deleteActivity = async(req,res)=>{
 //summmary
 module.exports.summaryActivity = async(req,res)=>{
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to get dashboard data"});
+    }
+
+  
+    if(role != "user"){
+        return res.status(400).json({success : false , message : "only normal user can get dashboard data"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({success : false , message : "block user can not get dashboard data"});
     }
 
     const {type,duration} = req.query;

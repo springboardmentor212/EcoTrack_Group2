@@ -57,7 +57,7 @@ const challengeStatus = async(user,challenge) => {
    currDate = utcStartDate(currDate); //(y,m,d,0,0,0,0)
    
    if(currDate < startDate){
-        return "not start";
+        return "not started";
    }
 
    const {values,challengeValue} = await getChallengeTrackingData(user,challenge);
@@ -154,15 +154,15 @@ const updateAllChallengesStatus = async() => {
         
         let status ;
         if(currDate < startDate){
-            status = "not start";
+            status = "not started";
         }
 
         if(startDate <= currDate &&  currDate <= endDate){
-            status = "continue";
+            status = "ongoing";
         }
 
         if(currDate > endDate){
-            status = "close";
+            status = "closed";
         }
 
         if(!status || challenge.status === status){

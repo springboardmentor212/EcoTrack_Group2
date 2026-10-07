@@ -65,6 +65,7 @@ module.exports.userCheck = async(req,res,next) => {
       }
       req.currUser = user._id;
       req.userRole = user.role;
+      req.isBlocked = user.isBlocked;
     next();
   }catch(err){
      res.status(500).json({success : false , message : "internal server error"});

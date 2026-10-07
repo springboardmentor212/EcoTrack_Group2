@@ -12,7 +12,11 @@ const {updateUserChallengesStatus} = require("../service/challenge/challengesSta
 module.exports.createChallenge = async (req,res) => {
   try{
     const userId = req.currUser,userRole = req.userRole;
-    if(!userId || !userRole || userRole !== "admin"){
+    if(!userId){
+        return res.status(400).json({success : false, message : "login first to create challenge"});
+    }
+
+    if(!userRole || userRole !== "admin"){
         return res.status(400).json({success : false, message : "only Admin user has permission to create challenge"});
     }
 
@@ -75,13 +79,17 @@ module.exports.createChallenge = async (req,res) => {
 //read
 module.exports.getChallengesByUser = async (req,res) => {
   try{
-    const userId = req.currUser,role = req.userRole;
+    const userId = req.currUser,role = req.userRole,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to get challenges"});
     }
 
-    if(role === "admin"){
-       return res.status(400).json({success : false , message : "only normal user get the users challenges data"});
+    if(role !== "user"){
+       return res.status(400).json({success : false , message : "only normal user get the challenges data"});
+    }
+
+    if(isBlocked){
+       return res.status(400).json({success : false, message : "block user can't get challenges data"});
     }
 
    const user = await userModel.findById(userId);
@@ -120,7 +128,7 @@ module.exports.getChallengesByAdmin = async (req,res) => {
         return res.status(400).json({success : false, message : "login first to get challenges"});
     }
 
-    if(role === "user"){
+    if(role !== "admin"){
        return res.status(400).json({success : false , message : "only admin user get the challenges data"});
     }
 
@@ -137,9 +145,13 @@ module.exports.getChallengesByAdmin = async (req,res) => {
 
 module.exports.getChallenge = async (req,res) => {
   try{
-    const userId = req.currUser;
+    const userId = req.currUser,isBlocked = req.isBlocked;
     if(!userId){
         return res.status(400).json({success : false, message : "login first to get challenge"});
+    }
+
+    if(isBlocked){
+       return res.status(400).json({success : false, message : "block user can't get specific challenge"});
     }
 
     const {id} = req.params;
@@ -176,7 +188,11 @@ module.exports.getChallenge = async (req,res) => {
 module.exports.updateChallenge = async (req,res) => {
  try{
   const userId = req.currUser,userRole = req.userRole;
-    if(!userId || !userRole || userRole !== "admin"){
+    if(!userId){
+       return res.status(400).json({success : false, message : "login first to update challenge"});
+    }
+
+    if(!userRole || userRole !== "admin"){
         return res.status(400).json({success : false, message : "only Admin user has permission to update challenge"});
     }
 
@@ -217,8 +233,8 @@ module.exports.updateChallenge = async (req,res) => {
       return res.status(400).json({success : false, message : "challenge is not exist"});
    }
 
-   if(challenge.status !== "not start" || challenge.startDate < currDate){
-         return res.status(400).json({success : false, message : "challenge is already started or closed, you can't update challenge"});
+   if(challenge.status !== "not started" || challenge.startDate < currDate){
+         return res.status(400).json({success : false, message : "challenge is Ongoing or closed, you can't update challenge"});
     }
 
    challengeData.unit = challengeUnitMap(challengeData.challengeType);challengeData.direction = "maximum";
@@ -250,7 +266,11 @@ module.exports.updateChallenge = async (req,res) => {
 module.exports.deleteChallenge = async (req,res) => {
  try{
     const userId = req.currUser,userRole = req.userRole;
-    if(!userId || !userRole || userRole !== "admin"){
+    if(!userId){
+        return res.status(400).json({success : false, message : "login first to delete challenge"});
+    }
+
+    if(!userRole || userRole !== "admin"){
         return res.status(400).json({success : false, message : "only Admin user has permission to delete challenge"});
     }
 
@@ -260,7 +280,7 @@ module.exports.deleteChallenge = async (req,res) => {
        return res.status(400).json({success : false, message : "challenge is not exist"});
     }
 
-    if(challenge.status === "close" || challenge.endDate < currDates()){
+    if(challenge.status === "closed" || challenge.endDate < currDates()){
        return res.status(400).json({success : false, message : "challenge is closed , you can't delete challenge"});
     }
   
@@ -275,9 +295,17 @@ module.exports.deleteChallenge = async (req,res) => {
 //join
 module.exports.joinChallenge = async (req,res) => {
  try{
-   const userId = req.currUser,userRole = req.userRole;
-    if(!userId || !userRole || userRole !== "user"){
+   const userId = req.currUser,userRole = req.userRole,isBlocked = req.isBlocked;
+    if(!userId){
+        return res.status(400).json({success : false, message : "login first to join challenge"});
+    }
+
+    if(!userRole || userRole !== "user"){
         return res.status(400).json({success : false, message : "only normal user join the challenge"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({ success : false, message : "blocked user can't join the challenge"});
     }
 
    const {id} = req.params;
@@ -293,7 +321,7 @@ module.exports.joinChallenge = async (req,res) => {
       return res.status(400).json({success : false , message : "you already joined this challenge"});
    }
 
-   let status = "not start";
+   let status = "not started";
    if(challenge.startDate <= currDate){
         status = "active";
    }
@@ -322,9 +350,17 @@ module.exports.joinChallenge = async (req,res) => {
 //cancel
 module.exports.cancelChallenge = async (req,res) => {
   try{
-    const userId = req.currUser,userRole = req.userRole;
-    if(!userId || !userRole || userRole !== "user"){
-        return res.status(400).json({success : false, message : "only normal user can cancel the challenge"});
+    const userId = req.currUser,userRole = req.userRole,isBlocked = req.isBlocked;
+    if(!userId){
+        return res.status(400).json({success : false, message : "login first to cancel challenge"});
+    }
+
+    if(!userRole || userRole !== "user"){
+        return res.status(400).json({success : false, message : "only normal user cancel the challenge"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({ success : false, message : "blocked user can't cancel the challenge"});
     }
 
    const {id} = req.params;

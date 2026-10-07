@@ -50,6 +50,12 @@ const notificationSchema = new Schema({
 
 notificationSchema.pre("deleteMany", async function() {
     const filter = this.getFilter();
+    
+    // Internal deletion se middleware ko skip karo
+    if (this.getOptions().skipCascade) {
+        return;
+    }
+
     const notifications = await this.model.find(filter).select("_id");
     const notificationIds = notifications.map(
         item => item._id
@@ -59,7 +65,11 @@ notificationSchema.pre("deleteMany", async function() {
         const userNotificationModel = mongoose.model("UserNotification");
         await userNotificationModel.deleteMany({
             notificationId: { $in: notificationIds }
-        });
+        },
+        {
+            skipCascade: true
+        }
+    );
     }
 });
 
