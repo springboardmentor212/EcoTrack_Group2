@@ -121,6 +121,7 @@ function App() {
         }
       />
 
+      {/* admin page */}
       <Route
         path="/admin-profile"
         element={

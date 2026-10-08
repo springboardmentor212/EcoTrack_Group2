@@ -61,10 +61,10 @@ const getStatusClass = (status) => {
     case "cancelled":
       return "status-cancelled";
 
-    case "close":
+    case "closed":
       return "status-closed";
 
-    case "not start":
+    case "not started":
       return "status-not-start";
 
     case "continue":
@@ -166,10 +166,24 @@ function ChallengeCard({
 }) {
   const challengeId = challenge?._id || challenge?.id;
 
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
+  const challengeEndDate = challenge.endDate
+    ? new Date(challenge.endDate)
+    : null;
+
   const canCancel =
     type === "my" &&
-    challenge.status !== "completed" &&
-    challenge.status !== "cancelled";
+    (challenge.status === "not started" ||
+      challenge.status === "active" ||
+      (challenge.status === "failed" &&
+        challengeEndDate &&
+        challengeEndDate >= today));
+
+  const canJoin =
+    type === "available" &&
+    (challenge.status === "not started" || challenge.status === "ongoing");
 
   return (
     <article className="challenge-card">
@@ -246,7 +260,7 @@ function ChallengeCard({
           </span>
         </button>
 
-        {type === "available" && (
+        {canJoin && (
           <button
             type="button"
             className="primary-button"
@@ -285,6 +299,9 @@ function ChallengeSection({
   onCancel,
   actionLoading,
   loading,
+  filter,
+  onFilterChange,
+  filterOptions,
 }) {
   const sliderRef = useRef(null);
 
@@ -307,6 +324,11 @@ function ChallengeSection({
     const slider = sliderRef.current;
 
     if (!slider) return;
+
+    slider.scrollTo({
+      left: 0,
+      behavior: "auto",
+    });
 
     updateArrowState();
 
@@ -342,6 +364,22 @@ function ChallengeSection({
             <h2>{title}</h2>
 
             <p>{description}</p>
+          </div>
+        </div>
+        <div className="challenge-filter-bar">
+          <div className="challenge-filter-scroll">
+            {filterOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`challenge-filter ${
+                  filter === option.value ? "active" : ""
+                }`}
+                onClick={() => onFilterChange(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -419,7 +457,8 @@ function ChallengeSection({
 function CommunityChallenges() {
   const [myChallenges, setMyChallenges] = useState([]);
   const [availableChallenges, setAvailableChallenges] = useState([]);
-
+  const [myChallengeFilter, setMyChallengeFilter] = useState("all");
+  const [moreChallengeFilter, setMoreChallengeFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
 
@@ -540,6 +579,37 @@ function CommunityChallenges() {
     }
   };
 
+  const myChallengeFilters = [
+    { value: "all", label: "All" },
+    { value: "not started", label: "Not Started" },
+    { value: "not have entry", label: "Not Have Entry" },
+    { value: "active", label: "Active" },
+    { value: "completed", label: "Completed" },
+    { value: "failed", label: "Failed" },
+    { value: "cancelled", label: "Cancelled" },
+  ];
+
+  const moreChallengeFilters = [
+    { value: "all", label: "All" },
+    { value: "not started", label: "Not Started" },
+    { value: "ongoing", label: "Ongoing" },
+    { value: "close", label: "Closed" },
+  ];
+
+  const filteredMyChallenges =
+    myChallengeFilter === "all"
+      ? myChallenges
+      : myChallenges.filter(
+          (challenge) => challenge.status === myChallengeFilter,
+        );
+
+  const filteredAvailableChallenges =
+    moreChallengeFilter === "all"
+      ? availableChallenges
+      : availableChallenges.filter(
+          (challenge) => challenge.status === moreChallengeFilter,
+        );
+
   const handleViewDetails = async (challenge) => {
     const challengeId = challenge?._id || challenge?.id;
 
@@ -609,26 +679,32 @@ function CommunityChallenges() {
             title="My Challenges"
             description="Challenges you have joined and are participating in."
             icon="users"
-            challenges={myChallenges}
+            challenges={filteredMyChallenges}
             type="my"
             onDetails={handleViewDetails}
             onJoin={handleJoinChallenge}
             onCancel={handleCancelChallenge}
             actionLoading={actionLoading}
             loading={loading}
+            filter={myChallengeFilter}
+            onFilterChange={setMyChallengeFilter}
+            filterOptions={myChallengeFilters}
           />
 
           <ChallengeSection
-            title="Available Challenges"
+            title="More Challenges"
             description="Discover new challenges and join the ones you want to take part in."
             icon="target"
-            challenges={availableChallenges}
+            challenges={filteredAvailableChallenges}
             type="available"
             onDetails={handleViewDetails}
             onJoin={handleJoinChallenge}
             onCancel={handleCancelChallenge}
             actionLoading={actionLoading}
             loading={loading}
+            filter={moreChallengeFilter}
+            onFilterChange={setMoreChallengeFilter}
+            filterOptions={moreChallengeFilters}
           />
         </main>
       </div>
@@ -890,6 +966,60 @@ function CommunityChallenges() {
           color: #7b8780;
           font-size: 0.8rem;
           line-height: 1.45;
+        }
+        
+        .challenge-filter-bar {
+          display: flex;
+          align-items: center;
+          overflow: hidden;
+        }
+
+        .challenge-filter-scroll {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          padding: 2px;
+        }
+
+        .challenge-filter-scroll::-webkit-scrollbar {
+          display: none;
+        }
+
+        .challenge-filter {
+          flex: 0 0 auto;
+          min-height: 35px;
+          padding: 8px 13px;
+          border: 1px solid #d5e3da;
+          border-radius: 999px;
+          background: #ffffff;
+          color: #68776e;
+          font-family: inherit;
+          font-size: 0.74rem;
+          font-weight: 750;
+          white-space: nowrap;
+          cursor: pointer;
+          transition:
+            background 0.2s ease,
+            border-color 0.2s ease,
+            color 0.2s ease,
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+        }
+
+        .challenge-filter:hover {
+          border-color: #b9d1c0;
+          background: #f8fbf9;
+          color: #27834d;
+          transform: translateY(-1px);
+        }
+
+        .challenge-filter.active {
+          border-color: #27834d;
+          background: #27834d;
+          color: #ffffff;
+          box-shadow: 0 5px 14px rgba(39, 131, 77, 0.16);
         }
 
         .carousel-controls {
