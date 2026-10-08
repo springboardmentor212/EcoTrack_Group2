@@ -26,14 +26,15 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/admin-login" element={<AdminLogin />} />
 
       {/* Home */}
       <Route
         path="/"
         element={
-          // <ProtectedRoute>
-          <Home />
-          // </ProtectedRoute>
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
         }
       />
 
@@ -127,15 +128,6 @@ function App() {
         element={
           <ProtectedRoute>
             <AdminProfile />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin-login"
-        element={
-          <ProtectedRoute>
-            <AdminLogin />
           </ProtectedRoute>
         }
       />
