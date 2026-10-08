@@ -61,6 +61,7 @@ const STATUS_CLASS = {
   continue: "status-continue",
   close: "status-close",
   active: "status-active",
+  ongoing: "status-ongoing",
   completed: "status-completed",
   failed: "status-failed",
   cancelled: "status-cancelled",
@@ -276,7 +277,15 @@ function CustomSelect({
                 setOpen(false);
               }}
             >
-              {formatLabel(option)}
+              {option === "all"
+                ? "All Challenges"
+                : option === "not start"
+                  ? "Not Started"
+                  : option === "ongoing"
+                    ? "Ongoing"
+                    : option === "close"
+                      ? "Closed"
+                      : formatLabel(option)}
             </button>
           ))}
         </div>
@@ -1270,28 +1279,30 @@ function DeleteConfirmModal({ challenge, onClose, onConfirm, deleting }) {
 
 function AdminChallengeManagement() {
   const [challenges, setChallenges] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [page, setPage] = useState(1);
-
+  const [filter, setFilter] = useState("all");
   const [formModal, setFormModal] = useState(null);
-
   const [viewChallenge, setViewChallenge] = useState(null);
-
   const [deleteChallenge, setDeleteChallenge] = useState(null);
-
   const [deleting, setDeleting] = useState(false);
-
   const ITEMS_PER_PAGE = 6;
 
-  const totalPages = Math.ceil(challenges.length / ITEMS_PER_PAGE);
+  const filteredChallenges = useMemo(() => {
+    if (filter === "all") {
+      return challenges;
+    }
+
+    return challenges.filter((challenge) => challenge.status === filter);
+  }, [challenges, filter]);
+
+  const totalPages = Math.ceil(filteredChallenges.length / ITEMS_PER_PAGE);
 
   const currentChallenges = useMemo(() => {
     const start = (page - 1) * ITEMS_PER_PAGE;
 
-    return challenges.slice(start, start + ITEMS_PER_PAGE);
-  }, [challenges, page]);
+    return filteredChallenges.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredChallenges, page]);
 
   const fetchChallenges = async () => {
     try {
@@ -1505,6 +1516,11 @@ function AdminChallengeManagement() {
         .status-not-start {
           background: #edf7f0;
           color: #27834d;
+        }
+
+        .status-ongoing {
+          background: #eef6ff;
+          color: #3573a8;
         }
 
         .status-continue,
@@ -2283,6 +2299,30 @@ function AdminChallengeManagement() {
           >
             + Create Challenge
           </button>
+        </div>
+        <div className="mb-6 flex flex-wrap gap-3">
+          {[
+            { value: "all", label: "All Challenges" },
+            { value: "not started", label: "Not Started" },
+            { value: "ongoing", label: "Ongoing" },
+            { value: "closed", label: "Closed" },
+          ].map((status) => (
+            <button
+              key={status.value}
+              type="button"
+              onClick={() => {
+                setFilter(status.value);
+                setPage(1);
+              }}
+              className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 ${
+                filter === status.value
+                  ? "bg-[#27834d] text-white shadow-md"
+                  : "border border-[#d9e8df] bg-white text-[#557064] hover:border-[#27834d] hover:text-[#27834d]"
+              }`}
+            >
+              {status.label}
+            </button>
+          ))}
         </div>
 
         {loading ? (
