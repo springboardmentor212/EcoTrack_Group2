@@ -988,6 +988,8 @@ export default function SustainabilityGoals() {
       goalType: "",
       target: "",
       unit: "",
+      period: value === "Electricity" ? "Monthly" : "",
+      endDate: "",
     }));
   };
 
@@ -1350,7 +1352,12 @@ export default function SustainabilityGoals() {
                 <CustomSelect
                   label="Period"
                   value={form.period}
-                  options={categoryConfig?.periods || []}
+                  options={
+                    form.category === "Carbon Emissions" &&
+                    form.trackingType === "Electricity"
+                      ? ["Monthly"]
+                      : categoryConfig?.periods || []
+                  }
                   placeholder="Select period"
                   disabled={!selectedType}
                   onChange={handlePeriodChange}

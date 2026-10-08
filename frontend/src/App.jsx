@@ -18,6 +18,7 @@ import AdminUserManagement from "./pages/admin-user-management";
 import AdminChallengeManagement from "./pages/admin-challenge-management";
 import AdminLogin from "./pages/admin-login";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminDashboard from "./pages/admin-dashboard";
 
 function App() {
   return (
@@ -123,6 +124,15 @@ function App() {
       />
 
       {/* admin page */}
+      <Route
+        path="/admin-dashboard"
+        element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/admin-profile"
         element={

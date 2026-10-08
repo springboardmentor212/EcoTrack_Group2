@@ -7,6 +7,9 @@ import { toast } from "react-toastify";
 const API_URL = import.meta.env.VITE_API_URL;
 const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
 const GOALS_URL = import.meta.env.VITE_GOAL_API;
+const PROFILE_URL = import.meta.env.VITE_PROFILE_URL;
+const CHALLENGE_URL = import.meta.env.VITE_CHALLENGE_API;
+const Notification_API = import.meta.env.VITE_NOTIFICATION_API;
 
 const trackerPeriods = {
   All: [
@@ -64,10 +67,7 @@ const navItems = [
   ["Carbon Tracking System", "/tracking"],
   ["Sustainability Goals", "/sustainability-goals"],
   ["Community Challenges", "/community-challenges"],
-  ["AI Insights", "/ai-insights"],
-  ["Analytics", "/analytics"],
-  ["Reports", "/reports"],
-  ["Rewards", "/rewards"],
+  ["Analytics / Reports", "/analytics"],
   ["Notifications", "/notifications"],
   ["Profile", "/profile"],
 ];
@@ -224,6 +224,28 @@ const createStatsFromSummary = (tracker, summary) => {
   ];
 };
 
+const formatChallengeLabel = (value) => {
+  if (!value) return "—";
+
+  return String(value)
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
+const formatChallengeCategory = (category) => {
+  const categoryMap = {
+    transportation: "Transportation",
+    electricity: "Electricity",
+    "waste management": "Waste Management",
+    "carbon emission": "Carbon Emission",
+    "carbon save": "Carbon Save",
+  };
+
+  return categoryMap[category] || formatChallengeLabel(category);
+};
+
 const getDurationData = (duration, durationSummary) => {
   if (!durationSummary) return [];
 
@@ -246,8 +268,15 @@ function Dashboard() {
   const [periodOpen, setPeriodOpen] = useState(false);
   const [trackerOpen, setTrackerOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [profile, setProfile] = useState({
+    name: "",
+    email: "",
+    location: "",
+    profilePhoto: "",
+  });
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [notifications] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [dashboardStats, setDashboardStats] = useState(overviewData);
@@ -256,6 +285,8 @@ function Dashboard() {
   const [noActivity, setNoActivity] = useState(false);
   const [goals, setGoals] = useState([]);
   const [goalsLoading, setGoalsLoading] = useState(true);
+  const [challenges, setChallenges] = useState([]);
+  const [challengesLoading, setChallengesLoading] = useState(true);
 
   useEffect(() => {
     const handleDocumentClick = (event) => {
@@ -356,6 +387,69 @@ function Dashboard() {
   }, [selectedTracker, selectedPeriod]);
 
   useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data } = await axios.get(`${PROFILE_URL}/`, {
+          withCredentials: true,
+        });
+
+        if (data.success) {
+          const profileData = data.profile || {};
+
+          setProfile({
+            name: profileData.name || "",
+            email: profileData.email || "",
+            location: profileData.location || "",
+            profilePhoto: profileData.profilePhoto || "",
+          });
+        }
+      } catch (error) {
+        console.error(
+          "Profile fetch error:",
+          error.response?.data?.message || error.message,
+        );
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setNotificationsLoading(true);
+
+        const { data } = await axios.get(
+          `${Notification_API}/?selected=all&status=all`,
+          {
+            withCredentials: true,
+          },
+        );
+
+        if (data.success) {
+          setNotifications(
+            Array.isArray(data.notificationData) ? data.notificationData : [],
+          );
+        } else {
+          setNotifications([]);
+          console.error("Notifications fetch error:", data.message);
+        }
+      } catch (error) {
+        console.error(
+          "Notifications fetch error:",
+          error.response?.data?.message || error.message,
+        );
+
+        setNotifications([]);
+      } finally {
+        setNotificationsLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
+  useEffect(() => {
     const fetchGoals = async () => {
       try {
         setGoalsLoading(true);
@@ -395,6 +489,39 @@ function Dashboard() {
     fetchGoals();
   }, []);
 
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      try {
+        setChallengesLoading(true);
+
+        const { data } = await axios.get(`${CHALLENGE_URL}/`, {
+          withCredentials: true,
+        });
+
+        if (data.success === "user") {
+          setChallenges(
+            Array.isArray(data.userChallengesData)
+              ? data.userChallengesData
+              : [],
+          );
+        } else {
+          setChallenges([]);
+        }
+      } catch (error) {
+        console.error(
+          "Challenges fetch error:",
+          error.response?.data?.message || error.message,
+        );
+
+        setChallenges([]);
+      } finally {
+        setChallengesLoading(false);
+      }
+    };
+
+    fetchChallenges();
+  }, []);
+
   const activeGoals = goals.filter((goal) => goal.status === "active");
   const completedGoals = goals.filter(
     (goal) =>
@@ -422,7 +549,7 @@ function Dashboard() {
       : `${selectedTracker} Overview`;
 
   const unreadNotifications = notifications.filter(
-    (notification) => !notification.read,
+    (notification) => !notification.isRead,
   );
 
   const periods = trackerPeriods[selectedTracker];
@@ -738,7 +865,11 @@ function Dashboard() {
                     </div>
 
                     <div className="max-h-[280px] overflow-y-auto">
-                      {notifications.length === 0 ? (
+                      {notificationsLoading ? (
+                        <div className="px-4 py-7 text-center text-xs text-[#8a998f]">
+                          Loading notifications...
+                        </div>
+                      ) : notifications.length === 0 ? (
                         <div className="px-4 py-7 text-center text-xs text-[#8a998f]">
                           No notifications
                         </div>
@@ -746,13 +877,43 @@ function Dashboard() {
                         notifications.slice(0, 5).map((notification) => (
                           <div
                             key={notification.id}
-                            className={`border-b border-[#f0f4f1] px-4 py-3 text-xs text-[#53685b] ${
-                              !notification.read
-                                ? "bg-[#f3f9f4] font-semibold"
-                                : ""
+                            onClick={() => navigate("/notifications")}
+                            className={`cursor-pointer border-b border-[#f0f4f1] px-4 py-3 transition-colors hover:bg-[#f6faf7] ${
+                              !notification.isRead ? "bg-[#f3f9f4]" : ""
                             }`}
                           >
-                            {notification.message}
+                            <div className="flex items-start justify-between gap-3">
+                              <p
+                                className={`text-xs leading-5 ${
+                                  !notification.isRead
+                                    ? "font-bold text-[#294a36]"
+                                    : "font-semibold text-[#53685b]"
+                                }`}
+                              >
+                                {notification.title}
+                              </p>
+
+                              {!notification.isRead && (
+                                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#27834d]" />
+                              )}
+                            </div>
+
+                            <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-[#7b8b81]">
+                              {notification.message}
+                            </p>
+
+                            <p className="mt-1.5 text-[10px] text-[#a0aaa4]">
+                              {new Date(notification.createdAt).toLocaleString(
+                                "en-IN",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </p>
                           </div>
                         ))
                       )}
@@ -780,16 +941,30 @@ function Dashboard() {
                   }}
                   className="flex items-center gap-2.5 rounded-lg border-0 bg-transparent px-1 py-1.5 text-left"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf5ed] text-sm font-semibold text-[#27834d]">
-                    E
+                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[#eaf5ed] text-sm font-semibold text-[#27834d]">
+                    {profile.profilePhoto ? (
+                      <img
+                        src={profile.profilePhoto}
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      (profile.name || "E").charAt(0).toUpperCase()
+                    )}
                   </div>
 
                   <div className="profile-info flex min-w-0 flex-col max-md:hidden">
-                    <strong className="text-xs font-semibold text-[#294a36]">
-                      Eco User
+                    <strong className="truncate text-xs font-semibold text-[#294a36]">
+                      {profile.name || "Eco User"}
                     </strong>
 
-                    <span className="text-[10px] text-[#8a998f]">Member</span>
+                    <span className="truncate text-[10px] text-[#8a998f]">
+                      {profile.location || "Member"}
+                    </span>
+
+                    <span className="truncate text-[10px] text-[#8a998f]">
+                      {profile.email || "email"}
+                    </span>
                   </div>
 
                   <FiChevronDown
@@ -838,7 +1013,10 @@ function Dashboard() {
               </p>
 
               <h1 className="text-[32px] font-semibold leading-tight text-[#173f2a] max-sm:text-[28px]">
-                Welcome back, <span className="text-[#27834d]">Eco User!</span>
+                Welcome back,{" "}
+                <span className="text-[#27834d]">
+                  {profile.name || "Eco User"}
+                </span>
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#718277]">
@@ -1188,10 +1366,12 @@ function Dashboard() {
                             </p>
                             <p className="mt-1 text-xs font-medium text-[#53685b]">
                               {goal.endDate
-                                .split("T")[0]
-                                .split("-")
-                                .reverse()
-                                .join("/") || "—"}
+                                ? goal.endDate
+                                    .split("T")[0]
+                                    .split("-")
+                                    .reverse()
+                                    .join("/")
+                                : "—"}
                             </p>
                           </div>
                         </button>
@@ -1200,62 +1380,118 @@ function Dashboard() {
                   </div>
                 )}
               </section>
-            </section>
 
-            <section
-              key={`recommendation-${refreshKey}`}
-              className="scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.72s_both]"
-            >
-              <div className="flex items-center justify-between gap-5">
-                <div>
-                  <p className="mb-1 text-[11px] font-bold tracking-[.15em] text-[#27834d]">
-                    RECOMMENDATION
-                  </p>
+              <section className="mt-[22px] scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.72s_both]">
+                <div className="flex items-center justify-between gap-5 max-sm:flex-col max-sm:items-start">
+                  <div>
+                    <p className="mb-1 text-[11px] font-bold tracking-[.15em] text-[#27834d]">
+                      COMMUNITY CHALLENGES
+                    </p>
 
-                  <h2 className="text-[21px] font-semibold text-[#173f2a]">
-                    Make an Impact
-                  </h2>
+                    <h2 className="text-[21px] font-semibold text-[#173f2a]">
+                      Your Challenges
+                    </h2>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate("/community-challenges")}
+                    className="h-[40px] rounded-lg border border-[#cfe0d4] bg-white px-4 text-[12px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
+                  >
+                    View All Challenges
+                  </button>
                 </div>
 
-                <img
-                  src="/assets/earth.jpg"
-                  alt="Earth"
-                  className="h-[52px] w-[52px] rounded-xl object-contain"
-                />
-              </div>
+                {challengesLoading ? (
+                  <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                    <span className="animate-pulse text-sm text-[#8a998f]">
+                      Loading challenges...
+                    </span>
+                  </div>
+                ) : challenges.length === 0 ? (
+                  <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                    <div className="px-6 text-center">
+                      <p className="text-sm font-semibold text-[#294a36]">
+                        No challenges joined yet
+                      </p>
 
-              <button
-                type="button"
-                onClick={() => navigate("/ai-insights")}
-                className="mt-[22px] flex w-full gap-3.5 rounded-[11px] border border-[#e1eee4] bg-[#f3f9f4] p-[17px] text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4e5da] hover:shadow-md"
-              >
-                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px]">
-                  <img
-                    src="/assets/Footprints.jpg"
-                    alt="Carbon footprint"
-                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                  />
-                </div>
+                      <p className="mt-2 text-xs leading-5 text-[#8a998f]">
+                        Explore community challenges and join one to start
+                        participating.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {challenges.slice(0, 3).map((challenge, index) => (
+                      <button
+                        key={
+                          challenge._id ||
+                          challenge.id ||
+                          `${challenge.title}-${index}`
+                        }
+                        type="button"
+                        onClick={() => navigate("/community-challenges")}
+                        className="rounded-xl border border-[#e1ebe4] bg-[#fbfdfb] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#d1e3d7] hover:bg-white hover:shadow-[0_12px_28px_rgba(33,78,50,0.07)]"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold tracking-[.12em] text-[#27834d]">
+                              {formatChallengeCategory(challenge.category)}
+                            </p>
 
-                <div>
-                  <h3 className="text-sm font-semibold leading-5 text-[#294a36]">
-                    Start tracking your first activity
-                  </h3>
+                            <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
+                              {challenge.title || "Challenge"}
+                            </h3>
 
-                  <p className="mt-1.5 text-[11px] leading-5 text-[#718277]">
-                    Add your transportation, energy, or lifestyle activity to
-                    start understanding your carbon footprint.
-                  </p>
-                </div>
-              </button>
+                            <p className="mt-1 text-[11px] text-[#8a998f]">
+                              {formatChallengeLabel(challenge.challengeType)}
+                            </p>
+                          </div>
 
-              <button
-                type="button"
-                onClick={() => navigate("/ai-insights")}
-                className="mt-[18px] h-[42px] w-full rounded-lg border border-[#cfe0d4] bg-white text-[13px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
-              >
-                View More Recommendations
-              </button>
+                          <span className="shrink-0 rounded-full bg-[#eaf5ed] px-2.5 py-1 text-[10px] font-semibold text-[#27834d]">
+                            {formatChallengeLabel(challenge.status)}
+                          </span>
+                        </div>
+
+                        <div className="mt-5 grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-[10px] text-[#8a998f]">Target</p>
+
+                            <p className="mt-1 text-sm font-semibold text-[#173f2a]">
+                              {challenge.target ?? "—"} {challenge.unit || ""}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-[10px] text-[#8a998f]">Period</p>
+
+                            <p className="mt-1 text-sm font-semibold text-[#173f2a]">
+                              {formatChallengeLabel(challenge.period)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 border-t border-[#edf2ee] pt-3">
+                          <p className="text-[10px] text-[#8a998f]">
+                            Start Date
+                          </p>
+
+                          <p className="mt-1 text-xs font-medium text-[#53685b]">
+                            {challenge.startDate
+                              ? String(challenge.startDate)
+                                  .slice(0, 10)
+                                  .split("-")
+                                  .reverse()
+                                  .join("/")
+                              : "—"}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
             </section>
           </main>
         </div>

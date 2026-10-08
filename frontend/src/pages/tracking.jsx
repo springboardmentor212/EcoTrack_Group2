@@ -2,27 +2,21 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FiChevronDown } from "react-icons/fi";
-import {
-  FaCar,
-  FaBolt,
-  FaTrashAlt
-} from "react-icons/fa";
+import {FaCar,FaBolt,FaTrashAlt} from "react-icons/fa";
 import earth from "../assets/earth.svg";
 import transportationImage from "../assets/transportation.png";
 import electricityImage from "../assets/electricity.png";
 import wasteImage from "../assets/waste.svg";
 
 const API_URL = import.meta.env.VITE_API_URL;
+const PROFILE_URL = import.meta.env.VITE_PROFILE_URL;
 
 const navItems = [
     ["Dashboard", "/dashboard"],
     ["Carbon Tracking System", "/tracking"],
     ["Sustainability Goals", "/sustainability-goals"],
     ["Community Challenges", "/community-challenges"],
-    ["AI Insights", "/ai-insights"],
-    ["Analytics", "/analytics"],
-    ["Reports", "/reports"],
-    ["Rewards", "/rewards"],
+    ["Analytics / Reports", "/analytics"],
     ["Notifications", "/notifications"],
     ["Profile", "/profile"],
 ];
@@ -30,6 +24,12 @@ const navItems = [
 function Tracking() {
     const navigate = useNavigate();
     const [profileOpen, setProfileOpen] = useState(false);
+    const [profile, setProfile] = useState({
+    name: "",
+    email: "",
+    location: "",
+    profilePhoto: "",
+});
 
     const trackingCards = [
   {
@@ -61,6 +61,34 @@ function Tracking() {
     image: wasteImage,
   },
 ];
+
+useEffect(() => {
+    const fetchProfile = async () => {
+        try {
+            const { data } = await axios.get(`${PROFILE_URL}/`, {
+                withCredentials: true,
+            });
+
+            if (data.success) {
+                const profileData = data.profile || {};
+
+                setProfile({
+                    name: profileData.name || "",
+                    email: profileData.email || "",
+                    location: profileData.location || "",
+                    profilePhoto: profileData.profilePhoto || "",
+                });
+            }
+        } catch (error) {
+            console.error(
+                "Profile fetch error:",
+                error.response?.data?.message || error.message
+            );
+        }
+    };
+
+    fetchProfile();
+}, []);
 
     useEffect(() => {
         const handleDocumentClick = (event) => {
@@ -148,11 +176,30 @@ function Tracking() {
                                 }}
                                 className="flex items-center gap-2.5 rounded-lg border-0 bg-transparent px-1 py-1.5 text-left"
                             >
-                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf5ed] text-sm font-semibold text-[#27834d]">E</div>
+                                {profile.profilePhoto ? (
+                                    <img
+                                        src={profile.profilePhoto}
+                                        alt={profile.name || "Profile"}
+                                        className="h-9 w-9 shrink-0 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eaf5ed] text-sm font-semibold text-[#27834d]">
+                                        {(profile.name || "U").charAt(0).toUpperCase()}
+                                    </div>
+                                )}
 
-                                <div className="profile-info flex min-w-0 flex-col max-md:hidden">
-                                    <strong className="text-xs font-semibold text-[#294a36]">Eco User</strong>
-                                    <span className="text-[10px] text-[#8a998f]">Member</span>
+                                <div className="profile-info flex min-w-0 max-w-[190px] flex-col max-md:hidden">
+                                    <strong className="truncate text-xs font-semibold text-[#294a36]">
+                                        {profile.name || "Eco User"}
+                                    </strong>
+
+                                    <span className="truncate text-[10px] text-[#8a998f]">
+                                        {profile.location || "Member"}
+                                    </span>
+
+                                    <span className="truncate text-[9px] text-[#9aa69f]">
+                                        {profile.email || ""}
+                                    </span>
                                 </div>
 
                                 <FiChevronDown

@@ -22,10 +22,10 @@ router.route("/profile")
 router.route("/user")
       .get(users);
 
-router.route("/block")
+router.route("/block/:id")
       .patch(block);
 
-router.route("/unblock")
+router.route("/unblock/:id")
       .patch(unBlock);
 
 

@@ -88,15 +88,67 @@ module.exports.updateAdminProfile = async (req,res) => {
 };
 
 module.exports.users = async (req,res) => {
-  
+   const userId = req.currUser,role = req.userRole;
+    if(!userId){
+        return res.status(400).json({success : false, message : "login first as admin to get all users data"});
+    }
+
+    if(role !== "admin"){
+        return res.status(400).json({success : false, message : "only admin user can get all user data"});
+    }
+
+    const users = await userModel.find({role : "user"}).select("_id name email location profilePhoto isBlocked");
+    if(!users){
+        res.status(400).json({success : false , message : "don't have users data"});
+    }
+
+    res.status(200).json({success : true, users});
 };
 
 module.exports.block = async (req,res) => {
+   const userId = req.currUser,role = req.userRole;
+    if(!userId){
+        return res.status(400).json({success : false, message : "login first as admin to block user"});
+    }
 
+    if(role !== "admin"){
+        return res.status(400).json({success : false, message : "only admin user can block any user"});
+    }
+
+    const {id} = req.params;
+    if(!id){
+        return res.status(400).json({success : false ,message : "please select first any user to block it"});
+    }
+
+    const user = await userModel.findOneAndUpdate({_id : id , role : "user"},{isBlocked : true});
+    if(!user){
+        return res.status(400).json({success : false , message : "doesn't find user to block"});
+    }
+
+    return res.status(200).json({success : true, message : "user blocked succuesfully"});
 };
 
 module.exports.unBlock = async (req,res) => {
+  const userId = req.currUser,role = req.userRole;
+    if(!userId){
+        return res.status(400).json({success : false, message : "login first as admin to unblock user"});
+    }
 
+    if(role !== "admin"){
+        return res.status(400).json({success : false, message : "only admin user can unblock any user"});
+    }
+
+    const {id} = req.params;
+    if(!id){
+        return res.status(400).json({success : false ,message : "please select first any user to unblock it"});
+    }
+
+    const user = await userModel.findOneAndUpdate({_id : id , role : "user"},{isBlocked : false});
+    if(!user){
+        return res.status(400).json({success : false , message : "don't find user to unblock"});
+    }
+
+    return res.status(200).json({success : true, message : "user unblocked succuesfully"});
 };
 
 module.exports.reports = async (req,res) => {
