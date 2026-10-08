@@ -55,7 +55,7 @@ module.exports.validateResetPassword = ((req,res,next)=>{
 module.exports.userCheck = async(req,res,next) => {
  try{
       if(!req.cookies.token) {
-        return res.status(400).json({ success: false ,  message : "please login first"});
+        return res.status(200).json({ success: false ,  message : "please login first"});
       }
       const token = req.cookies.token;
       const data = jwt.verify(token, process.env.token_key); 

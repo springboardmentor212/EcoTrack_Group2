@@ -13,10 +13,8 @@ function AdminLogin() {
 
   const navigate = useNavigate();
 
-  const API_URL = import.meta.env.VITE_API_URL;
-
-  const emailPattern =
-    /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const Admin_Api = import.meta.env.VITE_ADMIN_API;
+  const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
   const passwordPattern =
     /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/;
@@ -43,26 +41,27 @@ function AdminLogin() {
 
     if (!passwordPattern.test(password)) {
       setError(
-        "Please enter atleast 8 character using uppercase, lowercase, number and special character."
+        "Please enter atleast 8 character using uppercase, lowercase, number and special character.",
       );
       return;
     }
 
     try {
       setIsLoading(true);
-      
+
       const response = await axios.post(
-        `${API_URL}/ADMIN_LOGIN_API`,
+        `${Admin_Api}/login`,
         {
           email,
           password,
         },
         {
           withCredentials: true,
-        }
+        },
       );
 
       const data = response.data;
+      console.log(data);
 
       if (data.success === "true" || data.success === true) {
         toast.success(data.message || "Admin login successfully");
@@ -113,10 +112,7 @@ function AdminLogin() {
           </div>
 
           {/* Login Form */}
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-[15px]"
-          >
+          <form onSubmit={handleSubmit} className="flex flex-col gap-[15px]">
             {/* Email */}
             <div className="flex flex-col gap-[7px]">
               <label

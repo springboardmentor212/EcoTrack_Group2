@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const PROFILE_URL = import.meta.env.VITE_PROFILE_URL;
+const Admin_Api = import.meta.env.VITE_ADMIN_API;
 
 const emptyProfile = {
   name: "",
@@ -35,7 +35,7 @@ export default function AdminProfile() {
     try {
       setLoading(true);
 
-      const { data } = await axios.get(`${PROFILE_URL}/`, {
+      const { data } = await axios.get(`${Admin_Api}/profile`, {
         withCredentials: true,
       });
 
@@ -54,9 +54,7 @@ export default function AdminProfile() {
         toast.error(message || "Unable to load profile");
       }
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Unable to load profile"
-      );
+      toast.error(err.response?.data?.message || "Unable to load profile");
     } finally {
       setLoading(false);
     }
@@ -127,7 +125,7 @@ export default function AdminProfile() {
         body.append("profilePhoto", selectedPhoto);
       }
 
-      const { data } = await axios.patch(`${PROFILE_URL}/`, body, {
+      const { data } = await axios.patch(`${Admin_Api}/profile`, body, {
         withCredentials: true,
       });
 
@@ -148,9 +146,7 @@ export default function AdminProfile() {
         toast.error(message || "Unable to update profile");
       }
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Unable to update profile"
-      );
+      toast.error(err.response?.data?.message || "Unable to update profile");
     } finally {
       setSaving(false);
     }
@@ -171,7 +167,6 @@ export default function AdminProfile() {
   return (
     <div className="min-h-screen bg-[#f5f8f6] px-4 py-6 md:px-8 md:py-8">
       <div className="mx-auto max-w-6xl">
-
         {/* Page Header */}
         <div className="mb-7 animate-[fadeDown_0.6s_ease-out]">
           <h1 className="text-3xl font-bold text-[#173b2d] transition duration-300 hover:tracking-wide">
@@ -184,13 +179,10 @@ export default function AdminProfile() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
-
           {/* Profile Card */}
           <div className="group rounded-2xl border border-[#dfe9e3] bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-lg animate-[fadeUp_0.65s_ease-out]">
             <div className="flex flex-col items-center text-center">
-
               <div className="h-32 w-32 overflow-hidden rounded-full border-4 border-[#e8f2ec] bg-[#edf5ef] shadow-sm transition-all duration-500 group-hover:scale-105 group-hover:shadow-md">
-
                 {photoPreview ? (
                   <img
                     src={photoPreview}
@@ -202,7 +194,6 @@ export default function AdminProfile() {
                     {getInitial()}
                   </div>
                 )}
-
               </div>
 
               <h2 className="mt-5 text-xl font-semibold text-[#173b2d] transition duration-300 group-hover:text-[#2f6f4e]">
@@ -215,7 +206,6 @@ export default function AdminProfile() {
 
               {editing && (
                 <div className="mt-6 w-full animate-[fadeUp_0.4s_ease-out]">
-
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -237,18 +227,14 @@ export default function AdminProfile() {
                       {selectedPhoto.name}
                     </p>
                   )}
-
                 </div>
               )}
-
             </div>
           </div>
 
           {/* Personal Information */}
           <div className="rounded-2xl border border-[#dfe9e3] bg-white p-6 shadow-sm transition-all duration-500 hover:shadow-md md:p-8 animate-[fadeUp_0.75s_ease-out]">
-
             <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
               <div>
                 <h2 className="text-xl font-semibold text-[#173b2d]">
                   Personal Information
@@ -268,11 +254,9 @@ export default function AdminProfile() {
                   Edit Profile
                 </button>
               )}
-
             </div>
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-
               {/* Name */}
               <div className="animate-[fadeUp_0.7s_ease-out]">
                 <label className="mb-2 block text-sm font-medium text-[#355445]">
@@ -333,24 +317,18 @@ export default function AdminProfile() {
                 </label>
 
                 <div className="flex cursor-not-allowed items-center justify-between rounded-xl bg-[#f5f8f6] px-4 py-3 transition-all duration-300 hover:bg-[#edf5ef]">
-
-                  <span className="text-sm text-gray-800">
-                    Administrator
-                  </span>
+                  <span className="text-sm text-gray-800">Administrator</span>
 
                   <span className="rounded-full bg-[#e3f0e7] px-3 py-1 text-xs font-semibold text-[#2f6f4e] transition-transform duration-300 hover:scale-105">
                     Account Role
                   </span>
-
                 </div>
               </div>
-
             </div>
 
             {/* Save / Cancel */}
             {editing && (
               <div className="mt-8 flex justify-end gap-3 border-t border-[#edf1ee] pt-6 animate-[fadeUp_0.45s_ease-out]">
-
                 <button
                   type="button"
                   onClick={cancelEditing}
@@ -368,10 +346,8 @@ export default function AdminProfile() {
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
-
               </div>
             )}
-
           </div>
         </div>
       </div>

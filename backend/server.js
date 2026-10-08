@@ -26,6 +26,7 @@ const carbonRouter = require("./router/carbonActivity");
 const goalRouter = require("./router/goal");
 const notificationRouter = require("./router/notification");
 const challengeRouter = require("./router/challenge");
+const adminRouter = require("./router/admin");
 
 const {sendDailyGoalSuggestion,sendGoalReminder} = require("./jobs/goalSuggestionAndGoalReminder");
 const {updateChallengesStatus} = require("./jobs/challengeUpdate");
@@ -58,6 +59,7 @@ app.use("/carbonActivity",carbonRouter);
 app.use("/goal",goalRouter);
 app.use("/notification",notificationRouter);
 app.use("/challenge",challengeRouter);
+app.use("/admin",adminRouter);
 
 app.get("/",async (req,res)=>{
     // await sendGoalSuggestion();

@@ -440,3 +440,9 @@ module.exports.updateCarbonSaveChallengeSchema = joi.object({
      startDate : joi.date().required().min("now"),
      endDate : joi.date().required().min(joi.ref('startDate'))
 }).required();
+
+module.exports.adminProfileSchema = joi.object({
+    name : joi.string().required().min(3).pattern(/^(?=.{3,}$)[A-Za-z]+(?: [A-Za-z]+)?$/),
+    profilePhoto: joi.string().allow("",null),
+    location : joi.string().min(3).required(),
+}).required();
