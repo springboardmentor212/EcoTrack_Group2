@@ -17,12 +17,12 @@ module.exports.getNotification = async(req,res) => {
         return res.status(400).json({success : false , messag : "block user can't get notification"});
     }
 
-    const {selection = "all",status = "all"} = req.query;
+    const {selected = "all",status = "all"} = req.query;
     const validSelections = ["all","goal","challenge"];
     const validStatuses = ["all","read","unread"];
 
-    if(!validSelections.includes(selection)){
-        return res.status(400).json({success : false, message : "selection value is wrong"});
+    if(!validSelections.includes(selected)){
+        return res.status(400).json({success : false, message : "type value is wrong"});
     }
 
     if(!validStatuses.includes(status)){
@@ -37,7 +37,7 @@ module.exports.getNotification = async(req,res) => {
         query.isRead = false;
     }
  
-    if(selection === "goal"){
+    if(selected === "goal"){
        query.notificationId = {
                 $in: await getNotificationIds([
                     "goal suggestion",
@@ -46,11 +46,12 @@ module.exports.getNotification = async(req,res) => {
             };
     }
 
-    if(selection === "challenge"){
+    if(selected === "challenge"){
          query.notificationId = {
                 $in: await getNotificationIds([
                     "challenge suggestion",
-                    "challenge reminder"
+                    "challenge reminder",
+                    "challenge information"
                 ])
             };
     }
@@ -59,7 +60,7 @@ module.exports.getNotification = async(req,res) => {
                 .sort({ createdAt: -1 });
    
     if(!notifications || notifications.length === 0){
-       return res.status(400).json({success : false, message : "doesn't get the notifications"});
+       return res.status(200).json({success : false, message : "doesn't get the notifications"});
     }
 
     const notificationData = notifications.map(item => ({
@@ -75,7 +76,7 @@ module.exports.getNotification = async(req,res) => {
             createdAt: item.createdAt
     }));
 
-    res.status(200).json({success : true, message: "notifications get successfully", notificationData});
+    return res.status(200).json({success : true, message: "notifications get successfully", notificationData});
   }catch(error){
        return res.status(500).json({success : false , message : "internal server error"}); 
   }

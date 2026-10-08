@@ -62,14 +62,14 @@ app.use("/challenge",challengeRouter);
 app.use("/admin",adminRouter);
 
 app.get("/",async (req,res)=>{
-    // await sendGoalSuggestion();
-    // await sendDailyGoalReminderNotification();
-    // await sendWeeklyGoalReminderNotification();
-    // await sendMonthlyGoalReminderNotification();
+    await sendGoalSuggestion();
+    await sendDailyGoalReminderNotification();
+    await sendWeeklyGoalReminderNotification();
+    await sendMonthlyGoalReminderNotification();
     await updateAllChallengesStatus();
     await sendDailyChallengeReminderNotification();
-    // await sendWeeklyChallengeReminderNotification();
-    // await sendMonthlyChallengeReminderNotification();
+    await sendWeeklyChallengeReminderNotification();
+    await sendMonthlyChallengeReminderNotification();
     res.send("work complete");
 });
 app.listen(port,()=>{

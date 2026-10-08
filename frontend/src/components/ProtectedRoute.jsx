@@ -39,6 +39,7 @@ function ProtectedRoute({ children }) {
             "/tracking/electricity",
             "/tracking/waste",
             "/community-challenges",
+            "/notifications",
           ];
 
           if (userRoutes.includes(location.pathname)) {
