@@ -591,7 +591,8 @@ export default function Transportation() {
                     <td className="px-6 py-4">{displayDate(trip.date)}</td>
 
                     <td className="px-6 py-4">
-                      {trip.transportation.transportMode}
+                      {trip.transportation.transportMode
+                        ?.replace(/\b[a-z]/g, (char) => char.toUpperCase()) || "N/A"}
                     </td>
 
                     <td className="px-6 py-4">
@@ -599,11 +600,16 @@ export default function Transportation() {
                     </td>
 
                     <td className="px-6 py-4">
-                      {trip.transportation?.fuelType || "N/A"}
+                      {trip.transportation?.fuelType
+                        ? trip.transportation.fuelType.charAt(0).toUpperCase() +
+                          trip.transportation.fuelType.slice(1)
+                        : "N/A"}
                     </td>
 
                     <td className="px-6 py-4">
-                      {trip.emission ?? "N/A"}
+                      {trip.emission != null && Number.isFinite(Number(trip.emission))
+                        ? Number(trip.emission).toFixed(2)
+                        : "N/A"}
                     </td>
 
                     <td className="px-6 py-4">

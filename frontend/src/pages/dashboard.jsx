@@ -122,6 +122,17 @@ const formatCardText = (value) => {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
 
+const formatPersonName = (value) => {
+  if (!value) return "";
+
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/(^|[\s'-])([a-z])/g, (_, separator, letter) =>
+      separator + letter.toUpperCase()
+    );
+};
+
 const createStatsFromSummary = (tracker, summary) => {
   if (tracker === "All") {
     return [
@@ -230,11 +241,7 @@ const formatChallengeLabel = (value) => {
   return String(value)
     .trim()
     .split(/\s+/)
-    .map(
-      (word) =>
-        word.charAt(0).toUpperCase() +
-        word.slice(1).toLowerCase()
-    )
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 };
 
@@ -267,19 +274,17 @@ const getDurationData = (duration, durationSummary) => {
 function Dashboard() {
   const navigate = useNavigate();
 
-  const [selectedPeriod, setSelectedPeriod] = useState(
-    "This Month (Day-wise)",
-  );
+  const [selectedPeriod, setSelectedPeriod] = useState("This Month (Day-wise)");
   const [selectedTracker, setSelectedTracker] = useState("All");
   const [periodOpen, setPeriodOpen] = useState(false);
   const [trackerOpen, setTrackerOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profile, setProfile] = useState({
-  name: "",
-  email: "",
-  location: "",
-  profilePhoto: "",
-});
+    name: "",
+    email: "",
+    location: "",
+    profilePhoto: "",
+  });
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(true);
@@ -375,7 +380,12 @@ function Dashboard() {
         }));
 
         setChartData(durationData);
-        setNoActivity(false);
+
+        const hasActivity = durationData.some(
+          (item) => Number(item.totalEmission) > 0,
+        );
+
+        setNoActivity(!hasActivity);
       } catch (error) {
         setDashboardStats((current) => ({
           ...current,
@@ -396,72 +406,79 @@ function Dashboard() {
   }, [selectedTracker, selectedPeriod]);
 
   useEffect(() => {
-  const fetchProfile = async () => {
-    try {
-      const { data } = await axios.get(`${PROFILE_URL}/`, {
-        withCredentials: true,
-      });
-
-      if (data.success) {
-        const profileData = data.profile || {};
-
-        setProfile({
-          name: profileData.name || "",
-          email: profileData.email || "",
-          location: profileData.location || "",
-          profilePhoto: profileData.profilePhoto || "",
-        });
-      }
-    } catch (error) {
-      console.error(
-        "Profile fetch error:",
-        error.response?.data?.message || error.message
-      );
-    }
-  };
-
-  fetchProfile();
-}, []);
-
-useEffect(() => {
-  const fetchNotifications = async () => {
-    try {
-      setNotificationsLoading(true);
-
-      const { data } = await axios.get(
-        `${Notification_API}/?selected=all&status=all`,
-        {
+    const fetchProfile = async () => {
+      try {
+        const { data } = await axios.get(`${PROFILE_URL}/`, {
           withCredentials: true,
-        }
-      );
+        });
 
-      if (data.success) {
-        setNotifications(
-          Array.isArray(data.notificationData)
-            ? data.notificationData
-            : []
+        
+if (data.success) {
+  const profileData = data.profile || {};
+
+  const fullName =
+    [
+      profileData.firstName || profileData.first_name,
+      profileData.lastName || profileData.last_name,
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+    profileData.name ||
+    profileData.fullName ||
+    "";
+
+  setProfile({
+    name: formatPersonName(fullName),
+    email: profileData.email || "",
+    location: formatPersonName(profileData.location),
+    profilePhoto: profileData.profilePhoto || "",
+  });
+}
+      } catch (error) {
+        console.error(
+          "Profile fetch error:",
+          error.response?.data?.message || error.message,
         );
-      } else {
-        setNotifications([]);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setNotificationsLoading(true);
+
+        const { data } = await axios.get(
+          `${Notification_API}/?selected=all&status=all`,
+          {
+            withCredentials: true,
+          },
+        );
+
+        if (data.success) {
+          setNotifications(
+            Array.isArray(data.notificationData) ? data.notificationData : [],
+          );
+        } else {
+          setNotifications([]);
+          console.error("Notifications fetch error:", data.message);
+        }
+      } catch (error) {
         console.error(
           "Notifications fetch error:",
-          data.message
+          error.response?.data?.message || error.message,
         );
+
+        setNotifications([]);
+      } finally {
+        setNotificationsLoading(false);
       }
-    } catch (error) {
-      console.error(
-        "Notifications fetch error:",
-        error.response?.data?.message || error.message
-      );
+    };
 
-      setNotifications([]);
-    } finally {
-      setNotificationsLoading(false);
-    }
-  };
-
-  fetchNotifications();
-}, []);
+    fetchNotifications();
+  }, []);
 
   useEffect(() => {
     const fetchGoals = async () => {
@@ -503,20 +520,21 @@ useEffect(() => {
     fetchGoals();
   }, []);
 
-  useEffect(() => {
+  
+useEffect(() => {
   const fetchChallenges = async () => {
     try {
       setChallengesLoading(true);
 
-      const { data } = await axios.get(`${CHALLENGE_URL}/`, {
+      const { data } = await axios.get(`${CHALLENGE_URL}/user`, {
         withCredentials: true,
       });
 
-      if (data.success === "user") {
+      if (data.success === true) {
         setChallenges(
           Array.isArray(data.userChallengesData)
             ? data.userChallengesData
-            : []
+            : [],
         );
       } else {
         setChallenges([]);
@@ -524,7 +542,7 @@ useEffect(() => {
     } catch (error) {
       console.error(
         "Challenges fetch error:",
-        error.response?.data?.message || error.message
+        error.response?.data?.message || error.message,
       );
 
       setChallenges([]);
@@ -537,24 +555,11 @@ useEffect(() => {
 }, []);
 
   const activeGoals = goals.filter((goal) => goal.status === "active");
-
-  const completedGoals = goals.filter(
-    (goal) =>
-      goal.status === "complete" ||
-      goal.status === "completed" ||
-      goal.status === "achieve" ||
-      goal.status === "achieved",
-  );
-
-  const otherGoals = goals.filter(
-    (goal) =>
-      goal.status !== "active" &&
-      goal.status !== "complete" &&
-      goal.status !== "completed" &&
-      goal.status !== "achieve" &&
-      goal.status !== "achieved",
-  );
-
+  
+const activeChallenges = challenges.filter(
+  (challenge) => challenge.status === "active",
+);
+  
   const stats =
     dashboardStats[selectedTracker] || overviewData[selectedTracker];
 
@@ -564,8 +569,8 @@ useEffect(() => {
       : `${selectedTracker} Overview`;
 
   const unreadNotifications = notifications.filter(
-  (notification) => !notification.isRead,
-);
+    (notification) => !notification.isRead,
+  );
 
   const periods = trackerPeriods[selectedTracker];
 
@@ -621,8 +626,6 @@ useEffect(() => {
     [chartData, selectedTracker, selectedPeriod],
   );
 
-  const goalTitle = selectedChart.goalTitle;
-
   const chartScale = useMemo(() => {
     const maximum = Math.max(...selectedChart.values, 0);
 
@@ -648,17 +651,14 @@ useEffect(() => {
       step = magnitude * 2;
     }
 
-    const maximumWithPadding =
-      Math.ceil((maximum * 1.15) / step) * step;
+    const maximumWithPadding = Math.ceil((maximum * 1.15) / step) * step;
 
     const tickStep = maximumWithPadding / 5;
 
     const ticks = Array.from(
       { length: 6 },
       (_, index) =>
-        Math.round(
-          (maximumWithPadding - index * tickStep) * 100,
-        ) / 100,
+        Math.round((maximumWithPadding - index * tickStep) * 100) / 100,
     );
 
     return {
@@ -719,8 +719,7 @@ useEffect(() => {
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message ||
-          "Unable to logout. Please try again.",
+        error.response?.data?.message || "Unable to logout. Please try again.",
       );
     }
   };
@@ -922,19 +921,22 @@ useEffect(() => {
                             </p>
 
                             <p className="mt-1.5 text-[10px] text-[#a0aaa4]">
-                              {new Date(notification.createdAt).toLocaleString("en-IN", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {new Date(notification.createdAt).toLocaleString(
+                                "en-IN",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
                             </p>
                           </div>
                         ))
                       )}
                     </div>
-                    
+
                     <div className="border-t border-[#edf2ee] px-4 py-3 text-center">
                       <Link
                         to="/notifications"
@@ -975,7 +977,11 @@ useEffect(() => {
                     </strong>
 
                     <span className="truncate text-[10px] text-[#8a998f]">
-                      {profile.location || profile.email || "Member"}
+                      {profile.location || "Member"}
+                    </span>
+
+                    <span className="truncate text-[10px] text-[#8a998f]">
+                      {profile.email || "email"}
                     </span>
                   </div>
 
@@ -1025,7 +1031,10 @@ useEffect(() => {
               </p>
 
               <h1 className="text-[32px] font-semibold leading-tight text-[#173f2a] max-sm:text-[28px]">
-                Welcome back, <span className="text-[#27834d]">Eco User!</span>
+                Welcome back,{" "}
+                <span className="text-[#27834d]">
+                  {profile.name || "Eco User"}
+                </span>
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#718277]">
@@ -1141,9 +1150,7 @@ useEffect(() => {
                   <button
                     key={stat.title}
                     type="button"
-                    onClick={() =>
-                      handleStatClick(selectedTracker, stat.title)
-                    }
+                    onClick={() => handleStatClick(selectedTracker, stat.title)}
                     disabled={dashboardLoading}
                     className="group w-full rounded-[15px] border border-[#e1ebe4] bg-white p-[21px] text-left shadow-[0_10px_30px_rgba(33,78,50,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-[#d4e4da] hover:shadow-[0_16px_35px_rgba(33,78,50,0.09)] animate-[cardFadeUp_.6s_ease_both] disabled:cursor-wait disabled:opacity-70"
                     style={{
@@ -1161,11 +1168,7 @@ useEffect(() => {
                     </p>
 
                     <h3 className="text-[27px] font-semibold text-[#173f2a]">
-                      {dashboardLoading
-                        ? "..."
-                        : noActivity
-                          ? "—"
-                          : stat.value}{" "}
+                      {dashboardLoading ? "..." : noActivity ? "—" : stat.value}{" "}
                       {!noActivity && !dashboardLoading && stat.unit && (
                         <span className="text-xs font-medium text-[#8a998f]">
                           {stat.unit}
@@ -1225,9 +1228,7 @@ useEffect(() => {
                     <div className="flex flex-col justify-between py-1 text-[10px] text-[#8a998f]">
                       {chartScale.ticks.map((tick, index) => (
                         <span key={index}>
-                          {Number.isInteger(tick)
-                            ? tick
-                            : tick.toFixed(1)}
+                          {Number.isInteger(tick) ? tick : tick.toFixed(1)}
                         </span>
                       ))}
                     </div>
@@ -1260,9 +1261,7 @@ useEffect(() => {
                                 className="w-full max-w-[46px] origin-bottom rounded-t-md bg-[#27834d] animate-[barGrow_.7s_ease_both]"
                                 style={{
                                   height: `${percentage}%`,
-                                  animationDelay: `${
-                                    0.7 + index * 0.05
-                                  }s`,
+                                  animationDelay: `${0.7 + index * 0.05}s`,
                                 }}
                               />
 
@@ -1286,7 +1285,7 @@ useEffect(() => {
                     </p>
 
                     <h2 className="text-[21px] font-semibold text-[#173f2a]">
-                      Your Goals
+                      Your Active Goals
                     </h2>
                   </div>
 
@@ -1305,11 +1304,11 @@ useEffect(() => {
                       Loading goals...
                     </span>
                   </div>
-                ) : goals.length === 0 ? (
+                ) : activeGoals.length === 0 ? (
                   <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
                     <div className="px-6 text-center">
                       <p className="text-sm font-semibold text-[#294a36]">
-                        No sustainability goals yet
+                        No active sustainability goals found
                       </p>
 
                       <p className="mt-2 text-xs leading-5 text-[#8a998f]">
@@ -1321,23 +1320,11 @@ useEffect(() => {
                 ) : (
                   <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {activeGoals.slice(0, 3).map((goal, index) => {
-                      const isCompleted =
-                        goal.status === "complete" ||
-                        goal.status === "completed" ||
-                        goal.status === "achieve" ||
-                        goal.status === "achieved";
-
                       return (
                         <button
-                          key={
-                            goal._id ||
-                            goal.id ||
-                            `${goal.title}-${index}`
-                          }
+                          key={goal._id || goal.id || `${goal.title}-${index}`}
                           type="button"
-                          onClick={() =>
-                            navigate("/sustainability-goals")
-                          }
+                          onClick={() => navigate("/sustainability-goals")}
                           className="rounded-xl border border-[#e1ebe4] bg-[#fbfdfb] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#d1e3d7] hover:bg-white hover:shadow-[0_12px_28px_rgba(33,78,50,0.07)]"
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -1347,41 +1334,29 @@ useEffect(() => {
                               </p>
 
                               <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
-                                {goal.title || "Sustainability Goal"}
+                                {formatChallengeLabel(goal.title || "Sustainability Goal")}
                               </h3>
                             </div>
 
-                            <span
-                              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                                isCompleted
-                                  ? "bg-[#eaf5ed] text-[#27834d]"
-                                  : "bg-[#f3f8f4] text-[#53685b]"
-                              }`}
-                            >
-                              {isCompleted
-                                ? "Completed"
-                                : goal.status === "active"
-                                  ? "Active"
-                                  : "Previous"}
-                            </span>
-                          </div>
+                            
+                                <span className="shrink-0 rounded-full bg-[#eaf5ed] px-2.5 py-1 text-[10px] font-semibold text-[#27834d]">
+                                    Active
+                                </span>
+                            </div>
 
                           <div className="mt-5 grid grid-cols-2 gap-3">
                             <div>
                               <p className="text-[10px] text-[#8a998f]">
                                 Target
                               </p>
-
                               <p className="mt-1 text-sm font-semibold text-[#173f2a]">
                                 {goal.target ?? "—"} {goal.unit || ""}
                               </p>
                             </div>
-
                             <div>
                               <p className="text-[10px] text-[#8a998f]">
                                 Period
                               </p>
-
                               <p className="mt-1 text-sm font-semibold text-[#173f2a]">
                                 {goal.period || "—"}
                               </p>
@@ -1392,10 +1367,13 @@ useEffect(() => {
                             <p className="text-[10px] text-[#8a998f]">
                               End date
                             </p>
-
                             <p className="mt-1 text-xs font-medium text-[#53685b]">
                               {goal.endDate
-                                ? goal.endDate.split("T")[0].split("-").reverse().join("/")
+                                ? goal.endDate
+                                    .split("T")[0]
+                                    .split("-")
+                                    .reverse()
+                                    .join("/")
                                 : "—"}
                             </p>
                           </div>
@@ -1404,125 +1382,118 @@ useEffect(() => {
                     })}
                   </div>
                 )}
-            
-            </section>
+              </section>
 
-            <section
-  className="mt-[22px] scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.72s_both]"
->
-  <div className="flex items-center justify-between gap-5 max-sm:flex-col max-sm:items-start">
-    <div>
-      <p className="mb-1 text-[11px] font-bold tracking-[.15em] text-[#27834d]">
-        COMMUNITY CHALLENGES
-      </p>
+              <section className="mt-[22px] scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.72s_both]">
+                <div className="flex items-center justify-between gap-5 max-sm:flex-col max-sm:items-start">
+                  <div>
+                    <p className="mb-1 text-[11px] font-bold tracking-[.15em] text-[#27834d]">
+                      COMMUNITY CHALLENGES
+                    </p>
 
-      <h2 className="text-[21px] font-semibold text-[#173f2a]">
-        Your Challenges
-      </h2>
-    </div>
+                    <h2 className="text-[21px] font-semibold text-[#173f2a]">
+                      Your Active Challenges
+                    </h2>
+                  </div>
 
-    <button
-      type="button"
-      onClick={() => navigate("/community-challenges")}
-      className="h-[40px] rounded-lg border border-[#cfe0d4] bg-white px-4 text-[12px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
-    >
-      View All Challenges
-    </button>
-  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/community-challenges")}
+                    className="h-[40px] rounded-lg border border-[#cfe0d4] bg-white px-4 text-[12px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
+                  >
+                    View All Challenges
+                  </button>
+                </div>
 
-  {challengesLoading ? (
-    <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
-      <span className="animate-pulse text-sm text-[#8a998f]">
-        Loading challenges...
-      </span>
-    </div>
-  ) : challenges.length === 0 ? (
-    <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
-      <div className="px-6 text-center">
-        <p className="text-sm font-semibold text-[#294a36]">
-          No challenges joined yet
-        </p>
+                {challengesLoading ? (
+                  <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                    <span className="animate-pulse text-sm text-[#8a998f]">
+                      Loading challenges...
+                    </span>
+                  </div>
+                ) : activeChallenges.length === 0 ? (
+                  <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                    <div className="px-6 text-center">
+                      <p className="text-sm font-semibold text-[#294a36]">
+                        No active challenges found
+                      </p>
 
-        <p className="mt-2 text-xs leading-5 text-[#8a998f]">
-          Explore community challenges and join one to start participating.
-        </p>
-      </div>
-    </div>
-  ) : (
-    <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {challenges.slice(0, 3).map((challenge, index) => (
-        <button
-          key={
-            challenge._id ||
-            challenge.id ||
-            `${challenge.title}-${index}`
-          }
-          type="button"
-          onClick={() => navigate("/community-challenges")}
-          className="rounded-xl border border-[#e1ebe4] bg-[#fbfdfb] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#d1e3d7] hover:bg-white hover:shadow-[0_12px_28px_rgba(33,78,50,0.07)]"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold tracking-[.12em] text-[#27834d]">
-                {formatChallengeCategory(challenge.category)}
-              </p>
+                      <p className="mt-2 text-xs leading-5 text-[#8a998f]">
+                        Explore community challenges and join one to start
+                        participating.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {activeChallenges.slice(0, 3).map((challenge, index) => (
+                      <button
+                        key={
+                          challenge._id ||
+                          challenge.id ||
+                          `${challenge.title}-${index}`
+                        }
+                        type="button"
+                        onClick={() => navigate("/community-challenges")}
+                        className="rounded-xl border border-[#e1ebe4] bg-[#fbfdfb] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#d1e3d7] hover:bg-white hover:shadow-[0_12px_28px_rgba(33,78,50,0.07)]"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold tracking-[.12em] text-[#27834d]">
+                              {formatChallengeCategory(challenge.category)}
+                            </p>
 
-              <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
-                {challenge.title || "Challenge"}
-              </h3>
+                            <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
+                              {formatChallengeLabel(challenge.title || "Challenge")}
+                            </h3>
 
-              <p className="mt-1 text-[11px] text-[#8a998f]">
-                {formatChallengeLabel(challenge.challengeType)}
-              </p>
-            </div>
+                            <p className="mt-1 text-[11px] text-[#8a998f]">
+                              {formatChallengeLabel(challenge.challengeType)}
+                            </p>
+                          </div>
 
-            <span className="shrink-0 rounded-full bg-[#eaf5ed] px-2.5 py-1 text-[10px] font-semibold text-[#27834d]">
-              {formatChallengeLabel(challenge.status)}
-            </span>
-          </div>
+                          <span className="shrink-0 rounded-full bg-[#eaf5ed] px-2.5 py-1 text-[10px] font-semibold text-[#27834d]">
+                            {formatChallengeLabel(challenge.status)}
+                          </span>
+                        </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-[10px] text-[#8a998f]">
-                Target
-              </p>
+                        <div className="mt-5 grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-[10px] text-[#8a998f]">Target</p>
 
-              <p className="mt-1 text-sm font-semibold text-[#173f2a]">
-                {challenge.target ?? "—"}{" "}
-                {challenge.unit || ""}
-              </p>
-            </div>
+                            <p className="mt-1 text-sm font-semibold text-[#173f2a]">
+                              {challenge.target ?? "—"} {challenge.unit || ""}
+                            </p>
+                          </div>
 
-            <div>
-              <p className="text-[10px] text-[#8a998f]">
-                Period
-              </p>
+                          <div>
+                            <p className="text-[10px] text-[#8a998f]">Period</p>
 
-              <p className="mt-1 text-sm font-semibold text-[#173f2a]">
-                {formatChallengeLabel(challenge.period)}
-              </p>
-            </div>
-          </div>
+                            <p className="mt-1 text-sm font-semibold text-[#173f2a]">
+                              {formatChallengeLabel(challenge.period)}
+                            </p>
+                          </div>
+                        </div>
 
-          <div className="mt-4 border-t border-[#edf2ee] pt-3">
-            <p className="text-[10px] text-[#8a998f]">
-              Start Date
-            </p>
+                        <div className="mt-4 border-t border-[#edf2ee] pt-3">
+                          <p className="text-[10px] text-[#8a998f]">
+                            Start Date
+                          </p>
 
-            <p className="mt-1 text-xs font-medium text-[#53685b]">
-              {challenge.startDate
-                ? String(challenge.startDate)
-                    .slice(0, 10)
-                    .split("-")
-                    .reverse()
-                    .join("/")
-                : "—"}
-            </p>
-          </div>
-        </button>
-      ))}
-    </div>
-  )}
+                          <p className="mt-1 text-xs font-medium text-[#53685b]">
+                            {challenge.startDate
+                              ? String(challenge.startDate)
+                                  .slice(0, 10)
+                                  .split("-")
+                                  .reverse()
+                                  .join("/")
+                              : "—"}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </section>
             </section>
           </main>
