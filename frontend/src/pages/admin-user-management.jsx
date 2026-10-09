@@ -4,11 +4,14 @@ import {FiSearch,FiChevronDown,FiChevronLeft,FiChevronRight,FiUserX,FiUserCheck,
 import { toast } from "react-toastify";
 
 const initialUsers = [];
+const Admin_Api = import.meta.env.VITE_ADMIN_API;
 
 const USERS_PER_PAGE = 8;
 
 function AdminUserManagement() {
   const [users, setUsers] = useState(initialUsers);
+  const [isLoading, setIsLoading] = useState(true);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -16,6 +19,34 @@ function AdminUserManagement() {
   const filterRef = useRef(null);
 
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        if (!Admin_Api) {
+          throw new Error("VITE_ADMIN_API is not configured in frontend/.env");
+        }
+
+        const response = await fetch(`${Admin_Api}/user`, {
+          method: "GET",
+          credentials: "include",
+        });
+        const data = await response.json();
+
+        if (!response.ok || data.success === false) {
+          throw new Error(data.message || "Unable to load users.");
+        }
+
+        setUsers(Array.isArray(data.users) ? data.users : []);
+      } catch (error) {
+        toast.error(error.message || "Failed to load users.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
 
   useEffect(() => {
     const handleDocumentClick = (event) => {
@@ -44,7 +75,7 @@ function AdminUserManagement() {
 
     const matchesStatus =
       statusFilter === "all" ||
-      user.status?.toLowerCase() === statusFilter;
+      (user.isBlocked ? "blocked" : "active") === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -71,14 +102,39 @@ function AdminUserManagement() {
     }
   }, [currentPage, totalPages]);
 
-  const handleUserAction = (user) => {
-   
+  const handleUserAction = async (user) => {
+    if (!Admin_Api || !user._id || actionLoadingId) return;
 
-    toast.info(
-      `${
-        user.status === "blocked" ? "Unblock" : "Block"
-      } action will be connected with backend.`
-    );
+    const action = user.isBlocked ? "unblock" : "block";
+    const actionLabel = action === "block" ? "Block" : "Unblock";
+
+    try {
+      setActionLoadingId(user._id);
+
+      const response = await fetch(`${Admin_Api}/${action}/${user._id}`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || `Unable to ${action} user.`);
+      }
+
+      setUsers((currentUsers) =>
+        currentUsers.map((currentUser) =>
+          currentUser._id === user._id
+            ? { ...currentUser, isBlocked: !user.isBlocked }
+            : currentUser
+        )
+      );
+
+      toast.success(data.message || `User ${action === "block" ? "blocked" : "unblocked"} successfully.`);
+    } catch (error) {
+      toast.error(error.message || `Failed to ${actionLabel.toLowerCase()} user.`);
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   const statusOptions = [
@@ -330,7 +386,7 @@ function AdminUserManagement() {
                     {paginatedUsers.length > 0 ? (
                       paginatedUsers.map((user, index) => (
                         <tr
-                          key={user.id || user.email}
+                          key={user._id || user.email}
                           className="border-b border-[#edf2ee] transition-colors duration-200 hover:bg-[#fbfdfb] animate-[rowReveal_.4s_ease_both]"
                           style={{
                             animationDelay: `${index * 0.05}s`,
@@ -385,12 +441,12 @@ function AdminUserManagement() {
                           <td className="px-5 py-4">
                             <span
                               className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                                user.status === "blocked"
+                                user.isBlocked
                                   ? "bg-[#fdf0f0] text-[#b34b4b]"
                                   : "bg-[#eaf5ed] text-[#27834d]"
                               }`}
                             >
-                              {user.status === "blocked"
+                              {user.isBlocked
                                 ? "Blocked"
                                 : "Active"}
                             </span>
@@ -400,17 +456,18 @@ function AdminUserManagement() {
                           <td className="px-5 py-4 text-right">
                             <button
                               type="button"
-                              onClick={() =>
-                                handleUserAction(user)
-                              }
-                              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-200 ${
-                                user.status === "blocked"
+                              disabled={actionLoadingId === user._id}
+                              onClick={() => handleUserAction(user)}
+                              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-200 disabled:cursor-wait disabled:opacity-60 ${
+                                user.isBlocked
                                   ? "bg-[#eaf5ed] text-[#27834d] hover:bg-[#dff1e4]"
                                   : "bg-[#fdf2f2] text-[#b34b4b] hover:bg-[#f9e7e7]"
                               }`}
                             >
 
-                              {user.status === "blocked" ? (
+                              {actionLoadingId === user._id ? (
+                                "Updating..."
+                              ) : user.isBlocked ? (
                                 <>
                                   <FiUserCheck size={14} />
                                   Unblock
@@ -441,11 +498,13 @@ function AdminUserManagement() {
                             </div>
 
                             <h3 className="text-sm font-semibold text-[#294a36]">
-                              No users found
+                              {isLoading ? "Loading users..." : "No users found"}
                             </h3>
 
                             <p className="mt-1 text-sm leading-7 text-[#8a998f]">
-                              User data will appear here 
+                              {isLoading
+                                ? "Please wait while user data is loaded."
+                                : "Try adjusting your search or status filter."}
                             </p>
 
                           </div>
