@@ -13,6 +13,7 @@ function Notifications() {
   const [selected, setSelected] = useState("all");
   const [status, setStatus] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [joinedChallengeIds, setJoinedChallengeIds] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const loadNotifications = async () => {
     try {
@@ -46,43 +47,77 @@ function Notifications() {
     loadNotifications();
   }, [selected, status]);
 
-  const handleRead = async (notification) => {
-    if (notification.isRead) return;
-
-    try {
-      const { data } = await axios.patch(
-        `${Notification_API}/read/${notification.id}`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
-
-      if (data.success) {
-        setNotifications((prev) =>
-          prev.map((item) =>
-            item.id === notification.id
-              ? {
-                  ...item,
-                  isRead: true,
-                  readAt: new Date().toISOString(),
-                }
-              : item
-          )
-        );
-      } else {
-        toast.error(
-          data.message || "Unable to mark notification as read."
-        );
+const loadJoinedChallenges = async () => {
+  try {
+    const { data } = await axios.get(
+      `${CHALLENGE_URL}/joinChallenge`,
+      {
+        withCredentials: true,
       }
-    } catch (error) {
-      console.error("Mark notification read error:", error);
-      toast.error(
-        error.response?.data?.message ||
-          "Unable to mark notification as read."
+    );
+
+    if (data.success) {
+      setJoinedChallengeIds(
+        (data.joinChallenges || []).map((id) => String(id))
       );
     }
-  };
+  } catch (error) {
+    console.error("Fetch joined challenges error:", error);
+  }
+};
+
+useEffect(() => {
+  loadJoinedChallenges();
+}, []);
+
+const handleRead = async (notification) => {
+  if (notification.isRead) return true;
+
+  try {
+    const { data } = await axios.patch(
+      `${Notification_API}/read/${notification.id}`,
+      {},
+      { withCredentials: true }
+    );
+
+    if (data.success) {
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === notification.id
+            ? {
+                ...item,
+                isRead: true,
+                readAt: new Date().toISOString(),
+              }
+            : item
+        )
+      );
+
+      return true;
+    }
+
+    toast.error(
+      data.message || "Unable to mark notification as read."
+    );
+    return false;
+  } catch (error) {
+    console.error("Mark notification read error:", error);
+    toast.error(
+      error.response?.data?.message ||
+        "Unable to mark notification as read."
+    );
+    return false;
+  }
+};
+
+const handleNotificationClick = async (notification) => {
+  if (!notification.isRead) {
+    await handleRead(notification);
+    return;
+  }
+
+  handleNotificationNavigation(notification);
+};
 
   const handleDeleteAll = async () => {
     if (!notifications.length) return;
@@ -158,7 +193,7 @@ function Notifications() {
     }
   };
 
-  const handleNotificationDoubleClick = (notification) => {
+  const handleNotificationNavigation = (notification) => {
     const { type, action } = notification;
 
     // Profile Completion
@@ -224,12 +259,20 @@ function Notifications() {
         }
       );
 
-      if (data.success) {
-        toast.success(
-          data.message || "Challenge joined successfully"
-        );
+      
+    if (data.success) {
+      setJoinedChallengeIds((prev) =>
+        prev.includes(String(challengeId))
+      ? prev
+      : [...prev, String(challengeId)]
+    );
 
-        navigate("/community-challenges");
+      toast.success(
+      data.message || "Challenge joined successfully"
+    );
+
+     navigate("/community-challenges");
+     
       } else {
         toast.error(
           data.message || "Challenge could not be joined."
@@ -527,29 +570,6 @@ function Notifications() {
           flex-wrap: wrap;
         }
 
-        .read-btn {
-          border: none;
-          background: #2e7d32;
-          color: white;
-          padding: 8px 14px;
-          border-radius: 8px;
-          font-size: 13px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: 0.2s ease;
-        }
-
-        .read-btn:hover {
-          background: #256528;
-          transform: translateY(-1px);
-        }
-
-        .read-status {
-          color: #4d8a54;
-          font-size: 12px;
-          font-weight: 700;
-        }
-
         .join-btn {
           border: none;
           background: #43a047;
@@ -795,6 +815,9 @@ function Notifications() {
               const isChallengeSuggestion =
                 notification.type === "challenge suggestion" &&
                 notification.action === "join challenge";
+              const isAlreadyJoined = joinedChallengeIds.includes(
+                String(notification.relatedId)
+              );
 
               return (
                 <div
@@ -802,11 +825,13 @@ function Notifications() {
                     notification.isRead ? "read" : "unread"
                   }`}
                   key={notification.id}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="notification-check">
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(notification.id)}
+                      onClick={(event) => event.stopPropagation()}
                       onChange={() => handleSelect(notification.id)}
                     />
                   </div>
@@ -815,12 +840,7 @@ function Notifications() {
                     {getIcon(notification.type)}
                   </div>
 
-                  <div
-                    className="notification-content"
-                    onDoubleClick={() =>
-                      handleNotificationDoubleClick(notification)
-                    }
-                  >
+                  <div className="notification-content">
                     <div className="notification-top">
                       <h3 className="notification-title">
                         {notification.title}
@@ -838,25 +858,16 @@ function Notifications() {
                     )}
 
                     <div className="notification-actions">
-                      {!notification.isRead ? (
-                        <button
-                          className="read-btn"
-                          onClick={() => handleRead(notification)}
-                        >
-                          Read
-                        </button>
-                      ) : (
-                        <span className="read-status">
-                          ✓ Read
-                        </span>
-                      )}
-
-                      {isChallengeSuggestion && (
+                      
+                    {notification.isRead &&
+                      isChallengeSuggestion &&
+                      !isAlreadyJoined && (
                         <button
                           className="join-btn"
-                          onClick={() =>
-                            handleJoinChallenge(notification)
-                          }
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleJoinChallenge(notification);
+                          }}
                         >
                           Join Challenge
                         </button>
