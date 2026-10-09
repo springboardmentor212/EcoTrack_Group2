@@ -21,10 +21,7 @@ const formatLabel = (value) => {
     .map((word) => {
       if (!word) return word;
 
-      return (
-        word.charAt(0).toUpperCase() +
-        word.slice(1).toLowerCase()
-      );
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
     })
     .join(" ");
 };
@@ -64,10 +61,10 @@ const getStatusClass = (status) => {
     case "cancelled":
       return "status-cancelled";
 
-    case "close":
+    case "closed":
       return "status-closed";
 
-    case "not start":
+    case "not started":
       return "status-not-start";
 
     case "continue":
@@ -169,10 +166,24 @@ function ChallengeCard({
 }) {
   const challengeId = challenge?._id || challenge?.id;
 
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
+  const challengeEndDate = challenge.endDate
+    ? new Date(challenge.endDate)
+    : null;
+
   const canCancel =
     type === "my" &&
-    challenge.status !== "completed" &&
-    challenge.status !== "cancelled";
+    (challenge.status === "not started" ||
+      challenge.status === "active" ||
+      (challenge.status === "failed" &&
+        challengeEndDate &&
+        challengeEndDate >= today));
+
+  const canJoin =
+    type === "available" &&
+    (challenge.status === "not started" || challenge.status === "ongoing");
 
   return (
     <article className="challenge-card">
@@ -183,9 +194,7 @@ function ChallengeCard({
 
         {challenge.status && (
           <span
-            className={`challenge-status ${getStatusClass(
-              challenge.status
-            )}`}
+            className={`challenge-status ${getStatusClass(challenge.status)}`}
           >
             {formatLabel(challenge.status)}
           </span>
@@ -194,9 +203,7 @@ function ChallengeCard({
 
       <h3>{challenge.title || "Untitled Challenge"}</h3>
 
-      <p className="challenge-type">
-        {formatLabel(challenge.challengeType)}
-      </p>
+      <p className="challenge-type">{formatLabel(challenge.challengeType)}</p>
 
       <div className="challenge-highlight">
         <div className="highlight-icon">
@@ -253,16 +260,14 @@ function ChallengeCard({
           </span>
         </button>
 
-        {type === "available" && (
+        {canJoin && (
           <button
             type="button"
             className="primary-button"
             onClick={() => onJoin(challenge)}
             disabled={actionLoading === challengeId}
           >
-            {actionLoading === challengeId
-              ? "Joining..."
-              : "Join Challenge"}
+            {actionLoading === challengeId ? "Joining..." : "Join Challenge"}
           </button>
         )}
 
@@ -294,6 +299,9 @@ function ChallengeSection({
   onCancel,
   actionLoading,
   loading,
+  filter,
+  onFilterChange,
+  filterOptions,
 }) {
   const sliderRef = useRef(null);
 
@@ -308,8 +316,7 @@ function ChallengeSection({
     setCanScrollLeft(slider.scrollLeft > 5);
 
     setCanScrollRight(
-      slider.scrollLeft + slider.clientWidth <
-        slider.scrollWidth - 5
+      slider.scrollLeft + slider.clientWidth < slider.scrollWidth - 5,
     );
   };
 
@@ -317,6 +324,11 @@ function ChallengeSection({
     const slider = sliderRef.current;
 
     if (!slider) return;
+
+    slider.scrollTo({
+      left: 0,
+      behavior: "auto",
+    });
 
     updateArrowState();
 
@@ -352,6 +364,22 @@ function ChallengeSection({
             <h2>{title}</h2>
 
             <p>{description}</p>
+          </div>
+        </div>
+        <div className="challenge-filter-bar">
+          <div className="challenge-filter-scroll">
+            {filterOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`challenge-filter ${
+                  filter === option.value ? "active" : ""
+                }`}
+                onClick={() => onFilterChange(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -429,7 +457,8 @@ function ChallengeSection({
 function CommunityChallenges() {
   const [myChallenges, setMyChallenges] = useState([]);
   const [availableChallenges, setAvailableChallenges] = useState([]);
-
+  const [myChallengeFilter, setMyChallengeFilter] = useState("all");
+  const [moreChallengeFilter, setMoreChallengeFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
 
@@ -441,21 +470,17 @@ function CommunityChallenges() {
     try {
       setLoading(true);
 
-      const { data } = await axios.get(`${CHALLENGE_URL}/`, {
+      const { data } = await axios.get(`${CHALLENGE_URL}/user`, {
         withCredentials: true,
       });
 
-      if (data.success === "user") {
+      if (data.success === true) {
         setMyChallenges(
-          Array.isArray(data.userChallengesData)
-            ? data.userChallengesData
-            : []
+          Array.isArray(data.userChallengesData) ? data.userChallengesData : [],
         );
 
         setAvailableChallenges(
-          Array.isArray(data.otherChallenges)
-            ? data.otherChallenges
-            : []
+          Array.isArray(data.otherChallenges) ? data.otherChallenges : [],
         );
 
         return;
@@ -467,7 +492,7 @@ function CommunityChallenges() {
 
       toast.error(
         error.response?.data?.message ||
-          "Unable to load challenges. Please try again."
+          "Unable to load challenges. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -491,26 +516,22 @@ function CommunityChallenges() {
         {},
         {
           withCredentials: true,
-        }
+        },
       );
 
       if (data.success) {
-        toast.success(
-          data.message || "Challenge joined successfully"
-        );
+        toast.success(data.message || "Challenge joined successfully");
 
         await loadChallenges();
       } else {
-        toast.error(
-          data.message || "Challenge could not be joined."
-        );
+        toast.error(data.message || "Challenge could not be joined.");
       }
     } catch (error) {
       console.error("Join challenge error:", error);
 
       toast.error(
         error.response?.data?.message ||
-          "Unable to join challenge. Please try again."
+          "Unable to join challenge. Please try again.",
       );
     } finally {
       setActionLoading(null);
@@ -523,7 +544,7 @@ function CommunityChallenges() {
     if (!challengeId) return;
 
     const confirmed = window.confirm(
-      "Are you sure you want to cancel this challenge?"
+      "Are you sure you want to cancel this challenge?",
     );
 
     if (!confirmed) return;
@@ -536,31 +557,58 @@ function CommunityChallenges() {
         {},
         {
           withCredentials: true,
-        }
+        },
       );
 
       if (data.success) {
-        toast.success(
-          data.message || "Challenge cancelled successfully"
-        );
+        toast.success(data.message || "Challenge cancelled successfully");
 
         await loadChallenges();
       } else {
-        toast.error(
-          data.message || "Challenge could not be cancelled."
-        );
+        toast.error(data.message || "Challenge could not be cancelled.");
       }
     } catch (error) {
       console.error("Cancel challenge error:", error);
 
       toast.error(
         error.response?.data?.message ||
-          "Unable to cancel challenge. Please try again."
+          "Unable to cancel challenge. Please try again.",
       );
     } finally {
       setActionLoading(null);
     }
   };
+
+  const myChallengeFilters = [
+    { value: "all", label: "All" },
+    { value: "not started", label: "Not Started" },
+    { value: "not have entry", label: "Not Have Entry" },
+    { value: "active", label: "Active" },
+    { value: "completed", label: "Completed" },
+    { value: "failed", label: "Failed" },
+    { value: "cancelled", label: "Cancelled" },
+  ];
+
+  const moreChallengeFilters = [
+    { value: "all", label: "All" },
+    { value: "not started", label: "Not Started" },
+    { value: "ongoing", label: "Ongoing" },
+    { value: "close", label: "Closed" },
+  ];
+
+  const filteredMyChallenges =
+    myChallengeFilter === "all"
+      ? myChallenges
+      : myChallenges.filter(
+          (challenge) => challenge.status === myChallengeFilter,
+        );
+
+  const filteredAvailableChallenges =
+    moreChallengeFilter === "all"
+      ? availableChallenges
+      : availableChallenges.filter(
+          (challenge) => challenge.status === moreChallengeFilter,
+        );
 
   const handleViewDetails = async (challenge) => {
     const challengeId = challenge?._id || challenge?.id;
@@ -572,19 +620,14 @@ function CommunityChallenges() {
     setDetailsLoading(true);
 
     try {
-      const { data } = await axios.get(
-        `${CHALLENGE_URL}/${challengeId}`,
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await axios.get(`${CHALLENGE_URL}/${challengeId}`, {
+        withCredentials: true,
+      });
 
       if (data.success) {
         setSelectedChallenge(data.challengeData);
       } else {
-        toast.error(
-          data.message || "Unable to get challenge details."
-        );
+        toast.error(data.message || "Unable to get challenge details.");
 
         setDetailsOpen(false);
       }
@@ -592,8 +635,7 @@ function CommunityChallenges() {
       console.error("Get challenge details error:", error);
 
       toast.error(
-        error.response?.data?.message ||
-          "Unable to get challenge details."
+        error.response?.data?.message || "Unable to get challenge details.",
       );
 
       setDetailsOpen(false);
@@ -613,16 +655,13 @@ function CommunityChallenges() {
         <main className="community-challenges-container">
           <header className="challenges-topbar">
             <div className="challenges-heading">
-              <span className="challenges-eyebrow">
-                COMMUNITY
-              </span>
+              <span className="challenges-eyebrow">COMMUNITY</span>
 
               <h1>Community Challenges</h1>
 
               <p className="challenges-subtitle">
-                Take part in sustainability challenges, build
-                better habits, and make an environmental impact
-                together.
+                Take part in sustainability challenges, build better habits, and
+                make an environmental impact together.
               </p>
             </div>
 
@@ -640,35 +679,38 @@ function CommunityChallenges() {
             title="My Challenges"
             description="Challenges you have joined and are participating in."
             icon="users"
-            challenges={myChallenges}
+            challenges={filteredMyChallenges}
             type="my"
             onDetails={handleViewDetails}
             onJoin={handleJoinChallenge}
             onCancel={handleCancelChallenge}
             actionLoading={actionLoading}
             loading={loading}
+            filter={myChallengeFilter}
+            onFilterChange={setMyChallengeFilter}
+            filterOptions={myChallengeFilters}
           />
 
           <ChallengeSection
-            title="Available Challenges"
+            title="More Challenges"
             description="Discover new challenges and join the ones you want to take part in."
             icon="target"
-            challenges={availableChallenges}
+            challenges={filteredAvailableChallenges}
             type="available"
             onDetails={handleViewDetails}
             onJoin={handleJoinChallenge}
             onCancel={handleCancelChallenge}
             actionLoading={actionLoading}
             loading={loading}
+            filter={moreChallengeFilter}
+            onFilterChange={setMoreChallengeFilter}
+            filterOptions={moreChallengeFilters}
           />
         </main>
       </div>
 
       {detailsOpen && (
-        <div
-          className="challenge-modal-overlay"
-          onClick={closeDetails}
-        >
+        <div className="challenge-modal-overlay" onClick={closeDetails}>
           <div
             className="challenge-modal"
             onClick={(event) => event.stopPropagation()}
@@ -701,9 +743,7 @@ function CommunityChallenges() {
 
                 <div className="modal-detail-grid">
                   <div className="modal-detail-item highlight-detail">
-                    <span className="modal-detail-label">
-                      Target
-                    </span>
+                    <span className="modal-detail-label">Target</span>
 
                     <strong>
                       {selectedChallenge.target ?? "—"}{" "}
@@ -712,59 +752,39 @@ function CommunityChallenges() {
                   </div>
 
                   <div className="modal-detail-item">
-                    <span className="modal-detail-label">
-                      Period
-                    </span>
+                    <span className="modal-detail-label">Period</span>
 
-                    <strong>
-                      {formatLabel(selectedChallenge.period)}
-                    </strong>
+                    <strong>{formatLabel(selectedChallenge.period)}</strong>
                   </div>
 
                   <div className="modal-detail-item">
-                    <span className="modal-detail-label">
-                      Start Date
-                    </span>
+                    <span className="modal-detail-label">Start Date</span>
 
-                    <strong>
-                      {formatDate(selectedChallenge.startDate)}
-                    </strong>
+                    <strong>{formatDate(selectedChallenge.startDate)}</strong>
                   </div>
 
                   <div className="modal-detail-item">
-                    <span className="modal-detail-label">
-                      End Date
-                    </span>
+                    <span className="modal-detail-label">End Date</span>
 
-                    <strong>
-                      {formatDate(selectedChallenge.endDate)}
-                    </strong>
+                    <strong>{formatDate(selectedChallenge.endDate)}</strong>
                   </div>
 
                   {selectedChallenge.trackingType && (
                     <div className="modal-detail-item">
-                      <span className="modal-detail-label">
-                        Tracking Type
-                      </span>
+                      <span className="modal-detail-label">Tracking Type</span>
 
                       <strong>
-                        {formatLabel(
-                          selectedChallenge.trackingType
-                        )}
+                        {formatLabel(selectedChallenge.trackingType)}
                       </strong>
                     </div>
                   )}
 
                   {selectedChallenge.direction && (
                     <div className="modal-detail-item">
-                      <span className="modal-detail-label">
-                        Goal Direction
-                      </span>
+                      <span className="modal-detail-label">Goal Direction</span>
 
                       <strong>
-                        {formatLabel(
-                          selectedChallenge.direction
-                        )}
+                        {formatLabel(selectedChallenge.direction)}
                       </strong>
                     </div>
                   )}
@@ -776,13 +796,43 @@ function CommunityChallenges() {
 
                     <span
                       className={`challenge-status ${getStatusClass(
-                        selectedChallenge.status
+                        selectedChallenge.status,
                       )}`}
                     >
                       {formatLabel(selectedChallenge.status)}
                     </span>
                   </div>
                 )}
+{(() => {
+  const description =
+    selectedChallenge.description 
+  if (!description) return null;
+
+  return (
+    <section className="challenge-description">
+      <h3>Challenge Guide</h3>
+
+      <div className="description-section">
+        <h4>Objective :</h4>
+        <p>{description.objective}</p>
+      </div>
+
+      <div className="description-section">
+        <h4>Instructions :  </h4>
+        <ul>
+          {description.instructions?.map((instruction, index) => (
+            <li key={index}>{instruction}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="description-section">
+        <h4>Completion Criteria :</h4>
+        <p>{description.completionCriteria}</p>
+      </div>
+    </section>
+  );
+})()}
               </>
             ) : null}
           </div>
@@ -946,6 +996,60 @@ function CommunityChallenges() {
           color: #7b8780;
           font-size: 0.8rem;
           line-height: 1.45;
+        }
+        
+        .challenge-filter-bar {
+          display: flex;
+          align-items: center;
+          overflow: hidden;
+        }
+
+        .challenge-filter-scroll {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          padding: 2px;
+        }
+
+        .challenge-filter-scroll::-webkit-scrollbar {
+          display: none;
+        }
+
+        .challenge-filter {
+          flex: 0 0 auto;
+          min-height: 35px;
+          padding: 8px 13px;
+          border: 1px solid #d5e3da;
+          border-radius: 999px;
+          background: #ffffff;
+          color: #68776e;
+          font-family: inherit;
+          font-size: 0.74rem;
+          font-weight: 750;
+          white-space: nowrap;
+          cursor: pointer;
+          transition:
+            background 0.2s ease,
+            border-color 0.2s ease,
+            color 0.2s ease,
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+        }
+
+        .challenge-filter:hover {
+          border-color: #b9d1c0;
+          background: #f8fbf9;
+          color: #27834d;
+          transform: translateY(-1px);
+        }
+
+        .challenge-filter.active {
+          border-color: #27834d;
+          background: #27834d;
+          color: #ffffff;
+          box-shadow: 0 5px 14px rgba(39, 131, 77, 0.16);
         }
 
         .carousel-controls {
@@ -1231,6 +1335,50 @@ function CommunityChallenges() {
           gap: 8px;
           flex-wrap: wrap;
           margin-top: 15px;
+        }
+
+        .challenge-description {
+          margin-top: 22px;
+          padding: 20px;
+          border: 1px solid #dce9df;
+          border-radius: 14px;
+          background: #f8fbf9;
+        }
+
+        .challenge-description > h3 {
+          margin: 0 0 18px;
+          color: #173f2a;
+          font-size: 1.05rem;
+        }
+
+        .description-section + .description-section {
+          margin-top: 17px; 
+        }
+
+        .description-section h4 {
+          margin: 0 0 7px;
+          color: #27834d;
+          font-size: 0.86rem;
+        }
+
+        .description-section p,
+        .description-section li {
+          color: #68776e;
+          font-size: 0.82rem;
+          line-height: 1.65;
+        }
+
+        .description-section p {
+          margin: 0;
+        }
+
+        .description-section ul {
+          margin: 0;
+          padding-left: 20px;
+        }
+
+        .description-section li + li {
+          margin-top: 5px;
         }
 
         .primary-button,

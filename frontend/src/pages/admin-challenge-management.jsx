@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { generateChallengeDescription } from "../utils/challengeDescription";
 
 const CHALLENGE_URL = import.meta.env.VITE_CHALLENGE_API;
 
@@ -724,6 +725,37 @@ function ChallengeViewModal({ challenge, onClose }) {
             <strong>{formatDate(challenge.endDate)}</strong>
           </div>
         </div>
+        
+        {(() => {
+          const description =
+            challenge.description 
+          if (!description) return null;
+
+          return (
+            <section className="challenge-description">
+              <h3>Challenge Guide </h3>
+
+              <div className="description-section">
+                <h4>Objective :</h4>
+                <p>{description.objective}</p>
+              </div>
+
+              <div className="description-section">
+                <h4>Instructions :  </h4>
+                <ul>
+                  {description.instructions?.map((instruction, index) => (
+                    <li key={index}>{instruction}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="description-section">
+                <h4>Completion Criteria :</h4>
+                <p>{description.completionCriteria}</p>
+              </div>
+            </section>
+          );
+        })()}
 
         <button
           type="button"
@@ -990,6 +1022,13 @@ function ChallengeFormModal({ mode, initialChallenge, onClose, onSuccess }) {
       form.period,
     );
 
+    const description = generateChallengeDescription({
+      challengeType: form.challengeType,
+      target: Number(form.target),
+      unit: unit,
+      period: form.period,
+    });
+
     const payload = {
       ...(isEdit && {
         id: initialChallenge.id || initialChallenge._id,
@@ -1008,6 +1047,8 @@ function ChallengeFormModal({ mode, initialChallenge, onClose, onSuccess }) {
       startDate: formatDateForPayload(form.startDate),
 
       endDate: formatDateForPayload(form.endDate),
+
+      ...(description && { description }),
     };
 
     if (form.category === "carbon emission") {
@@ -1757,8 +1798,78 @@ const currentChallenges = useMemo(() => {
 
         .view-modal {
           width: min(680px, 100%);
+          max-height: 90vh;
+          overflow-y: auto;
           padding: 27px;
+          box-sizing: border-box;
         }
+        
+        
+.challenge-description {
+  margin-top: 25px;
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 2px solid #dce9df;
+  border-radius: 20px;
+  background: #f8fbf9;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+
+.challenge-description > h3 {
+  margin: 0 0 18px;
+  color: #173f2a;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.challenge-description .description-section {
+  margin-top: 17px;
+}
+
+.challenge-description .description-section:first-of-type {
+  margin-top: 0;
+}
+
+.challenge-description .description-section h4 {
+  margin: 0 0 7px;
+  color: #27834d;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.challenge-description .description-section p,
+.challenge-description .description-section li {
+  color: #68776e;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.challenge-description .description-section p {
+  margin: 0;
+}
+
+.challenge-description .description-section ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.challenge-description .description-section li + li {
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .view-modal {
+    width: 100%;
+    max-height: 88vh;
+    padding: 20px;
+  }
+
+  .challenge-description {
+    padding: 16px;
+  }
+}
 
         .delete-modal {
           width: min(430px, 100%);
