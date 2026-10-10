@@ -102,6 +102,7 @@ module.exports.getChallengesByUser = async (req,res) => {
    const userChallengesData = userChallenges.map(ch => ({
        _id : ch.challengeId._id,
        title : ch.challengeId.title,
+       description : ch.description || {},
        category : ch.challengeId.category,
        challengeType : ch.challengeId.challengeType,
        trackingType : ch.challengeId.trackingType,
@@ -164,6 +165,7 @@ module.exports.getChallenge = async (req,res) => {
     const challengeData = {
         id : challenge._id,
         title : challenge.title,
+        description : challenge.description || {},
         category : challenge.category,
         challengeType : challenge.challengeType,
         target : challenge.target,
