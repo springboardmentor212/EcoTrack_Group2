@@ -96,9 +96,9 @@ const toInputDate = (date) => {
 
   if (Number.isNaN(d.getTime())) return "";
 
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 };
@@ -560,7 +560,7 @@ function DatePicker({ value, onChange, period, startDate, isStart }) {
 function ChallengeCard({ challenge, onView, onEdit, onDelete }) {
   const statusClass = STATUS_CLASS[challenge.status] || "status-not-start";
   const canEdit =
-    challenge.status === "not start" &&
+    challenge.status === "not started" &&
     new Date(challenge.startDate) > new Date();
 
   const canDelete =
@@ -1004,7 +1004,6 @@ function ChallengeFormModal({ mode, initialChallenge, onClose, onSuccess }) {
       payload.trackingType = form.trackingType;
     }
 
-    console.log("data = ", payload);
     try {
       setSubmitting(true);
 
@@ -1017,7 +1016,6 @@ function ChallengeFormModal({ mode, initialChallenge, onClose, onSuccess }) {
           });
 
       const data = response.data;
-      console.log("data = ", data);
       if (data?.success) {
         toast.success(data.message);
 
