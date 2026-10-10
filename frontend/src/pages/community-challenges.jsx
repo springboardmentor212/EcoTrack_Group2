@@ -803,6 +803,36 @@ function CommunityChallenges() {
                     </span>
                   </div>
                 )}
+{(() => {
+  const description =
+    selectedChallenge.description 
+  if (!description) return null;
+
+  return (
+    <section className="challenge-description">
+      <h3>Challenge Guide</h3>
+
+      <div className="description-section">
+        <h4>Objective :</h4>
+        <p>{description.objective}</p>
+      </div>
+
+      <div className="description-section">
+        <h4>Instructions :  </h4>
+        <ul>
+          {description.instructions?.map((instruction, index) => (
+            <li key={index}>{instruction}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="description-section">
+        <h4>Completion Criteria :</h4>
+        <p>{description.completionCriteria}</p>
+      </div>
+    </section>
+  );
+})()}
               </>
             ) : null}
           </div>
@@ -1305,6 +1335,50 @@ function CommunityChallenges() {
           gap: 8px;
           flex-wrap: wrap;
           margin-top: 15px;
+        }
+
+        .challenge-description {
+          margin-top: 22px;
+          padding: 20px;
+          border: 1px solid #dce9df;
+          border-radius: 14px;
+          background: #f8fbf9;
+        }
+
+        .challenge-description > h3 {
+          margin: 0 0 18px;
+          color: #173f2a;
+          font-size: 1.05rem;
+        }
+
+        .description-section + .description-section {
+          margin-top: 17px; 
+        }
+
+        .description-section h4 {
+          margin: 0 0 7px;
+          color: #27834d;
+          font-size: 0.86rem;
+        }
+
+        .description-section p,
+        .description-section li {
+          color: #68776e;
+          font-size: 0.82rem;
+          line-height: 1.65;
+        }
+
+        .description-section p {
+          margin: 0;
+        }
+
+        .description-section ul {
+          margin: 0;
+          padding-left: 20px;
+        }
+
+        .description-section li + li {
+          margin-top: 5px;
         }
 
         .primary-button,
