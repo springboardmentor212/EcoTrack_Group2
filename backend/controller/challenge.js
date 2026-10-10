@@ -347,6 +347,34 @@ module.exports.joinChallenge = async (req,res) => {
   }
 };
 
+module.exports.getJoinChallenge = async (req,res) => {
+try{
+   const userId = req.currUser,userRole = req.userRole,isBlocked = req.isBlocked;
+    if(!userId){
+        return res.status(400).json({success : false, message : "login first to get join challenges"});
+    }
+
+    if(!userRole || userRole !== "user"){
+        return res.status(400).json({success : false, message : "only normal user can get join challenge data"});
+    }
+
+    if(isBlocked){
+        return res.status(400).json({ success : false, message : "blocked user can't get join challenge data"});
+    }
+  
+    const userChallenge = (await userModel.findOne({_id : userId, role : "user"}).select("joinChallenges")).joinChallenges;
+    if(!userChallenge){
+        return res.status(400).json({ success : false , message : "does't get the user challeges data"});
+    } 
+
+    const joinChallenges = userChallenge.map(ch => ch.challengeId);
+
+    return res.status(200).json({ success : true , joinChallenges});
+  }catch(error){
+      return res.status(500).json({success : false , message : "internal server error"}); 
+  }
+}
+
 //cancel
 module.exports.cancelChallenge = async (req,res) => {
   try{

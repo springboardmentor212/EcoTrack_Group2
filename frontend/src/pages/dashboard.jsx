@@ -122,6 +122,18 @@ const formatCardText = (value) => {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
 
+const formatPersonName = (value) => {
+  if (!value) return "";
+
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(
+      /(^|[\s'-])([a-z])/g,
+      (_, separator, letter) => separator + letter.toUpperCase(),
+    );
+};
+
 const createStatsFromSummary = (tracker, summary) => {
   if (tracker === "All") {
     return [
@@ -366,7 +378,12 @@ function Dashboard() {
         }));
 
         setChartData(durationData);
-        setNoActivity(false);
+
+        const hasActivity = durationData.some(
+          (item) => Number(item.totalEmission) > 0,
+        );
+
+        setNoActivity(!hasActivity);
       } catch (error) {
         setDashboardStats((current) => ({
           ...current,
@@ -396,10 +413,21 @@ function Dashboard() {
         if (data.success) {
           const profileData = data.profile || {};
 
+          const fullName =
+            [
+              profileData.firstName || profileData.first_name,
+              profileData.lastName || profileData.last_name,
+            ]
+              .filter(Boolean)
+              .join(" ") ||
+            profileData.name ||
+            profileData.fullName ||
+            "";
+
           setProfile({
-            name: profileData.name || "",
+            name: formatPersonName(fullName),
             email: profileData.email || "",
-            location: profileData.location || "",
+            location: formatPersonName(profileData.location),
             profilePhoto: profileData.profilePhoto || "",
           });
         }
@@ -494,11 +522,11 @@ function Dashboard() {
       try {
         setChallengesLoading(true);
 
-        const { data } = await axios.get(`${CHALLENGE_URL}/`, {
+        const { data } = await axios.get(`${CHALLENGE_URL}/user`, {
           withCredentials: true,
         });
 
-        if (data.success === "user") {
+        if (data.success === true) {
           setChallenges(
             Array.isArray(data.userChallengesData)
               ? data.userChallengesData
@@ -523,21 +551,9 @@ function Dashboard() {
   }, []);
 
   const activeGoals = goals.filter((goal) => goal.status === "active");
-  const completedGoals = goals.filter(
-    (goal) =>
-      goal.status === "complete" ||
-      goal.status === "completed" ||
-      goal.status === "achieve" ||
-      goal.status === "achieved",
-  );
 
-  const otherGoals = goals.filter(
-    (goal) =>
-      goal.status !== "active" &&
-      goal.status !== "complete" &&
-      goal.status !== "completed" &&
-      goal.status !== "achieve" &&
-      goal.status !== "achieved",
+  const activeChallenges = challenges.filter(
+    (challenge) => challenge.status === "active",
   );
 
   const stats =
@@ -605,8 +621,6 @@ function Dashboard() {
     () => getChartData(),
     [chartData, selectedTracker, selectedPeriod],
   );
-
-  const goalTitle = selectedChart.goalTitle;
 
   const chartScale = useMemo(() => {
     const maximum = Math.max(...selectedChart.values, 0);
@@ -1267,7 +1281,7 @@ function Dashboard() {
                     </p>
 
                     <h2 className="text-[21px] font-semibold text-[#173f2a]">
-                      Your Goals
+                      Your Active Goals
                     </h2>
                   </div>
 
@@ -1286,11 +1300,11 @@ function Dashboard() {
                       Loading goals...
                     </span>
                   </div>
-                ) : goals.length === 0 ? (
+                ) : activeGoals.length === 0 ? (
                   <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
                     <div className="px-6 text-center">
                       <p className="text-sm font-semibold text-[#294a36]">
-                        No sustainability goals yet
+                        No active sustainability goals found
                       </p>
 
                       <p className="mt-2 text-xs leading-5 text-[#8a998f]">
@@ -1302,12 +1316,6 @@ function Dashboard() {
                 ) : (
                   <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {activeGoals.slice(0, 3).map((goal, index) => {
-                      const isCompleted =
-                        goal.status === "complete" ||
-                        goal.status === "completed" ||
-                        goal.status === "achieve" ||
-                        goal.status === "achieved";
-
                       return (
                         <button
                           key={goal._id || goal.id || `${goal.title}-${index}`}
@@ -1322,22 +1330,14 @@ function Dashboard() {
                               </p>
 
                               <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
-                                {goal.title || "Sustainability Goal"}
+                                {formatChallengeLabel(
+                                  goal.title || "Sustainability Goal",
+                                )}
                               </h3>
                             </div>
 
-                            <span
-                              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                                isCompleted
-                                  ? "bg-[#eaf5ed] text-[#27834d]"
-                                  : "bg-[#f3f8f4] text-[#53685b]"
-                              }`}
-                            >
-                              {isCompleted
-                                ? "Completed"
-                                : goal.status === "active"
-                                  ? "Active"
-                                  : "Previous"}
+                            <span className="shrink-0 rounded-full bg-[#eaf5ed] px-2.5 py-1 text-[10px] font-semibold text-[#27834d]">
+                              Active
                             </span>
                           </div>
 
@@ -1389,7 +1389,7 @@ function Dashboard() {
                     </p>
 
                     <h2 className="text-[21px] font-semibold text-[#173f2a]">
-                      Your Challenges
+                      Your Active Challenges
                     </h2>
                   </div>
 
@@ -1408,11 +1408,11 @@ function Dashboard() {
                       Loading challenges...
                     </span>
                   </div>
-                ) : challenges.length === 0 ? (
+                ) : activeChallenges.length === 0 ? (
                   <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
                     <div className="px-6 text-center">
                       <p className="text-sm font-semibold text-[#294a36]">
-                        No challenges joined yet
+                        No active challenges found
                       </p>
 
                       <p className="mt-2 text-xs leading-5 text-[#8a998f]">
@@ -1423,7 +1423,7 @@ function Dashboard() {
                   </div>
                 ) : (
                   <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {challenges.slice(0, 3).map((challenge, index) => (
+                    {activeChallenges.slice(0, 3).map((challenge, index) => (
                       <button
                         key={
                           challenge._id ||
@@ -1441,7 +1441,9 @@ function Dashboard() {
                             </p>
 
                             <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
-                              {challenge.title || "Challenge"}
+                              {formatChallengeLabel(
+                                challenge.title || "Challenge",
+                              )}
                             </h3>
 
                             <p className="mt-1 text-[11px] text-[#8a998f]">

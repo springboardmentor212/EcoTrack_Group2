@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const {userCheck} = require("../middleware/userMiddleware");
 const {validateChallenge,validateUpdateChallenge} = require("../middleware/challengeMiddleware");
-const {createChallenge,getChallengesByUser,getChallengesByAdmin,getChallenge,updateChallenge,deleteChallenge,joinChallenge,cancelChallenge} 
+const {createChallenge,getChallengesByUser,getChallengesByAdmin,getChallenge,updateChallenge,
+       deleteChallenge,joinChallenge,getJoinChallenge,cancelChallenge} 
        = require("../controller/challenge");
 
 router.use(userCheck);
@@ -16,6 +17,9 @@ router.route("/admin")
 router.route("/")
       .post(validateChallenge,createChallenge)
       .patch(validateUpdateChallenge,updateChallenge);
+
+router.route("/joinChallenge")
+      .get(getJoinChallenge);
 
 router.route("/:id")
       .get(getChallenge)
