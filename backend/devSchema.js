@@ -294,6 +294,11 @@ module.exports.updateCarbonSaveGoalSchema = joi.object({
 
 module.exports.transportationChallengeSchema = joi.object({
      title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
      category : joi.string().valid("transportation").required(),
      challengeType : joi.string().valid(
                "distance limit challenge",
@@ -310,6 +315,11 @@ module.exports.transportationChallengeSchema = joi.object({
 module.exports.updateTransportationChallengeSchema = joi.object({
      id : joi.string().required(),
      title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
      category : joi.string().valid("transportation").required(),
      challengeType : joi.string().valid(
                "distance limit challenge",
@@ -325,6 +335,11 @@ module.exports.updateTransportationChallengeSchema = joi.object({
 
 module.exports.electricityChallengeSchema = joi.object({
      title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
      category : joi.string().valid("electricity").required(),
      challengeType : joi.string().valid(
                "power saving month",
@@ -339,7 +354,12 @@ module.exports.electricityChallengeSchema = joi.object({
 module.exports.updateElectricityChallengeSchema = joi.object({
      id : joi.string().required(),
      title : joi.string().required().min(3),
-        category : joi.string().valid("electricity").required(),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("electricity").required(),
      challengeType : joi.string().valid(
                "power saving month",
       ).required(),
@@ -352,6 +372,11 @@ module.exports.updateElectricityChallengeSchema = joi.object({
 
 module.exports.wasteChallengeSchema = joi.object({
      title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
      category : joi.string().valid("waste management").required(),
      challengeType : joi.string().valid(
                "waste reduction week",
@@ -368,6 +393,11 @@ module.exports.wasteChallengeSchema = joi.object({
 module.exports.updateWasteChallengeSchema = joi.object({
      id : joi.string().required(),
      title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
      category : joi.string().valid("waste management").required(),
      challengeType : joi.string().valid(
                "waste reduction week",
@@ -383,6 +413,11 @@ module.exports.updateWasteChallengeSchema = joi.object({
 
 module.exports.carbonEmissionChallengeSchema = joi.object({
      title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
      category : joi.string().valid("carbon emission").required(),
      challengeType : joi.string().valid(
               "carbon control challenge",
@@ -400,6 +435,11 @@ module.exports.carbonEmissionChallengeSchema = joi.object({
 module.exports.updateCarbonEmissionChallengeSchema = joi.object({
      id : joi.string().required(),
      title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
      category : joi.string().valid("carbon emission").required(),
      challengeType : joi.string().valid(
               "carbon control challenge",
@@ -416,6 +456,11 @@ module.exports.updateCarbonEmissionChallengeSchema = joi.object({
 
 module.exports.carbonSaveChallengeSchema = joi.object({
      title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
      category : joi.string().valid("carbon save").required(),
      challengeType : joi.string().valid(
              "carbon saving challenge",
@@ -429,7 +474,12 @@ module.exports.carbonSaveChallengeSchema = joi.object({
 
 module.exports.updateCarbonSaveChallengeSchema = joi.object({
      id : joi.string().required(),
-        title : joi.string().required().min(3),
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
      category : joi.string().valid("carbon save").required(),
      challengeType : joi.string().valid(
              "carbon saving challenge",

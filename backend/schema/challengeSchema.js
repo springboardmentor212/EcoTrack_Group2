@@ -2,12 +2,35 @@ const {Schema} = require("mongoose");
 const {userModel} = require("../model/userModel");
 const {notificationModel} = require("../model/notificationModel");
 
+const descriptionSchema = new Schema({
+   completionCriteria : {
+      type : String,
+      required : true,
+      trim : true
+   },
+
+   instructions : [{
+     type : String,
+     trim : true,
+   }],
+
+   objective : {
+      type : String,
+      required : true,
+      trim : true
+   },
+}, { _id: false });
+
 const challengeSchema = new Schema({
     title : {
         type : String,
         required : true,
         lowerCase : true,
         trim : true
+    },
+    
+    description : {
+        type : descriptionSchema,
     },
     
     category : {
