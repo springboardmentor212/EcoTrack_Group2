@@ -103,6 +103,26 @@ function formatDate(value) {
   });
 }
 
+function formatLabel(value) {
+  if (value == null || value === "") return "—";
+
+  return String(value)
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatPDFText(value) {
+  if (value == null || value === "") return "—";
+
+  return String(value)
+    .replace(/CO₂e/gi, "CO2")
+    .replace(/kg\s*CO₂e/gi, "kgCO2")
+    .replace(/\u00A0/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
 function StatCard({ title, value, icon: Icon, description }) {
   return (
     <div className="transform rounded-2xl border border-[#e1ebe4] bg-white p-5 shadow-[0_8px_25px_rgba(33,78,50,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none motion-reduce:transition-none">
@@ -407,30 +427,49 @@ function AdminReports() {
         head: [["Challenge Information", "Details"]],
         body: [
           ["Title", challenge.title || "—"],
-          ["Category", challenge.category || "—"],
-          ["Challenge Type", challenge.challengeType || "—"],
+          ["Category", formatLabel(challenge.category)],
+          ["Challenge Type", formatLabel(challenge.challengeType)],
           [
             "Target",
-            `${challenge.target ?? "—"} ${challenge.unit || ""}`.trim(),
+            `${challenge.target ?? "—"} ${
+              ["kgco2", "kgco2e"].includes(
+                String(challenge.unit || "").toLowerCase(),
+              )
+                ? "kgCO2"
+                : challenge.unit || ""
+            }`.trim(),
           ],
-          ["Period", challenge.period || "—"],
-          ["Direction", challenge.direction || "—"],
+          ["Period", formatLabel(challenge.period)],
+          ["Direction", formatLabel(challenge.direction)],
           ["Start Date", formatDate(challenge.startDate)],
           ["End Date", formatDate(challenge.endDate)],
-          ["Status", challenge.status || "—"],
+          ["Status", formatLabel(challenge.status)],
           ["Created At", formatDate(challenge.createdAt)],
           ["Updated At", formatDate(challenge.updatedAt)],
-          ["Objective", challenge.description?.objective || "—"],
+          ["Objective", formatPDFText(challenge.description?.objective)],
           [
             "Instructions",
-            challenge.description?.instructions.join("\n") || "—",
+            formatPDFText(
+              Array.isArray(challenge.description?.instructions)
+                ? challenge.description.instructions.join("\n")
+                : challenge.description?.instructions,
+            ),
           ],
           [
             "Completion Criteria",
-            challenge.description?.completionCriteria || "—",
+            formatPDFText(challenge.description?.completionCriteria),
           ],
         ],
-        styles: { fontSize: 9, cellPadding: 3, overflow: "linebreak" },
+        styles: {
+          font: "helvetica",
+          fontStyle: "normal",
+          fontSize: 9,
+          cellPadding: 3,
+          overflow: "linebreak",
+          charSpace: 0,
+          halign: "left",
+          valign: "top",
+        },
         headStyles: { fillColor: [39, 131, 77] },
         columnStyles: { 0: { cellWidth: 42 }, 1: { cellWidth: "auto" } },
         margin: { left: 14, right: 14 },
@@ -1223,18 +1262,29 @@ function AdminReports() {
 
                   <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {[
-                      ["Category", selectedChallenge.category],
-                      ["Challenge Type", selectedChallenge.challengeType],
+                      ["Category", formatLabel(selectedChallenge.category)],
+                      [
+                        "Challenge Type",
+                        formatLabel(selectedChallenge.challengeType),
+                      ],
                       [
                         "Target",
-                        `${selectedChallenge.target ?? "—"} ${selectedChallenge.unit || ""}`.trim(),
+                        `${selectedChallenge.target ?? "—"} ${
+                          ["kgco2", "kgco2e"].includes(
+                            String(selectedChallenge.unit || "")
+                              .trim()
+                              .toLowerCase(),
+                          )
+                            ? "kgCO₂e"
+                            : selectedChallenge.unit || ""
+                        }`.trim(),
                       ],
                       ["Title", selectedChallenge.title],
-                      ["Period", selectedChallenge.period],
+                      ["Period", formatLabel(selectedChallenge.period)],
                       ["Start Date", formatDate(selectedChallenge.startDate)],
                       ["End Date", formatDate(selectedChallenge.endDate)],
-                      ["Direction", selectedChallenge.direction],
-                      ["Status", selectedChallenge.status],
+                      ["Direction", formatLabel(selectedChallenge.direction)],
+                      ["Status", formatLabel(selectedChallenge.status)],
                       ["Created At", formatDate(selectedChallenge.createdAt)],
                       ["Updated At", formatDate(selectedChallenge.updatedAt)],
                     ].map(([label, value]) => (
