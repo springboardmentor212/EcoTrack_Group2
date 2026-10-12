@@ -22,7 +22,6 @@ const sustainabilityPreferenceOptions = [
   "sustainable waste disposal",
   "sustainable travel",
   "sustainable efficient electricity",
-  "carbon footprints",
 ];
 
 const environmentalInterestOptions = [
@@ -36,9 +35,8 @@ const personalGoalPreferenceOptions = [
   "short term goals",
   "long term goals",
   "measurable progress",
-  "habit-based goals",
   "emission reduction goals",
-  "resource-saving goals",
+  "carbon saving goals",
 ];
 
 const formatValue = (value) => {
@@ -96,9 +94,7 @@ export default function Profile() {
         toast.error(message || "Unable to load profile");
       }
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Unable to load profile"
-      );
+      toast.error(err.response?.data?.message || "Unable to load profile");
     } finally {
       setLoading(false);
     }
@@ -150,15 +146,9 @@ export default function Profile() {
   const startEditing = () => {
     setFormData({
       ...profile,
-      sustainabilityPreferences: [
-        ...(profile.sustainabilityPreferences || []),
-      ],
-      environmentalInterests: [
-        ...(profile.environmentalInterests || []),
-      ],
-      personalGoalPreferences: [
-        ...(profile.personalGoalPreferences || []),
-      ],
+      sustainabilityPreferences: [...(profile.sustainabilityPreferences || [])],
+      environmentalInterests: [...(profile.environmentalInterests || [])],
+      personalGoalPreferences: [...(profile.personalGoalPreferences || [])],
     });
 
     setPhotoPreview(profile.profilePhoto || "");
@@ -185,21 +175,22 @@ export default function Profile() {
       const body = new FormData();
 
       body.append("name", formData.name || "");
+      body.append("email", formData.email || "");
       body.append("location", formData.location || "");
 
       body.append(
         "sustainabilityPreferences",
-        JSON.stringify(formData.sustainabilityPreferences || [])
+        JSON.stringify(formData.sustainabilityPreferences || []),
       );
 
       body.append(
         "environmentalInterests",
-        JSON.stringify(formData.environmentalInterests || [])
+        JSON.stringify(formData.environmentalInterests || []),
       );
 
       body.append(
         "personalGoalPreferences",
-        JSON.stringify(formData.personalGoalPreferences || [])
+        JSON.stringify(formData.personalGoalPreferences || []),
       );
 
       if (selectedPhoto) {
@@ -227,9 +218,7 @@ export default function Profile() {
         toast.error(message || "Unable to update profile");
       }
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Unable to update profile"
-      );
+      toast.error(err.response?.data?.message || "Unable to update profile");
     } finally {
       setSaving(false);
     }
@@ -473,7 +462,7 @@ export default function Profile() {
               {editing ? (
                 renderPreferenceOptions(
                   "sustainabilityPreferences",
-                  sustainabilityPreferenceOptions
+                  sustainabilityPreferenceOptions,
                 )
               ) : (
                 <p className="mt-3 text-sm text-gray-500">
@@ -490,7 +479,7 @@ export default function Profile() {
               {editing ? (
                 renderPreferenceOptions(
                   "environmentalInterests",
-                  environmentalInterestOptions
+                  environmentalInterestOptions,
                 )
               ) : (
                 <p className="mt-3 text-sm text-gray-500">
@@ -507,7 +496,7 @@ export default function Profile() {
               {editing ? (
                 renderPreferenceOptions(
                   "personalGoalPreferences",
-                  personalGoalPreferenceOptions
+                  personalGoalPreferenceOptions,
                 )
               ) : (
                 <p className="mt-3 text-sm text-gray-500">
