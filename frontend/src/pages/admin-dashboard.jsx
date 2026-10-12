@@ -1,9 +1,17 @@
+
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-import {FiUsers,FiUserCheck,FiUserX,FiAward,FiCheckCircle,FiFileText,} from "react-icons/fi";
+import {
+  FiUsers,
+  FiUserCheck,
+  FiUserX,
+  FiAward,
+  FiCheckCircle,
+} from "react-icons/fi";
 import { toast } from "react-toastify";
 
+const Admin_Api = import.meta.env.VITE_ADMIN_API;
 const API_URL = import.meta.env.VITE_API_URL;
 
 const adminNavItems = [
@@ -11,27 +19,13 @@ const adminNavItems = [
   ["User Management", "/admin-user-management"],
   ["Challenge Management", "/admin-challenge-management"],
   ["Reports", "/admin-reports"],
+  ["Profile", "/admin-profile"],
 ];
 
-const statCards = [
-  {
-    title: "Total Users",
-    value: 0,
-    unit: "users",
-    icon: FiUsers,
-  },
-  {
-    title: "Active Users",
-    value: 0,
-    unit: "users",
-    icon: FiUserCheck,
-  },
-  {
-    title: "Blocked Users",
-    value: 0,
-    unit: "users",
-    icon: FiUserX,
-  },
+const initialStats = [
+  { title: "Total Users", value: 0, unit: "users", icon: FiUsers },
+  { title: "Active Users", value: 0, unit: "users", icon: FiUserCheck },
+  { title: "Blocked Users", value: 0, unit: "users", icon: FiUserX },
   {
     title: "Active Challenges",
     value: 0,
@@ -44,21 +38,119 @@ const statCards = [
     unit: "completed",
     icon: FiCheckCircle,
   },
-  {
-    title: "Reports",
-    value: 0,
-    unit: "generated",
-    icon: FiFileText,
-  },
 ];
 
 function AdminDashboard() {
   const navigate = useNavigate();
 
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [stats, setStats] = useState(statCards);
-  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [adminProfile, setAdminProfile] = useState({
+    name: "",
+    email: "",
+    profilePhoto: "",
+  });
 
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [stats, setStats] = useState(initialStats);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState(false);
+
+  // Load dashboard statistics
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboard = async () => {
+      setDashboardLoading(true);
+      setDashboardError(false);
+
+      try {
+        const { data } = await axios.get(`${Admin_Api}/`, {
+          withCredentials: true,
+        });
+
+        if (!data.success) {
+          throw new Error(
+            data.message || "Unable to load admin dashboard."
+          );
+        }
+
+        const dashboardData = data.dashboardData;
+
+        if (!dashboardData) {
+          throw new Error("Dashboard data is missing.");
+        }
+
+        if (isMounted) {
+          setStats((previousStats) =>
+            previousStats.map((stat) => {
+              const values = {
+                "Total Users": dashboardData.totalUser,
+                "Active Users": dashboardData.activeUser,
+                "Blocked Users": dashboardData.blockedUser,
+                "Active Challenges": dashboardData.activeChallenge,
+                "Completed Challenges": dashboardData.completedChallenge,
+              };
+
+              return {
+                ...stat,
+                value: values[stat.title] ?? 0,
+              };
+            })
+          );
+        }
+      } catch (error) {
+        if (isMounted) {
+          setDashboardError(true);
+
+          toast.error(
+            error.response?.data?.message ||
+              error.message ||
+              "Unable to load dashboard data."
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setDashboardLoading(false);
+        }
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Load the actual admin profile
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAdminProfile = async () => {
+      try {
+        const { data } = await axios.get(`${Admin_Api}/profile`, {
+          withCredentials: true,
+        });
+
+        if (data.success && isMounted) {
+          setAdminProfile({
+            name: data.profile?.name || "",
+            email: data.profile?.email || "",
+            profilePhoto: data.profile?.profilePhoto || "",
+          });
+        }
+      } catch (error) {
+        console.error("Unable to load admin profile:", error);
+      }
+    };
+
+    loadAdminProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Close profile dropdown when clicking outside
   useEffect(() => {
     const handleDocumentClick = (event) => {
       if (!event.target.closest(".profile-wrapper")) {
@@ -73,23 +165,7 @@ function AdminDashboard() {
     };
   }, []);
 
-  useEffect(() => {
-    /*
-      Admin dashboard statistics API will be connected here
-      once the backend developer provides the admin dashboard API.
-
-      Expected future data:
-      - total users
-      - active users
-      - blocked users
-      - active challenges
-      - completed challenges
-      - reports generated
-    */
-
-    setDashboardLoading(false);
-  }, []);
-
+  // Existing logout API
   const handleLogout = async () => {
     try {
       const { data } = await axios.get(`${API_URL}/logout`, {
@@ -97,6 +173,7 @@ function AdminDashboard() {
       });
 
       if (data.success) {
+        setProfileOpen(false);
         toast.success(data.message || "Logout successfully");
         navigate("/");
       } else {
@@ -111,7 +188,11 @@ function AdminDashboard() {
   };
 
   const handleStatClick = (title) => {
-    if (title === "Total Users" || title === "Active Users" || title === "Blocked Users") {
+    if (
+      title === "Total Users" ||
+      title === "Active Users" ||
+      title === "Blocked Users"
+    ) {
       navigate("/admin-user-management");
       return;
     }
@@ -121,88 +202,49 @@ function AdminDashboard() {
       title === "Completed Challenges"
     ) {
       navigate("/admin-challenge-management");
-      return;
-    }
-
-    if (title === "Reports") {
-      navigate("/admin-reports");
     }
   };
+
+  const adminInitial =
+    adminProfile.name.trim().charAt(0).toUpperCase() || "A";
 
   return (
     <>
       <style>{`
         @keyframes pageFadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
 
         @keyframes sidebarReveal {
-          from {
-            opacity: 0;
-            transform: translateX(-18px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
+          from { opacity: 0; transform: translateX(-18px); }
+          to { opacity: 1; transform: translateX(0); }
         }
 
         @keyframes topbarReveal {
-          from {
-            opacity: 0;
-            transform: translateY(-12px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(-12px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes heroFadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(18px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes cardFadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes iconReveal {
-          from {
-            opacity: 0;
-            transform: scale(.8);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
+          from { opacity: 0; transform: scale(.8); }
+          to { opacity: 1; transform: scale(1); }
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#f7fbf8] text-[#173f2a] animate-[pageFadeIn_.7s_ease_both] lg:flex">
-
+      <div className="min-h-screen animate-[pageFadeIn_.7s_ease_both] bg-[#f7fbf8] text-[#173f2a] lg:flex">
         {/* Sidebar */}
-        <aside className="fixed inset-y-0 left-0 z-40 flex w-[250px] shrink-0 flex-col overflow-hidden border-r border-[#e2ece5] bg-white px-[18px] py-5 animate-[sidebarReveal_.6s_ease_.05s_both] max-lg:w-[220px] max-md:w-[190px] max-sm:relative max-sm:w-full max-sm:border-b max-sm:border-r-0 max-sm:py-5">
-
-          {/* Logo */}
+        <aside className="fixed inset-y-0 left-0 z-40 flex w-[250px] shrink-0 flex-col overflow-y-auto border-r border-[#e2ece5] bg-white px-[18px] py-5 animate-[sidebarReveal_.6s_ease_.05s_both] max-lg:w-[220px] max-md:w-[190px] max-sm:relative max-sm:w-full max-sm:border-b max-sm:border-r-0 max-sm:py-5">
           <Link
             to="/admin-dashboard"
             className="flex shrink-0 items-center border-b border-[#e2ece5] px-3 pb-4"
@@ -214,8 +256,7 @@ function AdminDashboard() {
             />
           </Link>
 
-          {/* Navigation */}
-          <nav className="min-h-0 flex-1 overflow-hidden py-2 pr-1">
+          <nav className="min-h-0 flex-1 py-2 pr-1">
             <div className="mb-3 px-3 pt-2">
               <p className="text-[10px] font-bold tracking-[.16em] text-[#27834d]">
                 ADMIN PORTAL
@@ -239,7 +280,6 @@ function AdminDashboard() {
             </div>
           </nav>
 
-          {/* Logout */}
           <div className="shrink-0 pt-1">
             <div className="mx-2 my-2 h-px bg-[#e2ece5]" />
 
@@ -255,7 +295,6 @@ function AdminDashboard() {
 
         {/* Main Content */}
         <div className="w-full lg:ml-[250px] lg:w-[calc(100%-250px)] max-lg:ml-[220px] max-lg:w-[calc(100%-220px)] max-md:ml-[190px] max-md:w-[calc(100%-190px)] max-sm:ml-0 max-sm:w-full">
-
           {/* Topbar */}
           <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-[#e2ece5] bg-white px-[4%] animate-[topbarReveal_.6s_ease_.12s_both]">
             <div>
@@ -268,27 +307,38 @@ function AdminDashboard() {
               </div>
             </div>
 
-            {/* Admin Profile */}
+            {/* Dynamic Admin Profile + Dropdown */}
             <div className="profile-wrapper relative">
               <button
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-                  setProfileOpen(!profileOpen);
+                  setProfileOpen((open) => !open);
                 }}
-                className="flex items-center gap-2.5 rounded-lg border-0 bg-transparent px-1 py-1.5 text-left"
+                aria-expanded={profileOpen}
+                aria-haspopup="true"
+                aria-label="Open admin profile menu"
+                className="flex items-center gap-2.5 rounded-lg border-0 bg-transparent px-1 py-1.5 text-left transition hover:bg-[#f7fbf8]"
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf5ed] text-sm font-semibold text-[#27834d]">
-                  A
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eaf5ed] text-sm font-semibold text-[#27834d]">
+                  {adminProfile.profilePhoto ? (
+                    <img
+                      src={adminProfile.profilePhoto}
+                      alt="Admin profile"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    adminInitial
+                  )}
                 </div>
 
                 <div className="profile-info flex min-w-0 flex-col max-md:hidden">
-                  <strong className="text-xs font-semibold text-[#294a36]">
-                    Eco Admin
+                  <strong className="max-w-[180px] truncate text-xs font-semibold text-[#294a36]">
+                    {adminProfile.name || "Admin"}
                   </strong>
 
-                  <span className="text-[10px] text-[#8a998f]">
-                    Administrator
+                  <span className="max-w-[180px] truncate text-[10px] text-[#8a998f]">
+                    {adminProfile.email || "Administrator"}
                   </span>
                 </div>
 
@@ -302,13 +352,49 @@ function AdminDashboard() {
               </button>
 
               {profileOpen && (
-                <div className="absolute right-0 top-[47px] z-50 w-[180px] overflow-hidden rounded-xl border border-[#e1ebe4] bg-white p-1.5 shadow-[0_12px_30px_rgba(23,63,42,0.12)]">
+                <div className="absolute right-0 top-[47px] z-50 w-[230px] overflow-hidden rounded-xl border border-[#e1ebe4] bg-white p-1.5 shadow-[0_12px_30px_rgba(23,63,42,0.12)]">
+                  {/* Profile summary */}
+                  <div className="flex items-center gap-3 border-b border-[#e1ebe4] px-3 py-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eaf5ed] text-sm font-semibold text-[#27834d]">
+                      {adminProfile.profilePhoto ? (
+                        <img
+                          src={adminProfile.profilePhoto}
+                          alt="Admin profile"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        adminInitial
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[#294a36]">
+                        {adminProfile.name || "Admin"}
+                      </p>
+                      <p className="truncate text-xs text-[#8a998f]">
+                        {adminProfile.email || "Administrator"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Profile link */}
+                  <Link
+                    to="/admin-profile"
+                    onClick={() => setProfileOpen(false)}
+                    className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#53685b] transition hover:bg-[#f1f8f3] hover:text-[#27834d]"
+                  >
+                    <span aria-hidden="true">👤</span>
+                    <span>Profile</span>
+                  </Link>
+
+                  {/* Logout */}
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="w-full rounded-lg px-3 py-2.5 text-left text-xs text-[#53685b] hover:bg-[#fdf2f2] hover:text-[#b34b4b]"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-[#b34b4b] transition hover:bg-[#fdf2f2]"
                   >
-                    Logout
+                    <span aria-hidden="true">↪</span>
+                    <span>Logout</span>
                   </button>
                 </div>
               )}
@@ -317,8 +403,6 @@ function AdminDashboard() {
 
           {/* Dashboard */}
           <main className="px-[4%] pb-12 pt-8 sm:pt-10">
-
-            {/* Heading */}
             <section className="mb-8 animate-[heroFadeUp_.55s_ease_.2s_both]">
               <p className="mb-2 text-[11px] font-bold tracking-[.16em] text-[#27834d]">
                 ECOTRACK ADMINISTRATION
@@ -333,10 +417,22 @@ function AdminDashboard() {
               </p>
             </section>
 
-            {/* Statistics */}
             <section>
-              <div className="grid gap-[18px] sm:grid-cols-2 xl:grid-cols-3">
+              {dashboardError && (
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  <span>Dashboard statistics could not be loaded.</span>
 
+                  <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="font-semibold underline"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              <div className="grid gap-[18px] sm:grid-cols-2 xl:grid-cols-3">
                 {stats.map((stat, index) => {
                   const Icon = stat.icon;
 
@@ -351,7 +447,6 @@ function AdminDashboard() {
                       }}
                     >
                       <div className="flex items-start justify-between gap-4">
-
                         <div>
                           <p className="mb-2 text-[13px] text-[#718277]">
                             {stat.title}
@@ -373,10 +468,8 @@ function AdminDashboard() {
                     </button>
                   );
                 })}
-
               </div>
             </section>
-
           </main>
         </div>
       </div>
