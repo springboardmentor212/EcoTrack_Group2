@@ -14,6 +14,7 @@ import SustainabilityGoals from "./pages/sustainability-goals";
 import CommunityChallenges from "./pages/community-challenges";
 import AdminUserManagement from "./pages/admin-user-management";
 import AdminChallengeManagement from "./pages/admin-challenge-management";
+import AdminReports from "./pages/AdminReports";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -125,6 +126,15 @@ function App() {
      element={
         <ProtectedRoute>
           <AdminChallengeManagement />
+        </ProtectedRoute>
+      }
+    />
+
+    <Route
+     path="/admin-reports"
+     element={
+        <ProtectedRoute>
+          <AdminReports />
         </ProtectedRoute>
       }
     />
