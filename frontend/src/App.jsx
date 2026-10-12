@@ -17,8 +17,10 @@ import AdminProfile from "./pages/admin-profile";
 import AdminUserManagement from "./pages/admin-user-management";
 import AdminChallengeManagement from "./pages/admin-challenge-management";
 import AdminLogin from "./pages/admin-login";
-import ProtectedRoute from "./components/ProtectedRoute";
+import AdminReports from "./pages/admin-reports";
 import AdminDashboard from "./pages/admin-dashboard";
+
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -156,6 +158,15 @@ function App() {
         element={
           <ProtectedRoute>
             <AdminChallengeManagement />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin-reports"
+        element={
+          <ProtectedRoute>
+            <AdminReports />
           </ProtectedRoute>
         }
       />
