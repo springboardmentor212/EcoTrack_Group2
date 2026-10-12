@@ -387,6 +387,7 @@ function AdminReports() {
 
     try {
       const challenge = selectedChallenge;
+
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -406,7 +407,6 @@ function AdminReports() {
         head: [["Challenge Information", "Details"]],
         body: [
           ["Title", challenge.title || "—"],
-          ["Challenge ID", challenge._id || challenge.id || "—"],
           ["Category", challenge.category || "—"],
           ["Challenge Type", challenge.challengeType || "—"],
           [
@@ -421,7 +421,10 @@ function AdminReports() {
           ["Created At", formatDate(challenge.createdAt)],
           ["Updated At", formatDate(challenge.updatedAt)],
           ["Objective", challenge.description?.objective || "—"],
-          ["Instructions", challenge.description?.instructions || "—"],
+          [
+            "Instructions",
+            challenge.description?.instructions.join("\n") || "—",
+          ],
           [
             "Completion Criteria",
             challenge.description?.completionCriteria || "—",
@@ -1226,7 +1229,6 @@ function AdminReports() {
                         "Target",
                         `${selectedChallenge.target ?? "—"} ${selectedChallenge.unit || ""}`.trim(),
                       ],
-                      ["Challenge ID", selectedChallenge._id],
                       ["Title", selectedChallenge.title],
                       ["Period", selectedChallenge.period],
                       ["Start Date", formatDate(selectedChallenge.startDate)],
@@ -1363,7 +1365,7 @@ function AdminReports() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {[
                       ["Total Users", userReport.totalUsers ?? 0],
-                      ["Active Users", userReport.activeUser ?? 0],
+                      ["Active Users", userReport.activeUsers ?? 0],
                       ["Blocked Users", userReport.blockedUsers ?? 0],
                     ].map(([label, value]) => (
                       <div
@@ -1402,7 +1404,7 @@ function AdminReports() {
                       <tbody>
                         {[
                           ["Total Users", userReport.totalUsers ?? 0],
-                          ["Active Users", userReport.activeUser ?? 0],
+                          ["Active Users", userReport.activeUsers ?? 0],
                           ["Blocked Users", userReport.blockedUsers ?? 0],
                         ].map(([label, value]) => (
                           <tr key={label} className="border-t border-[#e1ebe4]">
