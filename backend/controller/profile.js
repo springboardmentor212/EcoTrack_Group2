@@ -60,7 +60,7 @@ module.exports.updateProfile = async(req,res)=>{
                  $set : user
                 },
                 {
-                   new : true,
+                   returnDocument: 'after',
                    runValidators: true     
                 });
         

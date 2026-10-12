@@ -21,6 +21,10 @@ module.exports.resendOtpSchema = joi.object({
     email : joi.string().required().min(5).pattern(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/),
 }).required();
 
+module.exports.deleteAccountSchema = joi.object({
+   password : joi.string().required().min(8).pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/)
+}).required();
+
 module.exports.resentPasswordSchema = joi.object({
     email : joi.string().required().min(5).pattern(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/),
     password : joi.string().required().min(8).pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/),
@@ -495,4 +499,12 @@ module.exports.adminProfileSchema = joi.object({
     name : joi.string().required().min(3).pattern(/^(?=.{3,}$)[A-Za-z]+(?: [A-Za-z]+)?$/),
     profilePhoto: joi.string().allow("",null),
     location : joi.string().min(3).required(),
+}).required();
+
+module.exports.notificationSettingSchema = joi.object({
+    goalSuggestion : joi.boolean().required(),
+    challengeSuggestion : joi.boolean().required(),
+    goalReminder : joi.boolean().required(),
+    challengeReminder : joi.boolean().required(),
+    updates : joi.boolean().required()
 }).required();

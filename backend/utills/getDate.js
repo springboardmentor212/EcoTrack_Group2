@@ -18,6 +18,20 @@ const utcDates = (date) => {
     return endDate;
 }
 
+const previousDate = () => {
+    const date = new Date();
+    const d = date.getUTCDate(),m = date.getUTCMonth(), y = date.getUTCFullYear();
+    const previousDate = new Date(Date.UTC(y,m,d,0,0,0,0));
+    return previousDate;
+}
+
+const previousMonthDate = () => {
+    const date = new Date();
+    const d = 0, m = date.getUTCMonth(),y = date.getUTCFullYear();
+    const lastDate = new Date(Date.UTC(y,m,d,0,0,0,0));
+    return lastDate;
+}
+
 const getCurrentDayDates = () => {
     const today = new Date();
     const dayStart = new Date(
@@ -201,6 +215,6 @@ const checkMonthEndDate = (endDate) => {
      return monthEnd.getTime() === endDate.getTime();
 };
 
-module.exports = {currDates,utcStartDate,utcDates,getCurrentDayDates,getCurrentWeekDates,
-                  getCurrentMonthDates,goalCurrentWeekDates,goalCurrentMonthDates,
+module.exports = {currDates,utcStartDate,utcDates,previousDate,previousMonthDate,getCurrentDayDates,
+                  getCurrentWeekDates,getCurrentMonthDates,goalCurrentWeekDates,goalCurrentMonthDates,
                   checkWeekStartDate,checkMonthStartDate,checkWeekEndDate,checkMonthEndDate};

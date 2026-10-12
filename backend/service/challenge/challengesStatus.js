@@ -5,7 +5,7 @@ const {getTransportationData,getElectricityData,getWasteData,getEmissionData}
        = require("../goal/goalsDurationData");
 
 const getChallengeTrackingData = async(user,challenge) => {
-    const {category,challengeType,trackingType,target,period,startDate,endDate,} = challenge;
+    const {category,challengeType,trackingType,target,period,startDate,endDate} = challenge;
     let todayEnd = currDates();
     todayEnd = utcDates(todayEnd);
 
@@ -128,7 +128,7 @@ const updateUserChallengesStatus = async(userId,userChallengesId) => {
           
         currDate = utcStartDate(currDate);
 
-        if(chall.status === "cancelled" || currDate > limitDate){
+        if(chall.status === "cancelled" || (currDate > limitDate && chall.status === "failed")){
            continue;
         }
 

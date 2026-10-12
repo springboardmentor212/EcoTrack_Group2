@@ -90,7 +90,8 @@ const getGoalForSuggestion = async(user) => {
 };
 
 const sendGoalSuggestion = async() => {
-    const users = await userModel.find({role : "user" , isBlocked : false});
+    const users = await userModel.find({role : "user" , isBlocked : false , 
+                        "notificationPreference.goalSuggestion" : true });
 
     for(const user of users){
         const suggestGoal = await getGoalForSuggestion(user);
@@ -130,7 +131,7 @@ const sendGoalSuggestion = async() => {
         },
         {
             upsert: true,
-            new: true
+            returnDocument: 'after' 
         }
        );
     }
@@ -138,7 +139,9 @@ const sendGoalSuggestion = async() => {
 
 
 const sendDailyGoalReminderNotification = async() => {
-    const users = await userModel.find({role : "user" , isBlocked : false});
+    const users = await userModel.find({role : "user" , isBlocked : false ,
+                        "notificationPreference.goalReminder" : true
+    });
 
     const {dayStart,dayEnd} = getCurrentDayDates();
     for(const user of users){
@@ -193,14 +196,15 @@ const sendDailyGoalReminderNotification = async() => {
         },
         {
             upsert: true,
-            new: true
+            returnDocument: 'after' 
         }
        );
     }
 };
 
 const sendWeeklyGoalReminderNotification = async() => {
-    const users = await userModel.find({role : "user" , isBlocked : false});
+    const users = await userModel.find({role : "user" , isBlocked : false,
+                       "notificationPreference.goalReminder" : true});
     const {weekStart, weekEnd} = getCurrentWeekDates();
 
     for(const user of users){
@@ -255,14 +259,16 @@ const sendWeeklyGoalReminderNotification = async() => {
         },
         {
             upsert: true,
-            new: true
+            returnDocument: 'after' 
         }
        );
    }  
 }
 
 const sendMonthlyGoalReminderNotification = async() => {
-    const users = await userModel.find({role : "user" , isBlocked : false});
+    const users = await userModel.find({role : "user" , isBlocked : false ,
+                        "notificationPreference.goalReminder" : true
+    });
     const {monthStart, monthEnd} = getCurrentMonthDates();
 
     for(const user of users){
@@ -317,7 +323,7 @@ const sendMonthlyGoalReminderNotification = async() => {
         },
         {
             upsert: true,
-            new: true
+            returnDocument: 'after' 
         }
        );
    }  

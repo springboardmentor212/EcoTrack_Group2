@@ -6,7 +6,7 @@ const {currDates,utcStartDate,utcDates,
 const {challengeUnitMap} = require("../utills/getUnitAndBaseValue");
 const {sendChallengeSuggestion,sendUpdateChallengeNotification,sendDeleteChallengeNotification}
    = require("../service/notification/challengeNotificationService");
-const {updateUserChallengesStatus} = require("../service/challenge/challengesStatus");
+const {updateUserChallengesStatus,updateAllChallengesStatus} = require("../service/challenge/challengesStatus");
 
 //create
 module.exports.createChallenge = async (req,res) => {
@@ -253,10 +253,11 @@ module.exports.updateChallenge = async (req,res) => {
 
    if(challengeData.challengeType === "zero waste day"){
       challengeData.period = "daily";
-      challengeData.target = 0;
+      challengeData.target = 0
    }
 
-   const updatedChallenge = await challengeModel.findByIdAndUpdate(challengeData.id,challengeData,{new : true,runValidators: true});
+   const updatedChallenge = await challengeModel.findByIdAndUpdate(challengeData.id,challengeData,{returnDocument: 'after',runValidators: true});
+   await updateAllChallengesStatus();
    await sendUpdateChallengeNotification(updatedChallenge);
    return res.status(200).json({success : true , message  : "challenge update successfully"});
   }catch(error){
@@ -336,7 +337,7 @@ module.exports.joinChallenge = async (req,res) => {
    const updateJoinChallenge = await userModel.findByIdAndUpdate(
        userId,
        {$push : { joinChallenges : newChallenge }},
-       {new : true}  
+       {returnDocument: 'after'}  
    );
 
    if(updateJoinChallenge){

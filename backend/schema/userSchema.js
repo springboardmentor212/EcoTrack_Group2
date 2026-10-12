@@ -4,6 +4,33 @@ const {carbonActivityModel} = require("../model/carbonActivityModel");
 const {goalModel} = require("../model/goalModel");
 const {userNotificationModel} = require("../model/userNotificationModel");
 
+const notificationPreferenceSchema = new Schema({
+     goalSuggestion : {
+         type : Boolean,
+         default : true,
+     },
+    
+     challengeSuggestion : {
+         type : Boolean,
+         default : true,
+     },
+
+     goalReminder : {
+         type : Boolean,
+         default : true,
+     },
+
+     challengeReminder : {
+         type : Boolean,
+         default : true,
+     },
+
+     updates : {
+        type : Boolean,
+        default : true,
+     }
+},{_id : false});
+
 const userSchema = new Schema({
     name : {
         type : String,
@@ -53,6 +80,10 @@ const userSchema = new Schema({
        default : false,
     },
     
+    notificationPreference : {
+         type : notificationPreferenceSchema,
+    },
+
   sustainabilityPreferences : [{
     type: String,
     enum: [

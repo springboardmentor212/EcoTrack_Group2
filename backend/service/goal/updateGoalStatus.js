@@ -12,7 +12,7 @@ const updateGoalStatus = async (goals) => {
                 
       currDate = utcStartDate(currDate);
       
-      if(goal.status === "cancelled" || currDate > limitDate){
+      if(goal.status === "cancelled" || (currDate > limitDate && goal.status === "failed")){
            continue;
       }
       const status = await getGoalStatus(goal);

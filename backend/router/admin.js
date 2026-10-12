@@ -6,13 +6,17 @@ const upload = multer({storage})
 
 const {userCheck,validateLogin} = require("../middleware/userMiddleware");
 const {validateAdminProfile} = require("../middleware/adminMiddleware");
-const {adminLogin,getAdminProfile,updateAdminProfile,users,block,unBlock,reports} = require("../controller/admin");
+const {adminLogin,getAdminProfile,updateAdminProfile,adminDashboard,users,block,unBlock,userReport,
+       completeChallengesReport,challengeReport} = require("../controller/admin");
 
 router.route("/login")
       .post(validateLogin,adminLogin);
 
 router.use(userCheck);
 
+router.route("/")
+      .get(adminDashboard);
+      
 router.route("/profile")
       .get(getAdminProfile)
       .patch(upload.single('profilePhoto'),
@@ -28,8 +32,13 @@ router.route("/block/:id")
 router.route("/unblock/:id")
       .patch(unBlock);
 
+router.route("/report/user")
+      .get(userReport);
 
-router.route("/report")
-      .get(reports);
-
+router.route("/report/challenge")
+       .get(completeChallengesReport);
+     
+router.route("/report/challenge/:id")
+       .get(challengeReport);
+       
 module.exports = router;

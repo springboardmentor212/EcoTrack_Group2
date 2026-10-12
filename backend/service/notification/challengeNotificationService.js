@@ -77,7 +77,9 @@ const sendChallengeSuggestion = async (challenge) => {
         action : "join challenge"
    });
 
-   const users = await userModel.find({role : "user" , isBlocked : false}).select("_id sustainabilityPreferences");;
+   const users = await userModel.find({role : "user" , isBlocked : false, 
+                  "notificationPreference.challengeSuggestion" : true
+                 }).select("_id sustainabilityPreferences");;
    
    for(const user of users){
         const match = await matchingChallenge(user,challenge);
@@ -96,7 +98,7 @@ const sendChallengeSuggestion = async (challenge) => {
                 },
                 {
                     upsert: true,
-                    new: true
+                    returnDocument: 'after' 
                 }
              );      
         }
@@ -112,7 +114,9 @@ const sendUpdateChallengeNotification = async (challenge) => {
         action : "informational notification"
    });
 
-   const users = await userModel.find({role : "user",isBlocked : false}).select("_id sustainabilityPreferences joinChallenges");;
+   const users = await userModel.find({role : "user",isBlocked : false,
+                      "notificationPreference.updates" : true
+                  }).select("_id sustainabilityPreferences joinChallenges");;
    
    for(const user of users){
         const match = await matchingChallenge(user,challenge);
@@ -131,7 +135,7 @@ const sendUpdateChallengeNotification = async (challenge) => {
                 },
                 {
                     upsert: true,
-                    new: true
+                    returnDocument: 'after' 
                 }
              );      
         }
@@ -149,7 +153,8 @@ const sendDeleteChallengeNotification = async (challenge) => {
 
    const userIds = await userModel.distinct("_id", {
       role : "user", isBlocked : false,
-     "joinChallenges.challengeId" : challenge._id
+      "notificationPreference.updates" : true,
+      "joinChallenges.challengeId" : challenge._id
    });
 
    for(const userId of userIds){
@@ -166,7 +171,7 @@ const sendDeleteChallengeNotification = async (challenge) => {
           },
           {
                upsert: true,
-               new: true
+               returnDocument: 'after' 
           }
      );  
    };
@@ -174,7 +179,8 @@ const sendDeleteChallengeNotification = async (challenge) => {
 
 //challenge Remainder
 const sendDailyChallengeReminderNotification = async() => {
-    const users = await userModel.find({role : "user" , isBlocked : false});
+    const users = await userModel.find({role : "user" , isBlocked : false,
+                        "notificationPreference.challengeReminder" : true});
     const {dayStart,dayEnd} = getCurrentDayDates();
 
     for(const user of users){
@@ -231,14 +237,16 @@ const sendDailyChallengeReminderNotification = async() => {
         },
         {
             upsert: true,
-            new: true
+            returnDocument: 'after' 
         }
        );
     }
 };
 
 const sendWeeklyChallengeReminderNotification = async() => {
-    const users = await userModel.find({role : "user", isBlocked : false});
+    const users = await userModel.find({role : "user", isBlocked : false ,
+                         "notificationPreference.challengeReminder" : true
+    });
     const {weekStart, weekEnd} = getCurrentWeekDates();
 
     for(const user of users){
@@ -295,14 +303,16 @@ const sendWeeklyChallengeReminderNotification = async() => {
         },
         {
             upsert: true,
-            new: true
+            returnDocument: 'after' 
         }
        );
     }
 };
 
 const sendMonthlyChallengeReminderNotification = async() => {
-    const users = await userModel.find({role : "user", isBlocked : false});
+    const users = await userModel.find({role : "user", isBlocked : false ,
+                   "notificationPreference.challengeReminder" : true
+    });
     const {monthStart, monthEnd} = getCurrentMonthDates();
 
     for(const user of users){
@@ -360,7 +370,7 @@ const sendMonthlyChallengeReminderNotification = async() => {
         },
         {
             upsert: true,
-            new: true
+            returnDocument: 'after' 
         }
        );
     }

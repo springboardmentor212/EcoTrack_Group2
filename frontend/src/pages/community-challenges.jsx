@@ -593,7 +593,7 @@ function CommunityChallenges() {
     { value: "all", label: "All" },
     { value: "not started", label: "Not Started" },
     { value: "ongoing", label: "Ongoing" },
-    { value: "close", label: "Closed" },
+    { value: "closed", label: "Closed" },
   ];
 
   const filteredMyChallenges =
@@ -803,36 +803,37 @@ function CommunityChallenges() {
                     </span>
                   </div>
                 )}
-{(() => {
-  const description =
-    selectedChallenge.description 
-  if (!description) return null;
+                {(() => {
+                  const description = selectedChallenge.description;
+                  if (!description) return null;
 
-  return (
-    <section className="challenge-description">
-      <h3>Challenge Guide</h3>
+                  return (
+                    <section className="challenge-description">
+                      <h3>Challenge Guide</h3>
 
-      <div className="description-section">
-        <h4>Objective :</h4>
-        <p>{description.objective}</p>
-      </div>
+                      <div className="description-section">
+                        <h4>Objective :</h4>
+                        <p>{description.objective}</p>
+                      </div>
 
-      <div className="description-section">
-        <h4>Instructions :  </h4>
-        <ul>
-          {description.instructions?.map((instruction, index) => (
-            <li key={index}>{instruction}</li>
-          ))}
-        </ul>
-      </div>
+                      <div className="description-section">
+                        <h4>Instructions : </h4>
+                        <ul>
+                          {description.instructions?.map(
+                            (instruction, index) => (
+                              <li key={index}>{instruction}</li>
+                            ),
+                          )}
+                        </ul>
+                      </div>
 
-      <div className="description-section">
-        <h4>Completion Criteria :</h4>
-        <p>{description.completionCriteria}</p>
-      </div>
-    </section>
-  );
-})()}
+                      <div className="description-section">
+                        <h4>Completion Criteria :</h4>
+                        <p>{description.completionCriteria}</p>
+                      </div>
+                    </section>
+                  );
+                })()}
               </>
             ) : null}
           </div>

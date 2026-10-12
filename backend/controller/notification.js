@@ -117,7 +117,7 @@ module.exports.readNotification = async(req,res) => {
                 }
              },
              {
-                new : true
+                returnDocument: 'after' 
              }
         );
    

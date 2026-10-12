@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const {userModel} = require("../model/userModel");
-const {loginSchema,registerSchema,verifyEmailSchema,resendOtpSchema,resentPasswordSchema} = require("../devSchema");
+const {loginSchema,registerSchema,verifyEmailSchema,resendOtpSchema,resentPasswordSchema,
+      notificationSettingSchema,deleteAccountSchema} = require("../devSchema");
 
 module.exports.validateLogin = ((req,res,next) => {
    const {error} = loginSchema.validate(req.body);
@@ -44,6 +45,26 @@ module.exports.validateResendOtp = ((req,res,next) => {
 
 module.exports.validateResetPassword = ((req,res,next)=>{
    const {error} = resentPasswordSchema.validate(req.body);
+   if(error){
+       let errMsg = error.details.map(el => el.message).join(",");
+       res.json({success : false , message : errMsg});
+   }else{
+      next();
+   }
+});
+
+module.exports.validateNotificationSetting = ((req,res,next)=>{
+   const {error} = notificationSettingSchema.validate(req.body);
+   if(error){
+       let errMsg = error.details.map(el => el.message).join(",");
+       res.json({success : false , message : errMsg});
+   }else{
+      next();
+   }
+});
+
+module.exports.validateDeleteAccount = ((req,res,next)=>{
+   const {error} = deleteAccountSchema.validate(req.body);
    if(error){
        let errMsg = error.details.map(el => el.message).join(",");
        res.json({success : false , message : errMsg});

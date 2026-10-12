@@ -896,7 +896,7 @@ async function seedGoals() {
                     $set: goalFields
                 },
                 {
-                    new: true,
+                    returnDocument: 'after',
                     upsert: true
                 }
             );
@@ -917,7 +917,7 @@ async function seedGoals() {
                         }
                     },
                     {
-                        new: true,
+                        returnDocument: 'after' ,
                         upsert: true
                     }
                 );
