@@ -19,7 +19,7 @@ import AdminChallengeManagement from "./pages/admin-challenge-management";
 import AdminLogin from "./pages/admin-login";
 import AdminReports from "./pages/admin-reports";
 import AdminDashboard from "./pages/admin-dashboard";
-
+import Settings from "./pages/settings";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -121,6 +121,15 @@ function App() {
         element={
           <ProtectedRoute>
             <Notifications />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
           </ProtectedRoute>
         }
       />

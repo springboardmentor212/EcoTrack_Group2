@@ -64,6 +64,7 @@ function ProtectedRoute({ children }) {
             "/tracking/waste",
             "/community-challenges",
             "/notifications",
+            "/settings",
           ];
 
           if (userRoutes.includes(location.pathname)) {
@@ -86,6 +87,7 @@ function ProtectedRoute({ children }) {
             "/admin-challenge-management",
             "/admin-profile",
             "/admin-reports",
+            "/settings",
           ];
 
           if (adminRoutes.includes(location.pathname)) {

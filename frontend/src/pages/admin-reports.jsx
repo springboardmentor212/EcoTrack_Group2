@@ -116,7 +116,7 @@ function formatPDFText(value) {
   if (value == null || value === "") return "—";
 
   return String(value)
-    .replace(/CO₂e/gi, "CO2")
+    .replace(/kg\s*CO₂/gi, "kgCO2")
     .replace(/kg\s*CO₂e/gi, "kgCO2")
     .replace(/\u00A0/g, " ")
     .replace(/[ \t]+/g, " ")
@@ -1275,7 +1275,7 @@ function AdminReports() {
                               .trim()
                               .toLowerCase(),
                           )
-                            ? "kgCO₂e"
+                            ? "kgCO₂"
                             : selectedChallenge.unit || ""
                         }`.trim(),
                       ],

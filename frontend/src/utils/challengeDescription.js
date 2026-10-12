@@ -149,7 +149,7 @@ export const generateChallengeDescription = (challenge) => {
   const formattedTarget = Number(target).toLocaleString("en-US");
   const readableUnit =
     unit.toLowerCase() === "kgco2"
-      ? "kg CO₂e"
+      ? "kgCO₂"
       : unit;
 
   return {
