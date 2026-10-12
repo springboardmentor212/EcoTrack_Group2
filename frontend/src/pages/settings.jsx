@@ -1,769 +1,246 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
 
-const sustainabilityOptions = [
-  "Small Daily Changes",
-  "Weekly Challenges",
-  "Reduce Emissions",
-  "Reduce Wastes",
-  "Sustainable Waste Disposal",
-  "Sustainable Travel",
-  "Sustainable Efficient Electricity",
-  "Carbon Footprints"
-];
-
-const environmentalInterests = [
-  "Transportation",
-  "Electricity",
-  "Waste Management",
-  "Build Sustainable Habits"
-];
-
-const personalGoalOptions = [
-  "Short term goals",
-  "Long term goals",
-  "Measurable progress",
-  "Habit-based goals",
-  "Emission reduction goals",
-  "Resource-saving goals"
-];
+const API_URL = import.meta.env.VITE_API_URL;
 
 const notificationOptions = [
-  "Reminders",
-  "Goals",
-  "Challenges",
-  "Leaderboards",
-  "Reports",
-  "Rewards",
-  "Updates"
+  { key: "goalSuggestion", label: "Goal Suggestions", description: "Get suggestions to help you reach your sustainability goals." },
+  { key: "challengeSuggestion", label: "Challenge Suggestions", description: "Discover challenges that match your interests." },
+  { key: "goalReminder", label: "Goal Reminders", description: "Receive reminders about your active goals." },
+  { key: "challengeReminder", label: "Challenge Reminders", description: "Stay updated on your community challenge deadlines." },
+  { key: "updates", label: "Updates", description: "Receive important EcoTrack updates." },
 ];
 
-function Toggle({ checked, onChange, disabled = false }) {
+const defaultPreferences = {
+  goalSuggestion: true,
+  challengeSuggestion: true,
+  goalReminder: true,
+  challengeReminder: true,
+  updates: true,
+};
+
+function Toggle({ checked, onChange, disabled = false, label }) {
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       onClick={onChange}
       disabled={disabled}
-      className={`relative h-6 w-11 rounded-full transition-all duration-300 ${
-        checked ? "bg-green-600" : "bg-gray-300"
-      } ${
-        disabled
-          ? "cursor-not-allowed opacity-60"
-          : "cursor-pointer hover:scale-105"
-      }`}
+      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-green-100 ${checked ? "bg-[#27834d]" : "bg-gray-300"} ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:brightness-95"}`}
     >
-      <span
-        className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-all duration-300 ${
-          checked ? "left-6" : "left-1"
-        }`}
-      />
+      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${checked ? "translate-x-6" : "translate-x-1"}`} />
     </button>
   );
 }
 
-function Settings() {
+export default function Settings() {
   const navigate = useNavigate();
+  const [preferences, setPreferences] = useState(defaultPreferences);
+  const [savedPreferences, setSavedPreferences] = useState(defaultPreferences);
+  const [savingPreferences, setSavingPreferences] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [requestingPasswordOtp, setRequestingPasswordOtp] = useState(false);
 
-  const [isVisible, setIsVisible] = useState(false);
 
-  const [sustainability, setSustainability] = useState([]);
-  const [interests, setInterests] = useState([]);
-  const [personalGoals, setPersonalGoals] = useState([]);
-
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-
-  const [notifications, setNotifications] = useState({
-    Reminders: false,
-    Goals: false,
-    Challenges: false,
-    Leaderboards: false,
-    Reports: false,
-    Rewards: false,
-    Updates: false
-  });
-
-  const [aiRecommendations, setAiRecommendations] = useState(false);
-  const [profileVisibility, setProfileVisibility] = useState(false);
-
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-
-  const [newEmail, setNewEmail] = useState("");
-  const [emailOtp, setEmailOtp] = useState("");
-  const [emailStep, setEmailStep] = useState("email");
-
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
-  const toggleSelection = (value, setter) => {
-    setter((current) =>
-      current.includes(value)
-        ? current.filter((item) => item !== value)
-        : [...current, value]
-    );
+  const togglePreference = (key) => {
+    if (savingPreferences) return;
+    setPreferences((current) => ({ ...current, [key]: !current[key] }));
   };
 
-  const toggleNotification = (value) => {
-    if (!notificationsEnabled) {
+  const hasChanges = notificationOptions.some(({ key }) => preferences[key] !== savedPreferences[key]);
+
+  const handleSavePreferences = async () => {
+    if (savingPreferences) return;
+    const payload = {
+      goalSuggestion: preferences.goalSuggestion,
+      challengeSuggestion: preferences.challengeSuggestion,
+      goalReminder: preferences.goalReminder,
+      challengeReminder: preferences.challengeReminder,
+      updates: preferences.updates,
+    };
+    if (!Object.values(payload).every((value) => typeof value === "boolean")) {
+      toast.error("Please check all notification preferences.");
       return;
     }
-
-    setNotifications((current) => ({
-      ...current,
-      [value]: !current[value]
-    }));
+    setSavingPreferences(true);
+    try {
+      const response = await axios.patch(`${API_URL}/notification`, payload, { withCredentials: true });
+      if (response.data?.success === true) {
+        setPreferences({ ...payload });
+        setSavedPreferences({ ...payload });
+        toast.success(response.data.message || "Notification preferences saved.");
+      } else {
+        toast.error(response.data?.message || "Failed to save notification preferences.");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to save notification preferences.");
+    } finally {
+      setSavingPreferences(false);
+    }
   };
 
-  const handleNotificationsToggle = () => {
-    const nextValue = !notificationsEnabled;
-
-    setNotificationsEnabled(nextValue);
-
-    if (!nextValue) {
-      setNotifications({
-        Reminders: false,
-        Goals: false,
-        Challenges: false,
-        Leaderboards: false,
-        Reports: false,
-        Rewards: false,
-        Updates: false
+  const handleChangePassword = async () => {
+    if (requestingPasswordOtp) return;
+    setRequestingPasswordOtp(true);
+    try {
+      const response = await axios.get(`${API_URL}/changePassword`, {
+        withCredentials: true,
       });
+
+      if (response.data?.success === true && response.data?.email) {
+        toast.success(response.data.message || "OTP sent to your registered email.");
+        navigate("/forgot-password", {
+          state: {
+            passwordChange: true,
+            email: response.data.email,
+          },
+        });
+      } else {
+        toast.error(response.data?.message || "Could not send the password-change OTP.");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not send the password-change OTP.");
+    } finally {
+      setRequestingPasswordOtp(false);
     }
   };
 
-  const closeEmailModal = () => {
-    setShowEmailModal(false);
-    setNewEmail("");
-    setEmailOtp("");
-    setEmailStep("email");
+  const handleLogout = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/logout`, { withCredentials: true });
+      if (response.data?.success === true) {
+        toast.success(response.data.message || "Logged out successfully.");
+        navigate("/login", { replace: true });
+      } else {
+        toast.error(response.data?.message || "Could not log out.");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Logout failed.");
+    }
   };
 
-  const handleEmailContinue = () => {
-    if (!newEmail.trim()) {
+  const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+  const handleDeleteAccount = async (event) => {
+    event.preventDefault();
+    if (!deletePassword) {
+      toast.error("Enter your password to delete your account.");
       return;
     }
-
-    setEmailStep("otp");
-  };
-
-  const handleEmailVerify = () => {
-    if (!emailOtp.trim()) {
+    if (!passwordPattern.test(deletePassword)) {
+      toast.error("Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.");
       return;
     }
-
-    closeEmailModal();
-  };
-
-  const closePasswordModal = () => {
-    setShowPasswordModal(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  };
-
-  const handlePasswordChange = () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      return;
-    }
-
-    closePasswordModal();
-  };
-
-  const handleLogout = () => {
-    navigate("/");
-  };
-
-  const handleDeleteAccount = () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete your account? This action cannot be undone."
-    );
-
-    if (confirmed) {
-      console.log("Delete account");
+    setDeletingAccount(true);
+    try {
+      const response = await axios.delete(`${API_URL}/`, {
+        data: { password: deletePassword },
+        withCredentials: true,
+      });
+      if (response.data?.success === true) {
+        toast.success(response.data.message || "Account deleted successfully.");
+        setShowDeleteModal(false);
+        setDeletePassword("");
+        navigate("/login", { replace: true });
+      } else {
+        toast.error(response.data?.message || "Could not delete account.");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Account deletion failed.");
+    } finally {
+      setDeletingAccount(false);
     }
   };
 
   return (
-    <div
-      className={`min-h-screen bg-gray-50 px-4 py-6 transition-all duration-700 md:px-8 ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-      }`}
-    >
+    <main className="min-h-screen overflow-hidden bg-[#f5f8f5] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-8 transition-all duration-700">
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="mt-2 text-sm text-gray-500">
-            Manage your Account
-          </p>
-        </div>
+        <header className="mb-8 animate-[settingsFadeDown_.55s_ease-out_both]">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-[#27834d]">EcoTrack · Personalize</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#173f2a] sm:text-4xl">Settings</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#718277] sm:text-base">Manage your account security and choose how EcoTrack keeps you informed.</p>
+        </header>
 
         <div className="space-y-6">
-          <section className="rounded-2xl bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Account
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Manage your account information and security.
-              </p>
+          {/* Account */}
+          <section className="rounded-2xl border border-[#e1ebe4] bg-white p-5 shadow-[0_10px_30px_rgba(33,78,50,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(33,78,50,0.09)] animate-[settingsFadeUp_.6s_ease-out_.08s_both] sm:p-6" style={{ animationDelay: "80ms" }}>
+            <div className="mb-6 flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#eaf5ed] text-xl text-[#27834d]" aria-hidden="true">👤</div>
+              <div><h2 className="text-xl font-semibold text-[#173f2a]">Account</h2><p className="mt-1 text-sm leading-5 text-[#718277]">Manage your account information and security.</p></div>
             </div>
-
             <div className="space-y-4">
-              <div className="rounded-xl border border-gray-200 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-green-300 hover:shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      Account Information
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      View your account details.
-                    </p>
-                  </div>
+              <div className="flex flex-col justify-between gap-4 rounded-xl border border-[#e1ebe4] p-4 transition-colors duration-300 hover:border-[#b8d9c2] hover:bg-[#fbfdfb] sm:flex-row sm:items-center">
+                <div><h3 className="font-semibold text-[#294a36]">Account Information</h3><p className="mt-1 text-sm text-[#718277]">View your profile and account details.</p></div>
+                <button type="button" onClick={() => navigate("/profile")} className="rounded-lg border border-[#cbd9ce] px-4 py-2.5 text-sm font-semibold text-[#294a36] transition-all duration-200 hover:border-[#27834d] hover:bg-[#eaf5ed] focus:outline-none focus:ring-4 focus:ring-green-100">View Profile</button>
+              </div>
+              <button type="button" onClick={handleChangePassword} disabled={requestingPasswordOtp} className="group flex w-full items-center justify-between gap-4 rounded-xl border border-[#e1ebe4] p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[#a8d2b5] hover:bg-[#fbfdfb] hover:shadow-sm focus:outline-none focus:ring-4 focus:ring-green-100 disabled:cursor-wait disabled:opacity-70">
+                <div><h3 className="font-semibold text-[#294a36]">Change Password</h3><p className="mt-1 text-sm leading-5 text-[#718277]">{requestingPasswordOtp ? "Sending an OTP to your registered email..." : "Verify your registered email with an OTP to set a new password."}</p></div>
+                <span className="text-xl text-[#27834d] transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true">{requestingPasswordOtp ? "…" : "→"}</span>
+              </button>
+              <div className="flex flex-wrap gap-3 border-t border-[#e8efe9] pt-5">
+                <button type="button" onClick={handleLogout} className="rounded-lg border border-[#cbd9ce] px-5 py-2.5 text-sm font-semibold text-[#294a36] transition-all duration-200 hover:border-[#27834d] hover:bg-[#f4faf5] focus:outline-none focus:ring-4 focus:ring-green-100">Logout</button>
+                <button type="button" onClick={() => setShowDeleteModal(true)} className="rounded-lg border border-red-200 px-5 py-2.5 text-sm font-semibold text-red-600 transition-all duration-200 hover:border-red-300 hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100">Delete Account</button>
+              </div>
+            </div>
+          </section>
 
-                  <button
-                    type="button"
-                    onClick={() => navigate("/profile")}
-                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-50 active:scale-95"
-                  >
-                    View Profile
+          {/* Notifications */}
+          <section className="rounded-2xl border border-[#e1ebe4] bg-white p-5 shadow-[0_10px_30px_rgba(33,78,50,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(33,78,50,0.09)] animate-[settingsFadeUp_.6s_ease-out_.16s_both] sm:p-6" style={{ animationDelay: "160ms" }}>
+            <div className="mb-6 flex items-start gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#eaf5ed] text-xl text-[#27834d]" aria-hidden="true">🔔</div>
+              <div><h2 className="text-xl font-semibold text-[#173f2a]">Notifications</h2><p className="mt-1 text-sm leading-5 text-[#718277]">Turn each notification type on or off independently.</p></div>
+            </div>
+            <>
+              <div className="divide-y divide-[#e8efe9] rounded-xl border border-[#e1ebe4]">
+                {notificationOptions.map((option, index) => (
+                  <div key={option.key} className="flex items-center justify-between gap-4 p-4 transition-colors duration-200 hover:bg-[#fbfdfb] sm:px-5" style={{ animation: `settingsFadeUp .45s ease-out ${index * 70}ms both` }}>
+                    <div className="min-w-0"><h3 className="font-semibold text-[#294a36]">{option.label}</h3><p className="mt-1 text-sm leading-5 text-[#718277]">{option.description}</p></div>
+                    <Toggle label={option.label} checked={preferences[option.key]} disabled={savingPreferences} onChange={() => togglePreference(option.key)} />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs leading-5 text-[#8a998f]" aria-live="polite">{hasChanges ? "You have unsaved changes." : "Your preferences are up to date."}</p>
+                <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                  <button type="button" onClick={() => setPreferences({ ...savedPreferences })} disabled={!hasChanges || savingPreferences} className="rounded-lg border border-[#cbd9ce] px-4 py-2.5 text-sm font-semibold text-[#294a36] transition-all duration-200 hover:bg-[#f4faf5] disabled:cursor-not-allowed disabled:opacity-45">Reset Changes</button>
+                  <button type="button" onClick={handleSavePreferences} disabled={!hasChanges || savingPreferences} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#27834d] px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#1e6e40] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none">
+                    {savingPreferences && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}{savingPreferences ? "Saving..." : "Save Preferences"}
                   </button>
                 </div>
               </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEmailModal(true)}
-                  className="rounded-xl border border-gray-200 p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:bg-green-50 hover:shadow-sm active:scale-[0.99]"
-                >
-                  <h3 className="font-medium text-gray-900">
-                    Change Email
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Change your email and verify the new address.
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowPasswordModal(true)}
-                  className="rounded-xl border border-gray-200 p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:bg-green-50 hover:shadow-sm active:scale-[0.99]"
-                >
-                  <h3 className="font-medium text-gray-900">
-                    Change Password
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Update your account password securely.
-                  </p>
-                </button>
-              </div>
-
-              <div className="border-t border-gray-200 pt-5">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-50 active:scale-95"
-                >
-                  Logout
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDeleteAccount}
-                  className="ml-3 rounded-lg border border-red-200 px-5 py-2.5 text-sm font-medium text-red-600 transition-all duration-300 hover:-translate-y-0.5 hover:bg-red-50 active:scale-95"
-                >
-                  Delete Account
-                </button>
-              </div>
-            </div>
+            </>
           </section>
 
-          <section
-            className="rounded-2xl bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md"
-            style={{ transitionDelay: "100ms" }}
-          >
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Notifications
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Control which notifications you receive.
-                </p>
-              </div>
-
-              <Toggle
-                checked={notificationsEnabled}
-                onChange={handleNotificationsToggle}
-              />
-            </div>
-
-            <div
-              className={`rounded-xl border border-gray-200 transition-all duration-300 ${
-                !notificationsEnabled ? "opacity-50" : ""
-              }`}
-            >
-              {notificationOptions.map((option) => (
-                <div
-                  key={option}
-                  className="flex items-center justify-between gap-4 border-b border-gray-100 px-4 py-4 last:border-b-0 transition-all duration-300 hover:bg-gray-50"
-                >
-                  <div>
-                    <h3 className="font-medium text-gray-900">
-                      {option}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Receive {option.toLowerCase()} notifications.
-                    </p>
-                  </div>
-
-                  <Toggle
-                    checked={notificationsEnabled && notifications[option]}
-                    disabled={!notificationsEnabled}
-                    onChange={() => toggleNotification(option)}
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section
-            className="rounded-2xl bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md"
-            style={{ transitionDelay: "150ms" }}
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  AI Recommendations
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Allow EcoTrack to provide personalized recommendations.
-                </p>
-              </div>
-
-              <Toggle
-                checked={aiRecommendations}
-                onChange={() => setAiRecommendations(!aiRecommendations)}
-              />
-            </div>
-          </section>
-
-          <section
-            className="rounded-2xl bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md"
-            style={{ transitionDelay: "200ms" }}
-          >
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Privacy
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Control how your profile is visible to other users.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 p-4 transition-all duration-300 hover:border-gray-300 hover:shadow-sm">
-              <div>
-                <h3 className="font-medium text-gray-900">
-                  Profile Visibility
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Allow your profile to be visible to other users.
-                </p>
-              </div>
-
-              <Toggle
-                checked={profileVisibility}
-                onChange={() => setProfileVisibility(!profileVisibility)}
-              />
-            </div>
-          </section>
-
-          <section
-            className="rounded-2xl bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md"
-            style={{ transitionDelay: "250ms" }}
-          >
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Sustainability Preferences
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Select the sustainability activities and outcomes you prefer.
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {sustainabilityOptions.map((option) => {
-                const selected = sustainability.includes(option);
-
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() =>
-                      toggleSelection(option, setSustainability)
-                    }
-                    className={`rounded-xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-sm active:scale-[0.99] ${
-                      selected
-                        ? "border-green-600 bg-green-50 shadow-sm"
-                        : "border-gray-200 bg-white hover:border-green-400"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span
-                        className={`font-medium transition-colors duration-300 ${
-                          selected ? "text-green-700" : "text-gray-800"
-                        }`}
-                      >
-                        {option}
-                      </span>
-
-                      <span
-                        className={`flex h-5 w-5 items-center justify-center rounded-full border transition-all duration-300 ${
-                          selected
-                            ? "scale-110 border-green-600 bg-green-600 text-white"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        <span
-                          className={`transition-all duration-300 ${
-                            selected
-                              ? "scale-100 opacity-100"
-                              : "scale-50 opacity-0"
-                          }`}
-                        >
-                          ✓
-                        </span>
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section
-            className="rounded-2xl bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md"
-            style={{ transitionDelay: "300ms" }}
-          >
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Environmental Interests
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Choose the environmental areas you are interested in.
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {environmentalInterests.map((option) => {
-                const selected = interests.includes(option);
-
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => toggleSelection(option, setInterests)}
-                    className={`rounded-xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-sm active:scale-[0.99] ${
-                      selected
-                        ? "border-green-600 bg-green-50 shadow-sm"
-                        : "border-gray-200 bg-white hover:border-green-400"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span
-                        className={`font-medium transition-colors duration-300 ${
-                          selected ? "text-green-700" : "text-gray-800"
-                        }`}
-                      >
-                        {option}
-                      </span>
-
-                      <span
-                        className={`flex h-5 w-5 items-center justify-center rounded-full border transition-all duration-300 ${
-                          selected
-                            ? "scale-110 border-green-600 bg-green-600 text-white"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        <span
-                          className={`transition-all duration-300 ${
-                            selected
-                              ? "scale-100 opacity-100"
-                              : "scale-50 opacity-0"
-                          }`}
-                        >
-                          ✓
-                        </span>
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-
-          <section
-            className="rounded-2xl bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md"
-            style={{ transitionDelay: "350ms" }}
-          >
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Personal Goals Preferences
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Choose the type of goals you would like EcoTrack to suggest.
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {personalGoalOptions.map((option) => {
-                const selected = personalGoals.includes(option);
-
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() =>
-                      toggleSelection(option, setPersonalGoals)
-                    }
-                    className={`rounded-xl border p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-sm active:scale-[0.99] ${
-                      selected
-                        ? "border-green-600 bg-green-50 shadow-sm"
-                        : "border-gray-200 bg-white hover:border-green-400"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <span
-                        className={`font-medium transition-colors duration-300 ${
-                          selected ? "text-green-700" : "text-gray-800"
-                        }`}
-                      >
-                        {option}
-                      </span>
-
-                      <span
-                        className={`flex h-5 w-5 items-center justify-center rounded-full border transition-all duration-300 ${
-                          selected
-                            ? "scale-110 border-green-600 bg-green-600 text-white"
-                            : "border-gray-300"
-                        }`}
-                      >
-                        <span
-                          className={`transition-all duration-300 ${
-                            selected
-                              ? "scale-100 opacity-100"
-                              : "scale-50 opacity-0"
-                          }`}
-                        >
-                          ✓
-                        </span>
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
         </div>
+        <p className="mt-6 pb-4 text-center text-xs text-[#8a998f] animate-[settingsFadeUp_.7s_ease-out_.3s_both]">Small choices add up to a more sustainable future.</p>
       </div>
 
-      {showEmailModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 pt-24 md:pt-28">
-          <div className="w-full max-w-md animate-[settingsModal_0.25s_ease-out] rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Change Email
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  {emailStep === "email"
-                    ? "Enter your new email address."
-                    : "Enter the verification code sent to your new email."}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={closeEmailModal}
-                className="rounded-full px-2 text-2xl text-gray-400 transition-all duration-200 hover:rotate-90 hover:bg-gray-100 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </div>
-
-            {emailStep === "email" ? (
-              <>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  New Email
-                </label>
-
-                <input
-                  type="email"
-                  value={newEmail}
-                  onChange={(event) => setNewEmail(event.target.value)}
-                  placeholder="Enter new email"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition-all duration-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                />
-
-                <button
-                  type="button"
-                  onClick={handleEmailContinue}
-                  className="mt-5 w-full rounded-lg bg-green-600 px-4 py-3 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-green-700 hover:shadow-md active:scale-95"
-                >
-                  Send Verification Code
-                </button>
-              </>
-            ) : (
-              <>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Verification Code
-                </label>
-
-                <input
-                  type="text"
-                  value={emailOtp}
-                  onChange={(event) => setEmailOtp(event.target.value)}
-                  placeholder="Enter verification code"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition-all duration-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                />
-
-                <button
-                  type="button"
-                  onClick={handleEmailVerify}
-                  className="mt-5 w-full rounded-lg bg-green-600 px-4 py-3 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-green-700 hover:shadow-md active:scale-95"
-                >
-                  Verify & Change Email
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {showPasswordModal && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 pt-24 md:pt-28">
-          <div className="w-full max-w-md animate-[settingsModal_0.25s_ease-out] rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Change Password
-                </h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Enter your current and new password.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={closePasswordModal}
-                className="rounded-full px-2 text-2xl text-gray-400 transition-all duration-200 hover:rotate-90 hover:bg-gray-100 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Current Password
-                </label>
-
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(event) =>
-                    setCurrentPassword(event.target.value)
-                  }
-                  placeholder="Enter current password"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition-all duration-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  closePasswordModal();
-                  navigate("/forgot-password");
-                }}
-                className="text-sm font-medium text-green-600 transition-colors duration-200 hover:text-green-700"
-              >
-                Forgot Password?
-              </button>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  New Password
-                </label>
-
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                  placeholder="Enter new password"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition-all duration-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Confirm New Password
-                </label>
-
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(event) =>
-                    setConfirmPassword(event.target.value)
-                  }
-                  placeholder="Confirm new password"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition-all duration-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                />
-              </div>
-
-              {newPassword &&
-                confirmPassword &&
-                newPassword !== confirmPassword && (
-                  <p className="animate-pulse text-sm text-red-500">
-                    Passwords do not match.
-                  </p>
-                )}
-
-              <button
-                type="button"
-                onClick={handlePasswordChange}
-                className="w-full rounded-lg bg-green-600 px-4 py-3 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-green-700 hover:shadow-md active:scale-95"
-              >
-                Change Password
-              </button>
-            </div>
-          </div>
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#102719]/55 px-4 py-6 backdrop-blur-sm animate-[settingsOverlayIn_.2s_ease-out_both]" onMouseDown={(event) => { if (event.target === event.currentTarget && !deletingAccount) { setShowDeleteModal(false); setDeletePassword(""); } }}>
+          <form onSubmit={handleDeleteAccount} className="w-full max-w-md animate-[settingsModalIn_.3s_cubic-bezier(.2,.8,.2,1)_both] rounded-2xl border border-red-100 bg-white p-6 shadow-2xl sm:p-7">
+            <div className="mb-5 flex items-start gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-50 text-xl font-bold text-red-600" aria-hidden="true">!</div><div><h2 className="text-xl font-bold text-gray-900">Delete Account</h2><p className="mt-1 text-sm leading-5 text-gray-500">This action cannot be undone. Confirm your password to continue.</p></div></div>
+            <label htmlFor="delete-account-password" className="mb-2 block text-sm font-medium text-gray-700">Password</label>
+            <div className="relative"><input id="delete-account-password" type={showDeletePassword ? "text" : "password"} autoComplete="current-password" value={deletePassword} onChange={(event) => setDeletePassword(event.target.value)} className="w-full rounded-lg border border-gray-300 px-4 py-3 pr-20 outline-none transition focus:border-[#27834d] focus:ring-4 focus:ring-green-100" placeholder="Enter your password" required /><button type="button" onClick={() => setShowDeletePassword((current) => !current)} className="absolute inset-y-0 right-3 text-xs font-semibold text-[#27834d]">{showDeletePassword ? "Hide" : "Show"}</button></div>
+            <p className="mt-2 text-xs leading-5 text-gray-500">Use at least 8 characters with uppercase, lowercase, a number, and a special character.</p>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" disabled={deletingAccount} onClick={() => { setShowDeleteModal(false); setDeletePassword(""); }} className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50">Cancel</button><button type="submit" disabled={deletingAccount} className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">{deletingAccount && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}{deletingAccount ? "Deleting..." : "Confirm Delete"}</button></div>
+          </form>
         </div>
       )}
 
       <style>{`
-        @keyframes settingsModal {
-          from {
-            opacity: 0;
-            transform: scale(0.96) translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
+        @keyframes settingsFadeDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes settingsFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes settingsOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes settingsModalIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
       `}</style>
-    </div>
+    </main>
   );
 }
-
-export default Settings;
