@@ -21,16 +21,40 @@ function ProtectedRoute({ children }) {
         console.log("checkUser response:", data);
         console.log("Current path:", location.pathname);
 
-        // User is not logged in
+        // =========================
+        // HOME PAGE
+        // =========================
+        if (location.pathname === "/") {
+          // User logged in
+          if (data.success && data.role === "user") {
+            navigate("/dashboard", { replace: true });
+            return;
+          }
+
+          // Admin logged in
+          if (data.success && data.role === "admin") {
+            navigate("/admin-dashboard", { replace: true });
+            return;
+          }
+
+          // User is NOT logged in
+          setAuthorized(true);
+          return;
+        }
+
+        // =========================
+        // USER NOT LOGGED IN
+        // =========================
         if (!data.success) {
           navigate("/", { replace: true });
           return;
         }
 
-        // Normal user
+        // =========================
+        // NORMAL USER
+        // =========================
         if (data.role === "user") {
           const userRoutes = [
-            "/",
             "/profile",
             "/dashboard",
             "/sustainability-goals",
@@ -39,29 +63,28 @@ function ProtectedRoute({ children }) {
             "/tracking/electricity",
             "/tracking/waste",
             "/community-challenges",
+            "/notifications",
           ];
 
           if (userRoutes.includes(location.pathname)) {
-            if (location.pathname === "/") {
-              navigate("/dashboard", { replace: true });
-              return;
-            }
-
             setAuthorized(true);
             return;
           }
 
-          // User trying to access admin page
+          // User trying to access admin/unknown page
           navigate("/dashboard", { replace: true });
           return;
         }
 
-        // Admin
+        // =========================
+        // ADMIN
+        // =========================
         if (data.role === "admin") {
           const adminRoutes = [
             "/admin-dashboard",
-            "/admin-challenge-management",
             "/admin-user-management",
+            "/admin-challenge-management",
+            "/admin-profile",
             "/admin-reports",
           ];
 
@@ -70,7 +93,7 @@ function ProtectedRoute({ children }) {
             return;
           }
 
-          // Admin trying to access user page
+          // Admin trying to access user/unknown page
           navigate("/admin-dashboard", { replace: true });
           return;
         }
@@ -79,6 +102,14 @@ function ProtectedRoute({ children }) {
         navigate("/", { replace: true });
       } catch (error) {
         console.error("checkUser error:", error);
+
+        // Agar checkUser fail ho jaye aur Home hai,
+        // to Home ko display kar do
+        if (location.pathname === "/") {
+          setAuthorized(true);
+          return;
+        }
+
         navigate("/", { replace: true });
       } finally {
         setLoading(false);

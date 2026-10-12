@@ -1,10 +1,28 @@
-
 import { useCallback, useEffect, useRef, useState } from "react";
-import {Chart as ChartJS,CategoryScale,LinearScale,BarElement,ArcElement,Tooltip,Legend,Title,} from "chart.js";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Title,
+} from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import {FiBarChart2,FiUsers,FiActivity,FiCheckCircle,FiRefreshCw,FiEye,FiDownload,FiX,FiAlertCircle,} from "react-icons/fi";
+import {
+  FiBarChart2,
+  FiUsers,
+  FiActivity,
+  FiCheckCircle,
+  FiRefreshCw,
+  FiEye,
+  FiDownload,
+  FiX,
+  FiAlertCircle,
+} from "react-icons/fi";
 import { toast } from "react-toastify";
 
 ChartJS.register(
@@ -14,7 +32,7 @@ ChartJS.register(
   ArcElement,
   Tooltip,
   Legend,
-  Title
+  Title,
 );
 
 const Admin_Api = import.meta.env.VITE_ADMIN_API;
@@ -85,6 +103,25 @@ function formatDate(value) {
   });
 }
 
+function formatLabel(value) {
+  if (value == null || value === "") return "—";
+
+  return String(value)
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatPDFText(value) {
+  if (value == null || value === "") return "—";
+
+  return String(value)
+    .normalize("NFC")
+    .replace(/\u00A0/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
 function StatCard({ title, value, icon: Icon, description }) {
   return (
     <div className="transform rounded-2xl border border-[#e1ebe4] bg-white p-5 shadow-[0_8px_25px_rgba(33,78,50,0.04)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none motion-reduce:transition-none">
@@ -143,7 +180,6 @@ function ChartPanel({ title, subtitle, children }) {
   );
 }
 
-
 const reportAnimationStyles = `
   @keyframes reportFadeIn {
     from {
@@ -166,7 +202,6 @@ const reportAnimationStyles = `
     }
   }
 `;
-
 
 const pageLoadingStyles = `
   @keyframes adminPageEnter {
@@ -216,7 +251,9 @@ function AdminReports() {
 
   const request = useCallback(async (url) => {
     if (!Admin_Api) {
-      throw new Error("Unable to load reports right now. Please try again later.");
+      throw new Error(
+        "Unable to load reports right now. Please try again later.",
+      );
     }
 
     const response = await fetch(url, {
@@ -230,11 +267,9 @@ function AdminReports() {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok || data.success === false) {
-      const error = new Error(
-  data.message || "Unable to load report data."
-);
-error.status = response.status;
-throw error;
+      const error = new Error(data.message || "Unable to load report data.");
+      error.status = response.status;
+      throw error;
     }
 
     return data;
@@ -253,7 +288,9 @@ throw error;
 
       setUserReport(data.userData);
     } catch (error) {
-      setUsersError("User reports are temporarily unavailable. Please try again later.");
+      setUsersError(
+        "User reports are temporarily unavailable. Please try again later.",
+      );
     } finally {
       setLoadingUsers(false);
     }
@@ -268,11 +305,15 @@ throw error;
       setChallenges(Array.isArray(data.challenges) ? data.challenges : []);
     } catch (error) {
       // The API returns 400 when there are no current-month challenges.
-      if (error.message === "No completed challenges found for the current month.") {
+      if (
+        error.message === "No completed challenges found for the current month."
+      ) {
         setChallenges([]);
         setChallengesError("");
       } else {
-        setChallengesError("Challenge reports are temporarily unavailable. Please try again later.");
+        setChallengesError(
+          "Challenge reports are temporarily unavailable. Please try again later.",
+        );
       }
     } finally {
       setLoadingChallenges(false);
@@ -288,12 +329,12 @@ throw error;
   }, [refreshReports]);
 
   const openChallengeReport = async (challenge) => {
-  const challengeId = challenge?.id || challenge?._id;
+    const challengeId = challenge?.id || challenge?._id;
 
-  if (!challengeId) {
-    toast.error("Unable to open this challenge report.");
-    return;
-  }
+    if (!challengeId) {
+      toast.error("Unable to open this challenge report.");
+      return;
+    }
 
     setSelectedChallenge(null);
     setDetailError("");
@@ -301,11 +342,13 @@ throw error;
 
     try {
       const data = await request(
-        `${Admin_Api}/report/challenge/${encodeURIComponent(challengeId)}`
+        `${Admin_Api}/report/challenge/${encodeURIComponent(challengeId)}`,
       );
 
       if (!data.challengeData) {
-        throw new Error("Unable to load this challenge report. Please try again.");
+        throw new Error(
+          "Unable to load this challenge report. Please try again.",
+        );
       }
 
       setSelectedChallenge(data.challengeData);
@@ -322,45 +365,38 @@ throw error;
     setDetailError("");
   };
 
-const addChartToPDF = (doc, chartRef, title, y) => {
-  const chart = chartRef.current;
+  const addChartToPDF = (doc, chartRef, title, y) => {
+    const chart = chartRef.current;
 
-  if (!chart) {
-    return y;
-  }
+    if (!chart) {
+      return y;
+    }
 
-  const image = chart.toBase64Image("image/png", 1);
+    const image = chart.toBase64Image("image/png", 1);
 
-  if (!image) {
-    return y;
-  }
+    if (!image) {
+      return y;
+    }
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 14;
-  const imageWidth = pageWidth - margin * 2;
-  const imageHeight = 75;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 14;
+    const imageWidth = pageWidth - margin * 2;
+    const imageHeight = 75;
 
-  if (y + 10 + imageHeight > pageHeight - margin) {
-    doc.addPage();
-    y = 20;
-  }
+    if (y + 10 + imageHeight > pageHeight - margin) {
+      doc.addPage();
+      y = 20;
+    }
 
-  doc.setFontSize(13);
-  doc.setTextColor(23, 63, 42);
-  doc.text(title, margin, y);
+    doc.setFontSize(13);
+    doc.setTextColor(23, 63, 42);
+    doc.text(title, margin, y);
 
-  doc.addImage(
-    image,
-    "PNG",
-    margin,
-    y + 5,
-    imageWidth,
-    imageHeight
-  );
+    doc.addImage(image, "PNG", margin, y + 5, imageWidth, imageHeight);
 
-  return y + imageHeight + 15;
-};
+    return y + imageHeight + 15;
+  };
 
   const downloadChallengePDF = () => {
     if (!selectedChallenge || downloading) return;
@@ -369,6 +405,7 @@ const addChartToPDF = (doc, chartRef, title, y) => {
 
     try {
       const challenge = selectedChallenge;
+
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -388,28 +425,40 @@ const addChartToPDF = (doc, chartRef, title, y) => {
         head: [["Challenge Information", "Details"]],
         body: [
           ["Title", challenge.title || "—"],
-          ["Challenge ID", challenge._id || challenge.id || "—"],
-          ["Category", challenge.category || "—"],
-          ["Challenge Type", challenge.challengeType || "—"],
-          [
-            "Target",
-            `${challenge.target ?? "—"} ${challenge.unit || ""}`.trim(),
-          ],
-          ["Period", challenge.period || "—"],
-          ["Direction", challenge.direction || "—"],
+          ["Category", formatLabel(challenge.category)],
+          ["Challenge Type", formatLabel(challenge.challengeType)],
+          ["Target", `${challenge.target ?? "—"} ${challenge.unit?.toLowerCase() === "kgco2" || challenge.unit?.toLowerCase() === "kgco2e" ? "kgCO₂e" : challenge.unit || ""}`.trim()],
+          ["Period", formatLabel(challenge.period)],
+          ["Direction", formatLabel(challenge.direction)],
           ["Start Date", formatDate(challenge.startDate)],
           ["End Date", formatDate(challenge.endDate)],
-          ["Status", challenge.status || "—"],
+          ["Status", formatLabel(challenge.status)],
           ["Created At", formatDate(challenge.createdAt)],
           ["Updated At", formatDate(challenge.updatedAt)],
-          ["Objective", challenge.description?.objective || "—"],
-          ["Instructions", challenge.description?.instructions || "—"],
+          ["Objective", formatPDFText(challenge.description?.objective)],
           [
-            "Completion Criteria",
-            challenge.description?.completionCriteria || "—"
+          "Instructions",
+            formatPDFText(
+            Array.isArray(challenge.description?.instructions)
+              ? challenge.description.instructions.join("\n")
+              : challenge.description?.instructions,
+            ),
+          ],
+          [
+          "Completion Criteria",
+            formatPDFText(challenge.description?.completionCriteria),
           ],
         ],
-        styles: { fontSize: 9, cellPadding: 3, overflow: "linebreak" },
+        styles: {
+  font: "helvetica",
+  fontStyle: "normal",
+  fontSize: 9,
+  cellPadding: 3,
+  overflow: "linebreak",
+  charSpace: 0,
+  halign: "left",
+  valign: "top",
+},
         headStyles: { fillColor: [39, 131, 77] },
         columnStyles: { 0: { cellWidth: 42 }, 1: { cellWidth: "auto" } },
         margin: { left: 14, right: 14 },
@@ -433,24 +482,19 @@ const addChartToPDF = (doc, chartRef, title, y) => {
 
       let chartY = doc.lastAutoTable.finalY + 12;
 
-if (chartY + 90 > doc.internal.pageSize.getHeight() - 14) {
-  doc.addPage();
-  chartY = 20;
-}
-
-chartY = addChartToPDF(
-  doc,
-  detailDoughnutRef,
-  "Participation Status",
-  chartY
-);
+      if (chartY + 90 > doc.internal.pageSize.getHeight() - 14) {
+        doc.addPage();
+        chartY = 20;
+      }
 
       chartY = addChartToPDF(
         doc,
-        detailBarRef,
-        "Status Comparison",
-        chartY
+        detailDoughnutRef,
+        "Participation Status",
+        chartY,
       );
+
+      chartY = addChartToPDF(doc, detailBarRef, "Status Comparison", chartY);
 
       const fileTitle = String(challenge.title || "challenge")
         .replace(/[^a-z0-9-_ ]/gi, "")
@@ -466,7 +510,6 @@ chartY = addChartToPDF(
     }
   };
 
-  
   const downloadUserPDF = () => {
     if (!userReport || downloadingReport) return;
 
@@ -489,7 +532,7 @@ chartY = addChartToPDF(
         head: [["Metric", "Users"]],
         body: [
           ["Total Users", userReport.totalUsers ?? 0],
-          ["Active Users", userReport.activeUser ?? 0],
+          ["Active Users", userReport.activeUsers ?? 0],
           ["Blocked Users", userReport.blockedUsers ?? 0],
         ],
         headStyles: { fillColor: [39, 131, 77] },
@@ -500,11 +543,11 @@ chartY = addChartToPDF(
       if (chartImage) {
         addChartToPDF(
           doc,
-            { current: { toBase64Image: () => chartImage } },
-            "User Account Overview",
-            doc.lastAutoTable.finalY + 12
-          );
-        }
+          { current: { toBase64Image: () => chartImage } },
+          "User Account Overview",
+          doc.lastAutoTable.finalY + 12,
+        );
+      }
 
       doc.save("EcoTrack-User-Report.pdf");
       toast.success("User report PDF downloaded.");
@@ -525,11 +568,11 @@ chartY = addChartToPDF(
       const chartImage = challengeChartRef.current?.toBase64Image();
       const totalJoined = challenges.reduce(
         (sum, item) => sum + (Number(item.totalJoinedUsers) || 0),
-        0
+        0,
       );
       const totalCompleted = challenges.reduce(
         (sum, item) => sum + (Number(item.completedUsers) || 0),
-        0
+        0,
       );
 
       doc.setFontSize(20);
@@ -554,13 +597,13 @@ chartY = addChartToPDF(
       });
 
       let y = chartImage
-  ? addChartToPDF(
-      doc,
-      { current: { toBase64Image: () => chartImage } },
-      "Joined vs Completed",
-      doc.lastAutoTable.finalY + 10
-    )
-  : doc.lastAutoTable.finalY + 10;
+        ? addChartToPDF(
+            doc,
+            { current: { toBase64Image: () => chartImage } },
+            "Joined vs Completed",
+            doc.lastAutoTable.finalY + 10,
+          )
+        : doc.lastAutoTable.finalY + 10;
 
       if (y + 30 > doc.internal.pageSize.getHeight() - 14) {
         doc.addPage();
@@ -605,7 +648,7 @@ chartY = addChartToPDF(
             label: "Users",
             data: [
               userReport.totalUsers ?? 0,
-              userReport.activeUser ?? 0,
+              userReport.activeUsers ?? 0,
               userReport.blockedUsers ?? 0,
             ],
             backgroundColor: ["#27834d", "#8cc99c", "#df8585"],
@@ -672,8 +715,8 @@ chartY = addChartToPDF(
 
   return (
     <div className="min-h-screen bg-[#f7fbf8] px-[4%] py-7 text-[#173f2a] sm:py-8 admin-reports-page">
-        <style>{pageLoadingStyles}</style>
-        <style>{reportAnimationStyles}</style>
+      <style>{pageLoadingStyles}</style>
+      <style>{reportAnimationStyles}</style>
       <div className="mx-auto w-full max-w-[1500px]">
         {/* Page heading */}
         <section className="mb-8 flex flex-wrap items-start justify-between gap-4">
@@ -704,361 +747,363 @@ chartY = addChartToPDF(
           </button>
         </section>
 
-        
-{/* Report Selection Cards */}
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-  <button
-    type="button"
-    onClick={() => setActiveSection("users")}
-    className={`group rounded-xl border p-5 text-center transform transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
-      activeSection === "users"
-        ? "border-green-600 bg-green-50 shadow-sm"
-        : "border-gray-200 bg-white hover:border-green-400"
-    }`}
-  >
-    <div className="mb-2 flex justify-center">
-      <FiUsers size={24} />
-    </div>
-    <h2 className="text-xl font-semibold">User Report</h2>
-    <p className="mt-2 text-sm text-gray-500">
-      Total, Active, Blocked Users
-    </p>
-  </button>
+        {/* Report Selection Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <button
+            type="button"
+            onClick={() => setActiveSection("users")}
+            className={`group rounded-xl border p-5 text-center transform transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
+              activeSection === "users"
+                ? "border-green-600 bg-green-50 shadow-sm"
+                : "border-gray-200 bg-white hover:border-green-400"
+            }`}
+          >
+            <div className="mb-2 flex justify-center">
+              <FiUsers size={24} />
+            </div>
+            <h2 className="text-xl font-semibold">User Report</h2>
+            <p className="mt-2 text-sm text-gray-500">
+              Total, Active, Blocked Users
+            </p>
+          </button>
 
-  <button
-    type="button"
-    onClick={() => setActiveSection("challenges")}
-    className={`group rounded-xl border p-5 text-center transform transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
-      activeSection === "challenges"
-        ? "border-green-600 bg-green-50 shadow-sm"
-        : "border-gray-200 bg-white hover:border-green-400"
-    }`}
-  >
-    <div className="flex justify-center mb-2">
-      <FiBarChart2 size={24} />
-    </div>
-    <h2 className="text-xl font-semibold">Challenge Reports</h2>
-    <p className="mt-2 text-sm text-gray-500">
-      Monthly Challenge Overview
-    </p>
-  </button>
-</div>
+          <button
+            type="button"
+            onClick={() => setActiveSection("challenges")}
+            className={`group rounded-xl border p-5 text-center transform transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 focus-visible:ring-offset-2 ${
+              activeSection === "challenges"
+                ? "border-green-600 bg-green-50 shadow-sm"
+                : "border-gray-200 bg-white hover:border-green-400"
+            }`}
+          >
+            <div className="flex justify-center mb-2">
+              <FiBarChart2 size={24} />
+            </div>
+            <h2 className="text-xl font-semibold">Challenge Reports</h2>
+            <p className="mt-2 text-sm text-gray-500">
+              Monthly Challenge Overview
+            </p>
+          </button>
+        </div>
 
         {/* User reports */}
         {activeSection === "users" && (
           <section className="report-fade-in mb-10">
-                <SectionHeading
-                  eyebrow="Overview"
-                  title="User Reports"
-                  description="Overall user statistics."
-                />
-                
-  {!loadingUsers && !usersError && userReport && (
-    <div className="mb-5 flex flex-wrap gap-3">
-      <button
-        type="button"
-        onClick={() => openReportPreview("users")}
-        className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#dce8df] bg-white px-4 py-2 text-sm font-semibold text-[#27834d] hover:bg-[#f1f8f3]"
-      >
-        <FiEye size={16} />
-        Preview Report
-      </button>
+            <SectionHeading
+              eyebrow="Overview"
+              title="User Reports"
+              description="Overall user statistics."
+            />
 
-      <button
-        type="button"
-        onClick={downloadUserPDF}
-        disabled={downloadingReport}
-        className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#27834d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#206c3f] disabled:opacity-60"
-      >
-        <FiDownload size={16} />
-        {downloadingReport ? "Preparing PDF..." : "Download PDF"}
-      </button>
-    </div>
-  )}
+            {!loadingUsers && !usersError && userReport && (
+              <div className="mb-5 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => openReportPreview("users")}
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#dce8df] bg-white px-4 py-2 text-sm font-semibold text-[#27834d] hover:bg-[#f1f8f3]"
+                >
+                  <FiEye size={16} />
+                  Preview Report
+                </button>
 
+                <button
+                  type="button"
+                  onClick={downloadUserPDF}
+                  disabled={downloadingReport}
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#27834d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#206c3f] disabled:opacity-60"
+                >
+                  <FiDownload size={16} />
+                  {downloadingReport ? "Preparing PDF..." : "Download PDF"}
+                </button>
+              </div>
+            )}
 
-                {loadingUsers ? (
-                  
-<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-  {[1, 2, 3].map((item) => (
-    <div
-      key={item}
-      className="animate-pulse rounded-2xl border border-[#e1ebe4] bg-white p-5"
-    >
-      <div className="h-4 w-28 rounded bg-[#eaf5ed]" />
-      <div className="mt-5 h-9 w-20 rounded bg-[#eaf5ed]" />
-      <div className="mt-3 h-3 w-36 max-w-full rounded bg-[#f0f4f1]" />
-    </div>
-  ))}
-</div>
-
-                ) : usersError ? (
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-red-200 bg-white p-6">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-  <div className="flex min-w-0 flex-1 items-start gap-3 text-sm text-red-700">
-    <FiAlertCircle className="mt-0.5 shrink-0" size={18} />
-
-    <div>
-      <p className="font-semibold">Unable to load user reports</p>
-      <p className="mt-1">{usersError}</p>
-    </div>
-  </div>
-
-  <button
-    type="button"
-    onClick={loadUserReport}
-    disabled={loadingUsers}
-    className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#27834d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#206c3f] disabled:cursor-not-allowed disabled:opacity-60"
-  >
-    <FiRefreshCw className={loadingUsers ? "animate-spin" : ""} />
-    {loadingUsers ? "Retrying..." : "Try Again"}
-  </button>
-</div>
-                    </div>
+            {loadingUsers ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {[1, 2, 3].map((item) => (
+                  <div
+                    key={item}
+                    className="animate-pulse rounded-2xl border border-[#e1ebe4] bg-white p-5"
+                  >
+                    <div className="h-4 w-28 rounded bg-[#eaf5ed]" />
+                    <div className="mt-5 h-9 w-20 rounded bg-[#eaf5ed]" />
+                    <div className="mt-3 h-3 w-36 max-w-full rounded bg-[#f0f4f1]" />
                   </div>
-                ) : userReport ? (
-                  <>
-                    <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                      <StatCard
-                        title="Total Users"
-                        value={userReport.totalUsers ?? 0}
-                        icon={FiUsers}
-                        description="All registered users"
-                      />
-                      <StatCard
-                        title="Active Users"
-                        value={userReport.activeUser ?? 0}
-                        icon={FiActivity}
-                        description="Users who are not blocked"
-                      />
-                      <StatCard
-                        title="Blocked Users"
-                        value={userReport.blockedUsers ?? 0}
-                        icon={FiAlertCircle}
-                        description="Accounts currently blocked"
-                      />
+                ))}
+              </div>
+            ) : usersError ? (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-red-200 bg-white p-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                    <div className="flex min-w-0 flex-1 items-start gap-3 text-sm text-red-700">
+                      <FiAlertCircle className="mt-0.5 shrink-0" size={18} />
+
+                      <div>
+                        <p className="font-semibold">
+                          Unable to load user reports
+                        </p>
+                        <p className="mt-1">{usersError}</p>
+                      </div>
                     </div>
 
-                    <ChartPanel
-                      title="User Account Overview"
-                      subtitle="Comparison of total, active and blocked user counts."
+                    <button
+                      type="button"
+                      onClick={loadUserReport}
+                      disabled={loadingUsers}
+                      className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#27834d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#206c3f] disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <Bar
-                        ref={userChartRef}
-                        data={userChartData}
-                        options={chartOptions}
+                      <FiRefreshCw
+                        className={loadingUsers ? "animate-spin" : ""}
                       />
-                    </ChartPanel>
-                  </>
-                ) : (
-                  <EmptyState message="The user report is currently unavailable." />
-                )}
+                      {loadingUsers ? "Retrying..." : "Try Again"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : userReport ? (
+              <>
+                <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <StatCard
+                    title="Total Users"
+                    value={userReport.totalUsers ?? 0}
+                    icon={FiUsers}
+                    description="All registered users"
+                  />
+                  <StatCard
+                    title="Active Users"
+                    value={userReport.activeUsers ?? 0}
+                    icon={FiActivity}
+                    description="Users who are not blocked"
+                  />
+                  <StatCard
+                    title="Blocked Users"
+                    value={userReport.blockedUsers ?? 0}
+                    icon={FiAlertCircle}
+                    description="Accounts currently blocked"
+                  />
+                </div>
+
+                <ChartPanel
+                  title="User Account Overview"
+                  subtitle="Comparison of total, active and blocked user counts."
+                >
+                  <Bar
+                    ref={userChartRef}
+                    data={userChartData}
+                    options={chartOptions}
+                  />
+                </ChartPanel>
+              </>
+            ) : (
+              <EmptyState message="The user report is currently unavailable." />
+            )}
           </section>
         )}
 
         {/* Challenge reports */}
         {activeSection === "challenges" && (
           <section className="report-fade-in mb-10">
-                <SectionHeading
-                  eyebrow="Current month"
-                  title="Challenge Reports"
-                  description="Challenges returned for the current month, with joined and completed user counts."
-                />
-                
-  {!loadingChallenges &&
-    !challengesError &&
-    challenges.length > 0 && (
-      <div className="mb-5 flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={() => openReportPreview("challenges")}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#dce8df] bg-white px-4 py-2 text-sm font-semibold text-[#27834d] hover:bg-[#f1f8f3]"
-        >
-          <FiEye size={16} />
-          Preview Report
-        </button>
+            <SectionHeading
+              eyebrow="Current month"
+              title="Challenge Reports"
+              description="Challenges returned for the current month, with joined and completed user counts."
+            />
 
-        <button
-          type="button"
-          onClick={downloadChallengeSummaryPDF}
-          disabled={downloadingReport}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#27834d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#206c3f] disabled:opacity-60"
-        >
-          <FiDownload size={16} />
-          {downloadingReport ? "Preparing PDF..." : "Download PDF"}
-        </button>
-      </div>
-    )}
+            {!loadingChallenges &&
+              !challengesError &&
+              challenges.length > 0 && (
+                <div className="mb-5 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => openReportPreview("challenges")}
+                    className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#dce8df] bg-white px-4 py-2 text-sm font-semibold text-[#27834d] hover:bg-[#f1f8f3]"
+                  >
+                    <FiEye size={16} />
+                    Preview Report
+                  </button>
 
-                {loadingChallenges ? (
-                  
-<div className="space-y-5">
-  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-    {[1, 2, 3].map((item) => (
-      <div
-        key={item}
-        className="animate-pulse rounded-2xl border border-[#e1ebe4] bg-white p-5"
-      >
-        <div className="h-4 w-28 rounded bg-[#eaf5ed]" />
-        <div className="mt-5 h-9 w-20 rounded bg-[#eaf5ed]" />
-      </div>
-    ))}
-  </div>
+                  <button
+                    type="button"
+                    onClick={downloadChallengeSummaryPDF}
+                    disabled={downloadingReport}
+                    className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#27834d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#206c3f] disabled:opacity-60"
+                  >
+                    <FiDownload size={16} />
+                    {downloadingReport ? "Preparing PDF..." : "Download PDF"}
+                  </button>
+                </div>
+              )}
 
-  <div className="animate-pulse rounded-2xl border border-[#e1ebe4] bg-white p-6">
-    <div className="h-5 w-48 max-w-full rounded bg-[#eaf5ed]" />
-    <div className="mt-5 h-64 rounded-xl bg-[#f0f4f1]" />
-  </div>
-</div>
+            {loadingChallenges ? (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  {[1, 2, 3].map((item) => (
+                    <div
+                      key={item}
+                      className="animate-pulse rounded-2xl border border-[#e1ebe4] bg-white p-5"
+                    >
+                      <div className="h-4 w-28 rounded bg-[#eaf5ed]" />
+                      <div className="mt-5 h-9 w-20 rounded bg-[#eaf5ed]" />
+                    </div>
+                  ))}
+                </div>
 
-                ) : challengesError ? (
-                  <div className="rounded-2xl border border-red-200 bg-white p-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                      <div className="flex min-w-0 flex-1 items-start gap-3 text-sm text-red-700">
-                        <FiAlertCircle className="mt-0.5 shrink-0" size={18} />
+                <div className="animate-pulse rounded-2xl border border-[#e1ebe4] bg-white p-6">
+                  <div className="h-5 w-48 max-w-full rounded bg-[#eaf5ed]" />
+                  <div className="mt-5 h-64 rounded-xl bg-[#f0f4f1]" />
+                </div>
+              </div>
+            ) : challengesError ? (
+              <div className="rounded-2xl border border-red-200 bg-white p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                  <div className="flex min-w-0 flex-1 items-start gap-3 text-sm text-red-700">
+                    <FiAlertCircle className="mt-0.5 shrink-0" size={18} />
 
-                        <div>
-                          <p className="font-semibold">Unable to load challenge reports</p>
-                          <p className="mt-1">{challengesError}</p>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={loadChallengeReports}
-                        disabled={loadingChallenges}
-                        className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#27834d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#206c3f] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <FiRefreshCw className={loadingChallenges ? "animate-spin" : ""} />
-                        {loadingChallenges ? "Retrying..." : "Try Again"}
-                      </button>
+                    <div>
+                      <p className="font-semibold">
+                        Unable to load challenge reports
+                      </p>
+                      <p className="mt-1">{challengesError}</p>
                     </div>
                   </div>
-                ) : challenges.length === 0 ? (
-                  <div className="rounded-2xl border border-[#e1ebe4] bg-white">
-                    <EmptyState message="No challenges are available in the current monthly report." />
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <StatCard
-                        title="Challenges"
-                        value={challenges.length}
-                        icon={FiBarChart2}
-                        description="Challenges in this report"
-                      />
-                      <StatCard
-                        title="Total Joined"
-                        value={challenges.reduce(
-                          (total, challenge) =>
-                            total + (Number(challenge.totalJoinedUsers) || 0),
-                          0
-                        )}
-                        icon={FiUsers}
-                        description="Combined challenge participants"
-                      />
-                      <StatCard
-                        title="Total Completed"
-                        value={challenges.reduce(
-                          (total, challenge) =>
-                            total + (Number(challenge.completedUsers) || 0),
-                          0
-                        )}
-                        icon={FiCheckCircle}
-                        description="Combined challenge completions"
-                      />
-                    </div>
 
-                    <div className="mb-6">
-                      <ChartPanel
-                        title="Joined vs Completed"
-                        subtitle="Compare participation and completion for each challenge."
-                      >
-                        <Bar
-                          ref={challengeChartRef}
-                          data={challengeChartData}
-                          options={{
-                            ...chartOptions,
-                            maintainAspectRatio: false,
-                            scales: {
-                              ...chartOptions.scales,
-                              x: {
-                                ...chartOptions.scales.x,
-                                ticks: {
-                                  ...chartOptions.scales.x.ticks,
-                                  maxRotation: 35,
-                                  minRotation: 0,
-                                },
-                              },
+                  <button
+                    type="button"
+                    onClick={loadChallengeReports}
+                    disabled={loadingChallenges}
+                    className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-[#27834d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#206c3f] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <FiRefreshCw
+                      className={loadingChallenges ? "animate-spin" : ""}
+                    />
+                    {loadingChallenges ? "Retrying..." : "Try Again"}
+                  </button>
+                </div>
+              </div>
+            ) : challenges.length === 0 ? (
+              <div className="rounded-2xl border border-[#e1ebe4] bg-white">
+                <EmptyState message="No challenges are available in the current monthly report." />
+              </div>
+            ) : (
+              <>
+                <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <StatCard
+                    title="Challenges"
+                    value={challenges.length}
+                    icon={FiBarChart2}
+                    description="Challenges in this report"
+                  />
+                  <StatCard
+                    title="Total Joined"
+                    value={challenges.reduce(
+                      (total, challenge) =>
+                        total + (Number(challenge.totalJoinedUsers) || 0),
+                      0,
+                    )}
+                    icon={FiUsers}
+                    description="Combined challenge participants"
+                  />
+                  <StatCard
+                    title="Total Completed"
+                    value={challenges.reduce(
+                      (total, challenge) =>
+                        total + (Number(challenge.completedUsers) || 0),
+                      0,
+                    )}
+                    icon={FiCheckCircle}
+                    description="Combined challenge completions"
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <ChartPanel
+                    title="Joined vs Completed"
+                    subtitle="Compare participation and completion for each challenge."
+                  >
+                    <Bar
+                      ref={challengeChartRef}
+                      data={challengeChartData}
+                      options={{
+                        ...chartOptions,
+                        maintainAspectRatio: false,
+                        scales: {
+                          ...chartOptions.scales,
+                          x: {
+                            ...chartOptions.scales.x,
+                            ticks: {
+                              ...chartOptions.scales.x.ticks,
+                              maxRotation: 35,
+                              minRotation: 0,
                             },
-                          }}
-                        />
-                      </ChartPanel>
-                    </div>
+                          },
+                        },
+                      }}
+                    />
+                  </ChartPanel>
+                </div>
 
-                    <section className="report-fade-in overflow-hidden rounded-2xl border border-[#e1ebe4] bg-white shadow-[0_8px_25px_rgba(33,78,50,0.04)]">
-                      <div className="border-b border-[#e7eee9] px-5 py-5 sm:px-6">
-                        <h3 className="font-bold text-[#294a36]">
-                          Monthly Challenge Details
-                        </h3>
-                        <p className="mt-1 text-xs leading-5 text-[#8a998f]">
-                          Open an individual report for its full status breakdown.
-                        </p>
-                      </div>
+                <section className="report-fade-in overflow-hidden rounded-2xl border border-[#e1ebe4] bg-white shadow-[0_8px_25px_rgba(33,78,50,0.04)]">
+                  <div className="border-b border-[#e7eee9] px-5 py-5 sm:px-6">
+                    <h3 className="font-bold text-[#294a36]">
+                      Monthly Challenge Details
+                    </h3>
+                    <p className="mt-1 text-xs leading-5 text-[#8a998f]">
+                      Open an individual report for its full status breakdown.
+                    </p>
+                  </div>
 
-                      <div className="overflow-x-auto">
-                        <table className="w-full min-w-[650px] border-collapse">
-                          <thead>
-                            <tr className="border-b border-[#e7eee9] bg-[#fbfdfb]">
-                              {["Challenge", "Joined", "Completed", "Action"].map(
-                                (heading) => (
-                                  <th
-                                    key={heading}
-                                    className="px-5 py-4 text-left text-[11px] font-semibold uppercase tracking-[.08em] text-[#718277]"
-                                  >
-                                    {heading}
-                                  </th>
-                                )
-                              )}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {challenges.map((challenge, index) => (
-                              <tr
-                                key={challenge.id || challenge._id || index}
-                                className="border-b border-[#edf2ee] transition-colors hover:bg-[#fbfdfb]"
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[650px] border-collapse">
+                      <thead>
+                        <tr className="border-b border-[#e7eee9] bg-[#fbfdfb]">
+                          {["Challenge", "Joined", "Completed", "Action"].map(
+                            (heading) => (
+                              <th
+                                key={heading}
+                                className="px-5 py-4 text-left text-[11px] font-semibold uppercase tracking-[.08em] text-[#718277]"
                               >
-                                <td className="px-5 py-4">
-                                  <p className="max-w-sm text-sm font-semibold text-[#294a36]">
-                                    {challenge.title || "Untitled Challenge"}
-                                  </p>
-                                </td>
-                                <td className="px-5 py-4 text-sm text-[#53685b]">
-                                  {challenge.totalJoinedUsers ?? 0}
-                                </td>
-                                <td className="px-5 py-4 text-sm text-[#53685b]">
-                                  {challenge.completedUsers ?? 0}
-                                </td>
-                                <td className="px-5 py-4">
-                                  <button
-                                    type="button"
-                                    onClick={() => openChallengeReport(challenge)}
-                                    disabled={detailLoading}
-                                    className="inline-flex items-center gap-2 rounded-lg bg-[#eaf5ed] px-3 py-2 text-xs font-semibold text-[#27834d] transition hover:bg-[#dff1e4] disabled:opacity-60"
-                                  >
-                                    <FiEye size={14} />
-                                    View Report
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </section>
-                  </>
-                )}
+                                {heading}
+                              </th>
+                            ),
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {challenges.map((challenge, index) => (
+                          <tr
+                            key={challenge.id || challenge._id || index}
+                            className="border-b border-[#edf2ee] transition-colors hover:bg-[#fbfdfb]"
+                          >
+                            <td className="px-5 py-4">
+                              <p className="max-w-sm text-sm font-semibold text-[#294a36]">
+                                {challenge.title || "Untitled Challenge"}
+                              </p>
+                            </td>
+                            <td className="px-5 py-4 text-sm text-[#53685b]">
+                              {challenge.totalJoinedUsers ?? 0}
+                            </td>
+                            <td className="px-5 py-4 text-sm text-[#53685b]">
+                              {challenge.completedUsers ?? 0}
+                            </td>
+                            <td className="px-5 py-4">
+                              <button
+                                type="button"
+                                onClick={() => openChallengeReport(challenge)}
+                                disabled={detailLoading}
+                                className="inline-flex items-center gap-2 rounded-lg bg-[#eaf5ed] px-3 py-2 text-xs font-semibold text-[#27834d] transition hover:bg-[#dff1e4] disabled:opacity-60"
+                              >
+                                <FiEye size={14} />
+                                View Report
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </>
+            )}
           </section>
         )}
       </div>
@@ -1069,10 +1114,10 @@ chartY = addChartToPDF(
           className="fixed inset-0 z-[100] flex items-center justify-center bg-[#173f2a]/30 p-4"
           role="status"
         >
-         <div className="flex items-center gap-3 rounded-xl bg-white px-6 py-5 text-sm font-medium text-[#294a36] shadow-xl">
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#dce8df] border-t-[#27834d]" />
+          <div className="flex items-center gap-3 rounded-xl bg-white px-6 py-5 text-sm font-medium text-[#294a36] shadow-xl">
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#dce8df] border-t-[#27834d]" />
             Loading detailed challenge report...
-        </div>
+          </div>
         </div>
       )}
 
@@ -1183,9 +1228,11 @@ chartY = addChartToPDF(
                         datasets: [
                           {
                             label: "Users",
-                            data: challengeCounts.map((item) => item.value ?? 0),
+                            data: challengeCounts.map(
+                              (item) => item.value ?? 0,
+                            ),
                             backgroundColor: challengeCounts.map(
-                              (item) => item.color
+                              (item) => item.color,
                             ),
                             borderRadius: 7,
                             maxBarThickness: 55,
@@ -1204,19 +1251,24 @@ chartY = addChartToPDF(
 
                   <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {[
-                      ["Category", selectedChallenge.category],
-                      ["Challenge Type", selectedChallenge.challengeType],
+                      ["Category", formatLabel(selectedChallenge.category)],
+                      ["Challenge Type", formatLabel(selectedChallenge.challengeType)],
                       [
-                        "Target",
-                        `${selectedChallenge.target ?? "—"} ${selectedChallenge.unit || ""}`.trim(),
+                      "Target",
+                          `${selectedChallenge.target ?? "—"} ${
+                          ["kgco2", "kgco2e"].includes(
+                          String(selectedChallenge.unit || "").trim().toLowerCase(),
+                          )
+                          ? "kgCO₂e"
+                          : selectedChallenge.unit || ""
+                          }`.trim(),
                       ],
-                      ["Challenge ID", selectedChallenge._id],
                       ["Title", selectedChallenge.title],
-                      ["Period", selectedChallenge.period],
+                      ["Period", formatLabel(selectedChallenge.period)],
                       ["Start Date", formatDate(selectedChallenge.startDate)],
                       ["End Date", formatDate(selectedChallenge.endDate)],
-                      ["Direction", selectedChallenge.direction],
-                      ["Status", selectedChallenge.status],
+                      ["Direction", formatLabel(selectedChallenge.direction)],
+                      ["Status", formatLabel(selectedChallenge.status)],
                       ["Created At", formatDate(selectedChallenge.createdAt)],
                       ["Updated At", formatDate(selectedChallenge.updatedAt)],
                     ].map(([label, value]) => (
@@ -1234,7 +1286,10 @@ chartY = addChartToPDF(
 
                   {[
                     ["Objective", selectedChallenge.description?.objective],
-                    ["Instructions", selectedChallenge.description?.instructions],
+                    [
+                      "Instructions",
+                      selectedChallenge.description?.instructions,
+                    ],
                     [
                       "Completion Criteria",
                       selectedChallenge.description?.completionCriteria,
@@ -1291,9 +1346,10 @@ chartY = addChartToPDF(
                     </table>
                   </div>
                   <p className="px-5 py-3 text-xs leading-5 text-[#8a998f]">
-                    Only status counts returned by the current API are displayed.
-                    Participants with no entries are included in the Failed count.
-                    A separate No Entry count is not currently provided by the API.
+                    Only status counts returned by the current API are
+                    displayed. Participants with no entries are included in the
+                    Failed count. A separate No Entry count is not currently
+                    provided by the API.
                   </p>
                 </section>
               </div>
@@ -1302,208 +1358,206 @@ chartY = addChartToPDF(
         </>
       )}
       {previewType && (
-            <div
-              className="fixed inset-0 z-[120] overflow-y-auto bg-[#173f2a]/40 p-3 sm:p-6"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="general-report-preview-title"
-            >
-              <div className="mx-auto my-4 w-full max-w-4xl overflow-hidden rounded-2xl bg-[#f7fbf8] shadow-2xl">
-                <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e1ebe4] bg-white px-5 py-5">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#27834d]">
-                      EcoTrack · Report Preview
-                    </p>
-                    <h2
-                      id="general-report-preview-title"
-                      className="mt-1 text-xl font-bold text-[#173f2a]"
-                    >
-                      {previewType === "users"
-                        ? "User Report"
-                        : "Monthly Challenge Summary"}
-                    </h2>
-                    <p className="mt-1 text-xs text-[#718277]">
-                      Generated: {formatDate(new Date())}
-                    </p>
+        <div
+          className="fixed inset-0 z-[120] overflow-y-auto bg-[#173f2a]/40 p-3 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="general-report-preview-title"
+        >
+          <div className="mx-auto my-4 w-full max-w-4xl overflow-hidden rounded-2xl bg-[#f7fbf8] shadow-2xl">
+            <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[#e1ebe4] bg-white px-5 py-5">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#27834d]">
+                  EcoTrack · Report Preview
+                </p>
+                <h2
+                  id="general-report-preview-title"
+                  className="mt-1 text-xl font-bold text-[#173f2a]"
+                >
+                  {previewType === "users"
+                    ? "User Report"
+                    : "Monthly Challenge Summary"}
+                </h2>
+                <p className="mt-1 text-xs text-[#718277]">
+                  Generated: {formatDate(new Date())}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPreviewType(null)}
+                aria-label="Close report preview"
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dce8df] bg-white hover:bg-[#f1f8f3]"
+              >
+                <FiX size={18} />
+              </button>
+            </header>
+
+            <div className="space-y-5 p-4 sm:p-6">
+              {previewType === "users" && userReport && (
+                <>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {[
+                      ["Total Users", userReport.totalUsers ?? 0],
+                      ["Active Users", userReport.activeUsers ?? 0],
+                      ["Blocked Users", userReport.blockedUsers ?? 0],
+                    ].map(([label, value]) => (
+                      <div
+                        key={label}
+                        className="rounded-xl border border-[#e1ebe4] bg-white p-4"
+                      >
+                        <p className="text-xs text-[#718277]">{label}</p>
+                        <p className="mt-2 text-2xl font-bold text-[#173f2a]">
+                          {value}
+                        </p>
+                      </div>
+                    ))}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setPreviewType(null)}
-                    aria-label="Close report preview"
-                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dce8df] bg-white hover:bg-[#f1f8f3]"
-                  >
-                    <FiX size={18} />
-                  </button>
-                </header>
+                  <section className="rounded-xl border border-[#e1ebe4] bg-white p-4">
+                    <h3 className="mb-3 font-bold text-[#294a36]">
+                      User Account Overview
+                    </h3>
+                    <div className="h-[280px]">
+                      <Bar data={userChartData} options={chartOptions} />
+                    </div>
+                  </section>
 
-                <div className="space-y-5 p-4 sm:p-6">
-                  {previewType === "users" && userReport && (
-                    <>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <section className="overflow-x-auto rounded-xl border border-[#e1ebe4] bg-white">
+                    <table className="w-full min-w-[300px]">
+                      <thead>
+                        <tr className="bg-[#eaf5ed]">
+                          <th className="px-4 py-3 text-left text-sm">
+                            Metric
+                          </th>
+                          <th className="px-4 py-3 text-right text-sm">
+                            Count
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
                         {[
                           ["Total Users", userReport.totalUsers ?? 0],
-                          ["Active Users", userReport.activeUser ?? 0],
+                          ["Active Users", userReport.activeUsers ?? 0],
                           ["Blocked Users", userReport.blockedUsers ?? 0],
                         ].map(([label, value]) => (
-                          <div
-                            key={label}
-                            className="rounded-xl border border-[#e1ebe4] bg-white p-4"
-                          >
-                            <p className="text-xs text-[#718277]">{label}</p>
-                            <p className="mt-2 text-2xl font-bold text-[#173f2a]">
+                          <tr key={label} className="border-t border-[#e1ebe4]">
+                            <td className="px-4 py-3 text-sm">{label}</td>
+                            <td className="px-4 py-3 text-right text-sm font-semibold">
                               {value}
-                            </p>
-                          </div>
+                            </td>
+                          </tr>
                         ))}
-                      </div>
+                      </tbody>
+                    </table>
+                  </section>
+                </>
+              )}
 
-                      <section className="rounded-xl border border-[#e1ebe4] bg-white p-4">
-                        <h3 className="mb-3 font-bold text-[#294a36]">
-                          User Account Overview
-                        </h3>
-                        <div className="h-[280px]">
-                          <Bar
-                            data={userChartData}
-                            options={chartOptions}
-                          />
-                        </div>
-                      </section>
+              {previewType === "challenges" && challenges.length > 0 && (
+                <>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="rounded-xl border border-[#e1ebe4] bg-white p-4">
+                      <p className="text-xs text-[#718277]">Challenges</p>
+                      <p className="mt-2 text-2xl font-bold">
+                        {challenges.length}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-[#e1ebe4] bg-white p-4">
+                      <p className="text-xs text-[#718277]">Total Joined</p>
+                      <p className="mt-2 text-2xl font-bold">
+                        {challenges.reduce(
+                          (sum, item) =>
+                            sum + (Number(item.totalJoinedUsers) || 0),
+                          0,
+                        )}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-[#e1ebe4] bg-white p-4">
+                      <p className="text-xs text-[#718277]">Total Completed</p>
+                      <p className="mt-2 text-2xl font-bold">
+                        {challenges.reduce(
+                          (sum, item) =>
+                            sum + (Number(item.completedUsers) || 0),
+                          0,
+                        )}
+                      </p>
+                    </div>
+                  </div>
 
-                      <section className="overflow-x-auto rounded-xl border border-[#e1ebe4] bg-white">
-                        <table className="w-full min-w-[300px]">
-                          <thead>
-                            <tr className="bg-[#eaf5ed]">
-                              <th className="px-4 py-3 text-left text-sm">Metric</th>
-                              <th className="px-4 py-3 text-right text-sm">Count</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[
-                              ["Total Users", userReport.totalUsers ?? 0],
-                              ["Active Users", userReport.activeUser ?? 0],
-                              ["Blocked Users", userReport.blockedUsers ?? 0],
-                            ].map(([label, value]) => (
-                              <tr key={label} className="border-t border-[#e1ebe4]">
-                                <td className="px-4 py-3 text-sm">{label}</td>
-                                <td className="px-4 py-3 text-right text-sm font-semibold">
-                                  {value}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </section>
-                    </>
-                  )}
+                  <section className="rounded-xl border border-[#e1ebe4] bg-white p-4">
+                    <h3 className="mb-3 font-bold text-[#294a36]">
+                      Joined vs Completed
+                    </h3>
+                    <div className="h-[300px]">
+                      <Bar data={challengeChartData} options={chartOptions} />
+                    </div>
+                  </section>
 
-                  {previewType === "challenges" && challenges.length > 0 && (
-                    <>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <div className="rounded-xl border border-[#e1ebe4] bg-white p-4">
-                          <p className="text-xs text-[#718277]">Challenges</p>
-                          <p className="mt-2 text-2xl font-bold">
-                            {challenges.length}
-                          </p>
-                        </div>
-                        <div className="rounded-xl border border-[#e1ebe4] bg-white p-4">
-                          <p className="text-xs text-[#718277]">Total Joined</p>
-                          <p className="mt-2 text-2xl font-bold">
-                            {challenges.reduce(
-                              (sum, item) =>
-                                sum + (Number(item.totalJoinedUsers) || 0),
-                              0
-                            )}
-                          </p>
-                        </div>
-                        <div className="rounded-xl border border-[#e1ebe4] bg-white p-4">
-                          <p className="text-xs text-[#718277]">Total Completed</p>
-                          <p className="mt-2 text-2xl font-bold">
-                            {challenges.reduce(
-                              (sum, item) =>
-                                sum + (Number(item.completedUsers) || 0),
-                              0
-                            )}
-                          </p>
-                        </div>
-                      </div>
+                  <section className="overflow-x-auto rounded-xl border border-[#e1ebe4] bg-white">
+                    <table className="w-full min-w-[440px]">
+                      <thead>
+                        <tr className="bg-[#eaf5ed]">
+                          {["Challenge", "Joined", "Completed"].map((label) => (
+                            <th
+                              key={label}
+                              className="px-4 py-3 text-left text-sm"
+                            >
+                              {label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {challenges.map((item, index) => (
+                          <tr
+                            key={item.id || item._id || index}
+                            className="border-t border-[#e1ebe4]"
+                          >
+                            <td className="px-4 py-3 text-sm">
+                              {item.title || "Untitled Challenge"}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {item.totalJoinedUsers ?? 0}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {item.completedUsers ?? 0}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </section>
+                </>
+              )}
 
-                      <section className="rounded-xl border border-[#e1ebe4] bg-white p-4">
-                        <h3 className="mb-3 font-bold text-[#294a36]">
-                          Joined vs Completed
-                        </h3>
-                        <div className="h-[300px]">
-                          <Bar
-                            data={challengeChartData}
-                            options={chartOptions}
-                          />
-                        </div>
-                      </section>
+              <footer className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPreviewType(null)}
+                  className="min-h-10 rounded-lg border border-[#dce8df] bg-white px-4 py-2 text-sm font-semibold text-[#53685b] hover:bg-[#f1f8f3]"
+                >
+                  Close Preview
+                </button>
 
-                      <section className="overflow-x-auto rounded-xl border border-[#e1ebe4] bg-white">
-                        <table className="w-full min-w-[440px]">
-                          <thead>
-                            <tr className="bg-[#eaf5ed]">
-                              {["Challenge", "Joined", "Completed"].map((label) => (
-                                <th
-                                  key={label}
-                                  className="px-4 py-3 text-left text-sm"
-                                >
-                                  {label}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {challenges.map((item, index) => (
-                              <tr
-                                key={item.id || item._id || index}
-                                className="border-t border-[#e1ebe4]"
-                              >
-                                <td className="px-4 py-3 text-sm">
-                                  {item.title || "Untitled Challenge"}
-                                </td>
-                                <td className="px-4 py-3 text-sm">
-                                  {item.totalJoinedUsers ?? 0}
-                                </td>
-                                <td className="px-4 py-3 text-sm">
-                                  {item.completedUsers ?? 0}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </section>
-                    </>
-                  )}
-
-                  <footer className="flex flex-wrap justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewType(null)}
-                      className="min-h-10 rounded-lg border border-[#dce8df] bg-white px-4 py-2 text-sm font-semibold text-[#53685b] hover:bg-[#f1f8f3]"
-                    >
-                      Close Preview
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={
-                        previewType === "users"
-                          ? downloadUserPDF
-                          : downloadChallengeSummaryPDF
-                      }
-                      disabled={downloadingReport}
-                      className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#27834d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#206c3f] disabled:opacity-60"
-                    >
-                      <FiDownload size={16} />
-                      {downloadingReport ? "Preparing PDF..." : "Download PDF"}
-                    </button>
-                  </footer>
-                </div>
-              </div>
+                <button
+                  type="button"
+                  onClick={
+                    previewType === "users"
+                      ? downloadUserPDF
+                      : downloadChallengeSummaryPDF
+                  }
+                  disabled={downloadingReport}
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#27834d] px-4 py-2 text-sm font-semibold text-white hover:bg-[#206c3f] disabled:opacity-60"
+                >
+                  <FiDownload size={16} />
+                  {downloadingReport ? "Preparing PDF..." : "Download PDF"}
+                </button>
+              </footer>
             </div>
-          )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
