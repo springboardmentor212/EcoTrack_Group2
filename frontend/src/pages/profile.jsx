@@ -22,7 +22,6 @@ const sustainabilityPreferenceOptions = [
   "sustainable waste disposal",
   "sustainable travel",
   "sustainable efficient electricity",
-  "carbon footprints",
 ];
 
 const environmentalInterestOptions = [

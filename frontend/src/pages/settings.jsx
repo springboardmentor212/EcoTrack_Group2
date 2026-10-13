@@ -33,12 +33,12 @@ const notificationOptions = [
   },
 ];
 
-const defaultPreferences = {
-  goalSuggestion: true,
-  challengeSuggestion: true,
-  goalReminder: true,
-  challengeReminder: true,
-  updates: true,
+const emptyPreferences = {
+  goalSuggestion: false,
+  challengeSuggestion: false,
+  goalReminder: false,
+  challengeReminder: false,
+  updates: false,
 };
 
 function Toggle({ checked, onChange, disabled = false, label }) {
@@ -50,10 +50,18 @@ function Toggle({ checked, onChange, disabled = false, label }) {
       aria-label={label}
       onClick={onChange}
       disabled={disabled}
-      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-green-100 ${checked ? "bg-[#27834d]" : "bg-gray-300"} ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:brightness-95"}`}
+      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-green-100 ${
+        checked ? "bg-[#27834d]" : "bg-gray-300"
+      } ${
+        disabled
+          ? "cursor-not-allowed opacity-60"
+          : "cursor-pointer hover:brightness-95"
+      }`}
     >
       <span
-        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${checked ? "translate-x-6" : "translate-x-1"}`}
+        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out ${
+          checked ? "translate-x-6" : "translate-x-1"
+        }`}
       />
     </button>
   );
@@ -61,8 +69,10 @@ function Toggle({ checked, onChange, disabled = false, label }) {
 
 export default function Settings() {
   const navigate = useNavigate();
-  const [preferences, setPreferences] = useState(defaultPreferences);
-  const [savedPreferences, setSavedPreferences] = useState(defaultPreferences);
+  const [preferences, setPreferences] = useState(emptyPreferences);
+  const [savedPreferences, setSavedPreferences] = useState(emptyPreferences);
+  const [loadingPreferences, setLoadingPreferences] = useState(true);
+  const [preferencesLoadError, setPreferencesLoadError] = useState(false);
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -71,33 +81,81 @@ export default function Settings() {
   const [requestingPasswordOtp, setRequestingPasswordOtp] = useState(false);
 
   useEffect(() => {
-    const getNotification = async () => {
+    let isMounted = true;
+
+    const loadPreferences = async () => {
+      setLoadingPreferences(true);
+      setPreferencesLoadError(false);
+
       try {
         const response = await axios.get(`${API_URL}/notification`, {
           withCredentials: true,
         });
-        if (response.data?.success === true) {
-          setPreferences(response.data.notificationPreference);
-        } else {
-          toast.error(
-            response.data?.message || "Failed to get notification preferences.",
+
+        const data = response.data;
+        const result = data?.notificationPreference;
+
+        const keys = [
+          "goalSuggestion",
+          "challengeSuggestion",
+          "goalReminder",
+          "challengeReminder",
+          "updates",
+        ];
+
+        if (
+          data?.success !== true ||
+          !result ||
+          !keys.every((key) => typeof result[key] === "boolean")
+        ) {
+          throw new Error(
+            data?.message || "Invalid notification preferences response.",
           );
         }
+
+        if (isMounted) {
+          const actualPreferences = {
+            goalSuggestion: result.goalSuggestion,
+            challengeSuggestion: result.challengeSuggestion,
+            goalReminder: result.goalReminder,
+            challengeReminder: result.challengeReminder,
+            updates: result.updates,
+          };
+
+          setPreferences(actualPreferences);
+          setSavedPreferences(actualPreferences);
+        }
       } catch (error) {
-        toast.error(
-          error.response?.data?.message ||
-            "Failed to get notification preferences.",
-        );
+        if (isMounted) {
+          setPreferencesLoadError(true);
+          toast.error(
+            error.response?.data?.message ||
+              "Failed to load notification preferences.",
+          );
+        }
       } finally {
-        setSavingPreferences(false);
+        if (isMounted) {
+          setLoadingPreferences(false);
+        }
       }
     };
-    getNotification();
+
+    loadPreferences();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const togglePreference = (key) => {
-    if (savingPreferences) return;
-    setPreferences((current) => ({ ...current, [key]: !current[key] }));
+    if (savingPreferences || loadingPreferences || preferencesLoadError) {
+      return;
+    }
+
+    setPreferences((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
   };
 
   const hasChanges = notificationOptions.some(
@@ -105,7 +163,9 @@ export default function Settings() {
   );
 
   const handleSavePreferences = async () => {
-    if (savingPreferences) return;
+    if (savingPreferences || loadingPreferences || preferencesLoadError) {
+      return;
+    }
     const payload = {
       goalSuggestion: preferences.goalSuggestion,
       challengeSuggestion: preferences.challengeSuggestion,
@@ -349,6 +409,28 @@ export default function Settings() {
             </div>
             <>
               <div className="divide-y divide-[#e8efe9] rounded-xl border border-[#e1ebe4]">
+                {loadingPreferences && (
+                  <p className="border-b border-[#e8efe9] px-4 py-4 text-sm text-[#718277]">
+                    Loading your notification preferences...
+                  </p>
+                )}
+
+                {preferencesLoadError && (
+                  <div className="border-b border-[#e8efe9] px-4 py-4">
+                    <p className="text-sm text-red-600">
+                      Notification preferences could not be loaded. Your
+                      settings have not been changed.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => window.location.reload()}
+                      className="mt-3 rounded-lg border border-[#cbd9ce] px-4 py-2 text-sm font-semibold text-[#294a36] hover:bg-[#f4faf5]"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
                 {notificationOptions.map((option, index) => (
                   <div
                     key={option.key}
@@ -368,7 +450,11 @@ export default function Settings() {
                     <Toggle
                       label={option.label}
                       checked={preferences[option.key]}
-                      disabled={savingPreferences}
+                      disabled={
+                        savingPreferences ||
+                        loadingPreferences ||
+                        preferencesLoadError
+                      }
                       onChange={() => togglePreference(option.key)}
                     />
                   </div>
@@ -387,7 +473,12 @@ export default function Settings() {
                   <button
                     type="button"
                     onClick={() => setPreferences({ ...savedPreferences })}
-                    disabled={!hasChanges || savingPreferences}
+                    disabled={
+                      !hasChanges ||
+                      savingPreferences ||
+                      loadingPreferences ||
+                      preferencesLoadError
+                    }
                     className="rounded-lg border border-[#cbd9ce] px-4 py-2.5 text-sm font-semibold text-[#294a36] transition-all duration-200 hover:bg-[#f4faf5] disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     Reset Changes
@@ -395,7 +486,12 @@ export default function Settings() {
                   <button
                     type="button"
                     onClick={handleSavePreferences}
-                    disabled={!hasChanges || savingPreferences}
+                    disabled={
+                      !hasChanges ||
+                      savingPreferences ||
+                      loadingPreferences ||
+                      preferencesLoadError
+                    }
                     className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#27834d] px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#1e6e40] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-green-100 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
                     {savingPreferences && (

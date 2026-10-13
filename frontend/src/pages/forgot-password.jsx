@@ -4,38 +4,48 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 function ForgotPassword() {
-  const [email, setEmail] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isPasswordChange = location.state?.passwordChange === true;
+  const registeredEmail = location.state?.email || "";
+
+  const [email, setEmail] = useState(isPasswordChange ? registeredEmail : "");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [otpTimerKey, setOtpTimerKey] = useState(0);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState("forgot");
-  const [otpExpired, setOtpExpired] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
 
-const isAdminReset =
-  new URLSearchParams(location.search).get("from") === "admin";
+  const [step, setStep] = useState(
+    isPasswordChange && registeredEmail ? "otp" : "forgot",
+  );
+  const [otpExpired, setOtpExpired] = useState(false);
+
+  const isAdminReset =
+    new URLSearchParams(location.search).get("from") === "admin";
 
   const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
   const passwordPattern =
-    /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/;
+    /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    if (step === "otp") {
-      const timer = setTimeout(() => {
-        setOtpExpired(true);
-      }, 300000); // 300 seconds
+    if (step !== "otp") return;
 
-      return () => clearTimeout(timer);
-    }
-  }, [step, setOtpExpired]);
+    setOtpExpired(false);
+
+    const timer = setTimeout(() => {
+      setOtpExpired(true);
+    }, 300000);
+
+    return () => clearTimeout(timer);
+  }, [step, otpTimerKey]);
 
   const handleSendOtp = async (event) => {
     event.preventDefault();
@@ -118,11 +128,9 @@ const isAdminReset =
         return;
       }
 
-      setOtpExpired(true);
       toast.error(data.message || "OTP verification failed.");
     } catch (err) {
       const message = err.response?.data?.message || "OTP verification failed.";
-      setOtpExpired(true);
       setError(message);
       toast.error(message);
     } finally {
@@ -151,6 +159,7 @@ const isAdminReset =
       if (data.success === true) {
         setOtp("");
         setOtpExpired(false);
+        setOtpTimerKey((current) => current + 1);
         toast.success(data.message);
         return;
       }
@@ -311,7 +320,9 @@ const isAdminReset =
                 </h1>
 
                 <p className="text-[#718277] text-sm leading-[1.6]">
-                  Enter the OTP sent to your {email}.
+                  {isPasswordChange
+                    ? `Enter the OTP sent to your registered email${email ? ` (${email})` : ""}.`
+                    : `Enter the OTP sent to your ${email}.`}
                 </p>
               </div>
 
@@ -343,24 +354,22 @@ const isAdminReset =
                   </div>
                 )}
 
-                {!otpExpired ? (
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] hover:-translate-y-px disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? "Verifying..." : "Verify OTP"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={isLoading}
-                    className="text-[#27834d] text-[13px] font-semibold bg-transparent border-0 cursor-pointer hover:underline disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? "Please wait..." : "Resend OTP"}
-                  </button>
-                )}
+                <button
+                  type="submit"
+                  disabled={isLoading || otpExpired}
+                  className="w-full h-[45px] border-0 rounded-[9px] bg-[#27834d] text-white text-[15px] font-semibold cursor-pointer transition duration-200 hover:bg-[#1e6e40] disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Verifying..." : "Verify OTP"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={isLoading}
+                  className="w-full h-[42px] rounded-[9px] border border-[#cbd9ce] text-[#27834d] text-sm font-semibold hover:bg-[#eaf5ed] disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Please wait..." : "Resend OTP"}
+                </button>
               </form>
             </>
           )}

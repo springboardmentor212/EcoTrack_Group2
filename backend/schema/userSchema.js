@@ -82,6 +82,7 @@ const userSchema = new Schema({
     
     notificationPreference : {
          type : notificationPreferenceSchema,
+         default : {},
     },
 
   sustainabilityPreferences : [{

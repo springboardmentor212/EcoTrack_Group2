@@ -256,7 +256,7 @@ module.exports.updateChallenge = async (req,res) => {
       challengeData.target = 0
    }
 
-   const updatedChallenge = await challengeModel.findByIdAndUpdate(challengeData.id,challengeData,{returnDocument: 'after',runValidators: true});
+   const updatedChallenge = await challengeModel.findByIdAndUpdate(challengeData.id,challengeData,{runValidators: true});
    await updateAllChallengesStatus();
    await sendUpdateChallengeNotification(updatedChallenge);
    return res.status(200).json({success : true , message  : "challenge update successfully"});
