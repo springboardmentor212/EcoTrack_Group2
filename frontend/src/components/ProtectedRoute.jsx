@@ -62,6 +62,7 @@ function ProtectedRoute({ children }) {
             "/admin-dashboard",
             "/admin-challenge-management",
             "/admin-user-management",
+            "/admin-settings",
           ];
 
           if (adminRoutes.includes(location.pathname)) {
