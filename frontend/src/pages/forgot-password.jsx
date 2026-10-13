@@ -25,8 +25,9 @@ function ForgotPassword() {
   );
   const [otpExpired, setOtpExpired] = useState(false);
 
+  console.log(new URLSearchParams(location.search).get("from"));
   const isAdminReset =
-    new URLSearchParams(location.search).get("from") === "admin";
+    new URLSearchParams(location.search).get("from") === "admin-settings";
 
   const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 

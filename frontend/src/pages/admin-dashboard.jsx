@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
@@ -68,9 +67,7 @@ function AdminDashboard() {
         });
 
         if (!data.success) {
-          throw new Error(
-            data.message || "Unable to load admin dashboard."
-          );
+          throw new Error(data.message || "Unable to load admin dashboard.");
         }
 
         const dashboardData = data.dashboardData;
@@ -94,7 +91,7 @@ function AdminDashboard() {
                 ...stat,
                 value: values[stat.title] ?? 0,
               };
-            })
+            }),
           );
         }
       } catch (error) {
@@ -104,7 +101,7 @@ function AdminDashboard() {
           toast.error(
             error.response?.data?.message ||
               error.message ||
-              "Unable to load dashboard data."
+              "Unable to load dashboard data.",
           );
         }
       } finally {
@@ -181,8 +178,7 @@ function AdminDashboard() {
       }
     } catch (error) {
       toast.error(
-        error.response?.data?.message ||
-          "Unable to logout. Please try again."
+        error.response?.data?.message || "Unable to logout. Please try again.",
       );
     }
   };
@@ -197,16 +193,12 @@ function AdminDashboard() {
       return;
     }
 
-    if (
-      title === "Active Challenges" ||
-      title === "Completed Challenges"
-    ) {
+    if (title === "Active Challenges" || title === "Completed Challenges") {
       navigate("/admin-challenge-management");
     }
   };
 
-  const adminInitial =
-    adminProfile.name.trim().charAt(0).toUpperCase() || "A";
+  const adminInitial = adminProfile.name.trim().charAt(0).toUpperCase() || "A";
 
   return (
     <>
@@ -385,6 +377,15 @@ function AdminDashboard() {
                   >
                     <span aria-hidden="true">👤</span>
                     <span>Profile</span>
+                  </Link>
+
+                  {/* Setting page */}
+                  <Link
+                    to="/admin-settings"
+                    className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#53685b] transition hover:bg-[#f1f8f3] hover:text-[#27834d]"
+                  >
+                    <span aria-hidden="true">⚙️</span>
+                    <span>Settings</span>
                   </Link>
 
                   {/* Logout */}

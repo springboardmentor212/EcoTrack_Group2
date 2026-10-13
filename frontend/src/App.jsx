@@ -20,6 +20,8 @@ import AdminLogin from "./pages/admin-login";
 import AdminReports from "./pages/admin-reports";
 import AdminDashboard from "./pages/admin-dashboard";
 import Settings from "./pages/settings";
+import AdminSettings from "./pages/admin-settings";
+
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -176,6 +178,15 @@ function App() {
         element={
           <ProtectedRoute>
             <AdminReports />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin-settings"
+        element={
+          <ProtectedRoute>
+            <AdminSettings />
           </ProtectedRoute>
         }
       />

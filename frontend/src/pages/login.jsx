@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -275,12 +275,19 @@ function Login() {
                     </button>
                   </div>
 
-                  <a
+                  <Link
+                    to="/forgot-password"
+                    state={{ from: window.location.pathname }}
+                    className="self-end mt-px text-[#27834d] text-xs font-semibold no-underline hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                  {/* <a
                     href="/forgot-password"
                     className="self-end mt-px text-[#27834d] text-xs font-semibold no-underline hover:underline"
                   >
                     Forgot password?
-                  </a>
+                  </a> */}
                 </div>
 
                 {error && (
