@@ -22,7 +22,6 @@ const sustainabilityPreferenceOptions = [
   "sustainable waste disposal",
   "sustainable travel",
   "sustainable efficient electricity",
-  "carbon footprints",
 ];
 
 const environmentalInterestOptions = [
@@ -268,7 +267,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f8f6] px-4 py-6 md:px-8 md:py-8">
+    <div className="min-h-screen bg-[#f5f8f6]">
       <div className="mx-auto max-w-6xl">
         <div className="mb-7 animate-[fadeDown_0.6s_ease-out]">
           <h1 className="text-3xl font-bold text-[#173b2d] transition duration-300 hover:tracking-wide">

@@ -1,4 +1,4 @@
-const {carbonTypeSummary,transportationTypeSummary,electricityTypeSummary,wasteTypeSummary} = require("../service/typeBasisSummaryService");
+const {carbonTypeSummary,transportationTypeSummary,electricityTypeSummary,wasteTypeSummary} = require("../service/carbonActivity/typeBasisSummaryService");
 const unitMap = (goalType)=>{
    if(goalType === "reduce travelling distance" || goalType === "reduce electricity consumption" || 
       goalType === "reduce waste generated" || goalType === "reduce carbon emissions"){
@@ -16,6 +16,19 @@ const unitMap = (goalType)=>{
    }
 };
 
+const challengeUnitMap = (challengeType)=>{
+   if(challengeType === "distance limit challenge" || challengeType === "ev travel challenge"){
+     return "km";
+   }else if(challengeType === "power saving month"){
+     return "kwh";
+   }else if(challengeType === "waste reduction week" || challengeType === "zero waste day" || challengeType === "recycle and save"){
+     return "kg";
+   }else if(challengeType === "carbon control challenge" || challengeType === "carbon saving challenge"){
+     return "kgco2";
+   }else if(challengeType ===  "cng commute challenge"){
+     return "trips";
+   }
+};
 
 const getBaseValue = async (date,period,category,userId) => {
      const month = new Date(date).getMonth(),year = new Date(date).getFullYear();
@@ -58,4 +71,4 @@ const getBaseValue = async (date,period,category,userId) => {
      return typeSummary;
 };
 
-module.exports = {unitMap,getBaseValue};
+module.exports = {unitMap,challengeUnitMap,getBaseValue};

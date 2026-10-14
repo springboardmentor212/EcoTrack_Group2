@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const {carbonActivityModel} = require("../model/carbonActivityModel");
+const {carbonActivityModel} = require("../../model/carbonActivityModel");
 
 const match = (type,userId,startDate,endDate) =>{
     const matchCondition = {

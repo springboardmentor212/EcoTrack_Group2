@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const {carbonActivityModel} = require("../model/carbonActivityModel");
+const {carbonActivityModel} = require("../../model/carbonActivityModel");
 
 const getTransportationData = async(startDate,endDate,period,userId) => {
   const result = await carbonActivityModel.aggregate([
@@ -17,61 +17,105 @@ const getTransportationData = async(startDate,endDate,period,userId) => {
 
     // 2. Group according to day / week / month
     {
-        $group: {
-            _id: {
-                $dateTrunc: {
-                    date: "$date",
-                    unit: period,
-                    startOfWeek: "monday"
-                }
-            },
-
-            totalDistance: {
-                $sum: "$transportation.distance"
-            },
-
-            cngCount: {
-                $sum: {
-                    $cond: [
-                        {
-                            $eq: [
-                                "$transportation.fuelType",
-                                "cng"
-                            ]
-                        },
-                        1,
-                        0
-                    ]
-                }
-            },
-
-            electricCount: {
-                $sum: {
-                    $cond: [
-                        {
-                            $eq: [
-                                "$transportation.fuelType",
-                                "electric"
-                            ]
-                        },
-                        1,
-                        0
-                    ]
-                }
+    $group: {
+        _id: {
+            $dateTrunc: {
+                date: "$date",
+                unit: period,
+                startOfWeek: "monday"
             }
+        },
+
+        totalDistance: {
+            $sum: "$transportation.distance"
+        },
+
+        cngCount: {
+            $sum: {
+                $cond: [
+                    {
+                        $eq: [
+                            "$transportation.fuelType",
+                            "cng"
+                        ]
+                    },
+                    1,
+                    0
+                ]
+            }
+        },
+
+        cngExists: {
+            $max: {
+                $cond: [
+                    {
+                        $eq: [
+                            "$transportation.fuelType",
+                            "cng"
+                        ]
+                    },
+                    1,
+                    0
+                ]
+            }
+        },
+
+        electricCount: {
+            $sum: {
+                $cond: [
+                    {
+                        $eq: [
+                            "$transportation.fuelType",
+                            "electric"
+                        ]
+                    },
+                    1,
+                    0
+                ]
+            }
+        },
+
+        electricExists: {
+            $max: {
+                $cond: [
+                    {
+                        $eq: [
+                            "$transportation.fuelType",
+                            "electric"
+                        ]
+                    },
+                    1,
+                    0
+                ]
+            }
+        },
+
+        electricDistance: {
+           $sum: {
+               $cond: [
+              {
+                  $eq: [
+                     "$transportation.fuelType",
+                     "electric"
+                  ]
+              },
+              "$transportation.distance",
+               0
+           ]
         }
-    },
+       },
+    }
+},
 
     // 3. Store all existing grouped data in one array
     {
-        $group: {
-            _id: null,
-            existing: {
-                $push: "$$ROOT"
-            }
+    $group: {
+        _id: null,
+        existing: {
+            $push: "$$ROOT"
         }
-    },
-
+    }
+  },
     // 4. Generate every required day/week/month
     {
         $project: {
@@ -177,18 +221,43 @@ const getTransportationData = async(startDate,endDate,period,userId) => {
                                         },
 
                                         cngCount: {
-                                            $ifNull: [
-                                                "$$currentData.cngCount",
-                                                -1
-                                            ]
-                                        },
+                                          $cond: [
+                                           {
+                                            $eq: [
+                                              "$$currentData.cngExists",
+                                               1
+                                             ]
+                                           },
+                                           "$$currentData.cngCount",
+                                           -1
+                                         ]
+                                       },
 
                                         electricCount: {
-                                            $ifNull: [
-                                                "$$currentData.electricCount",
-                                                -1
-                                            ]
-                                        }
+                                          $cond: [
+                                          {
+                                            $eq: [
+                                              "$$currentData.electricExists",
+                                               1
+                                             ]
+                                          },
+                                          "$$currentData.electricCount",
+                                            -1
+                                         ]
+                                       },
+
+                                       electricDistance: {
+                                          $cond: [
+                                           {
+                                               $eq: [
+                                                 "$$currentData.electricExists",
+                                                  1
+                                              ]
+                                          },
+                                          "$$currentData.electricDistance",
+                                          -1
+                                        ]
+                                      },
                                     }
                                 }
                             }
@@ -251,7 +320,7 @@ const getElectricityData = async(startDate,endDate,userId) => {
         }
     },
 
-    // 3. Existing data ko array me convert karo
+     // 3. Store all existing grouped data in one array
     {
         $group: {
             _id: null,
@@ -265,7 +334,6 @@ const getElectricityData = async(startDate,endDate,userId) => {
             }
         }
     },
-
     // 4. StartDate se EndDate tak months generate karo
     {
         $project: {
@@ -404,36 +472,81 @@ const getWasteData = async (startDate, endDate,period, userId) => {
         },
 
         // 2. Group according to day / week / month
-        {
-            $group: {
-                _id: {
-                    $dateTrunc: {
-                        date: "$date",
-                        unit: period,
-                        startOfWeek: "monday"
-                    }
-                },
+       {
+          $group: {
+            _id: {
+               $dateTrunc: {
+                 date: "$date",
+                 unit: period,
+                 startOfWeek: "monday"
+               }
+           },
 
-                totalWasteAmount: {
-                    $sum: "$waste.wasteAmount"
-                },
+           totalWasteAmount: {
+              $sum: "$waste.wasteAmount"
+           },
 
-                totalCarbonSave: {
-                    $sum: "$waste.carbonSave"
-                }
+           totalCarbonSave: {
+              $sum: "$waste.carbonSave"
+           },
+
+           carbonSaveExists: {
+              $max: {
+                 $cond: [
+                     {
+                         $ne: [
+                             "$waste.carbonSave",
+                             null
+                         ]
+                     },
+                     1,
+                     0
+                 ]
+              }
+           },
+
+           totalRecycleWaste : {
+              "$sum" : {
+                  $cond: [
+                   {
+                      $eq: [
+                        "$waste.disposalMethod",
+                        "recycled"
+                     ]
+                   },
+                  "$waste.wasteAmount",
+                   0
+                 ]
+              }
+           },
+
+           recycleExists: {
+            $max: {
+              $cond: [
+                 {
+                   $eq: [
+                     "$waste.disposalMethod",
+                      "recycled"
+                   ]
+                 },
+                 1,
+                 0
+              ]
             }
-        },
+          },
+        }
+    },
 
-        // 3. Store existing grouped data
-        {
-            $group: {
-                _id: null,
-                existing: {
-                    $push: "$$ROOT"
-                }
-            }
-        },
-
+   
+    // 3. Store all existing grouped data in one array
+    {
+    $group: {
+        _id: null,
+        existing: {
+            $push: "$$ROOT"
+        }
+    }
+  },
         // 4. Generate every required period
         {
             $project: {
@@ -530,12 +643,30 @@ const getWasteData = async (startDate, endDate,period, userId) => {
                                             },
 
                                             totalCarbonSave: {
-                                                $ifNull: [
-                                                    "$$currentData.totalCarbonSave",
-                                                    -1
-                                                ]
-                                            }
+                                              $cond: [
+                                             {
+                                               $eq: [
+                                                 "$$currentData.carbonSaveExists",
+                                                  1
+                                               ]
+                                             },
+                                             "$$currentData.totalCarbonSave",
+                                             -1
+                                           ]
+                                          } ,
 
+                                           totalRecycleWaste: {
+                                             $cond: [
+                                                {
+                                                  $eq: [
+                                                       "$$currentData.recycleExists",
+                                                       1
+                                                   ]
+                                               },
+                                                  "$$currentData.totalRecycleWaste",
+                                                  -1
+                                              ]
+                                          },
                                         }
                                     }
                                 }

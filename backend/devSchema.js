@@ -21,6 +21,10 @@ module.exports.resendOtpSchema = joi.object({
     email : joi.string().required().min(5).pattern(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/),
 }).required();
 
+module.exports.deleteAccountSchema = joi.object({
+   password : joi.string().required().min(8).pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/)
+}).required();
+
 module.exports.resentPasswordSchema = joi.object({
     email : joi.string().required().min(5).pattern(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/),
     password : joi.string().required().min(8).pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z][A-Za-z\d@$!%*?&]{7,}$/),
@@ -40,7 +44,6 @@ module.exports.profileSchema = joi.object({
          "sustainable waste disposal",
          "sustainable travel",
          "sustainable efficient electricity",
-         "carbon footprints"
       )).unique().max(8).required(),
 
      environmentalInterests : joi.array().items(
@@ -291,4 +294,217 @@ module.exports.updateCarbonSaveGoalSchema = joi.object({
      period : joi.string().valid("daily","weekly","monthly").required(),
      startDate : joi.date().required(),
      endDate : joi.date().min("now").required(),
+}).required();
+
+module.exports.transportationChallengeSchema = joi.object({
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("transportation").required(),
+     challengeType : joi.string().valid(
+               "distance limit challenge",
+               "ev travel challenge",
+               "cng commute challenge",
+      ).required(),
+     target : joi.number().min(0).required(),
+     unit : joi.string().valid("km","trips").required(),
+     period : joi.string().valid("daily","weekly","monthly").required(),
+     startDate : joi.date().required().min("now"),
+     endDate : joi.date().required().min(joi.ref('startDate'))
+}).required();
+
+module.exports.updateTransportationChallengeSchema = joi.object({
+     id : joi.string().required(),
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("transportation").required(),
+     challengeType : joi.string().valid(
+               "distance limit challenge",
+               "ev travel challenge",
+               "cng commute challenge",
+      ).required(),
+     target : joi.number().min(0).required(),
+     unit : joi.string().valid("km","trips").required(),
+     period : joi.string().valid("daily","weekly","monthly").required(),
+     startDate : joi.date().required().min("now"),
+     endDate : joi.date().required().min(joi.ref('startDate'))
+}).required();
+
+module.exports.electricityChallengeSchema = joi.object({
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("electricity").required(),
+     challengeType : joi.string().valid(
+               "power saving month",
+      ).required(),
+     target : joi.number().min(0).required(),
+     unit : joi.string().valid("kwh").required(),
+     period : joi.string().valid("monthly").required(),
+     startDate : joi.date().required().min("now"),
+     endDate : joi.date().required().min(joi.ref('startDate'))
+}).required();
+
+module.exports.updateElectricityChallengeSchema = joi.object({
+     id : joi.string().required(),
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("electricity").required(),
+     challengeType : joi.string().valid(
+               "power saving month",
+      ).required(),
+     target : joi.number().min(0).required(),
+     unit : joi.string().valid("kwh").required(),
+     period : joi.string().valid("monthly").required(),
+     startDate : joi.date().required().min("now"),
+     endDate : joi.date().required().min(joi.ref('startDate'))
+}).required();
+
+module.exports.wasteChallengeSchema = joi.object({
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("waste management").required(),
+     challengeType : joi.string().valid(
+               "waste reduction week",
+                "zero waste day",
+                "recycle and save"
+      ).required(),
+     target : joi.number().min(0).required(),
+     unit : joi.string().valid("kg").required(),
+     period : joi.string().valid("daily","weekly","monthly").required(),
+     startDate : joi.date().required().min("now"),
+     endDate : joi.date().required().min(joi.ref('startDate'))
+}).required();
+
+module.exports.updateWasteChallengeSchema = joi.object({
+     id : joi.string().required(),
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("waste management").required(),
+     challengeType : joi.string().valid(
+               "waste reduction week",
+                "zero waste day",
+                "recycle and save"
+      ).required(),
+     target : joi.number().min(0).required(),
+     unit : joi.string().valid("kg").required(),
+     period : joi.string().valid("daily","weekly","monthly").required(),
+     startDate : joi.date().required().min("now"),
+     endDate : joi.date().required().min(joi.ref('startDate'))
+}).required();
+
+module.exports.carbonEmissionChallengeSchema = joi.object({
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("carbon emission").required(),
+     challengeType : joi.string().valid(
+              "carbon control challenge",
+      ).required(),
+     trackingType : joi.string().valid(
+               "all","transportation","electricity","waste management"
+     ).required(),
+     target : joi.number().min(0).required(),
+     unit : joi.string().valid("kgco2").required(),
+     period : joi.string().valid("daily","weekly","monthly").required(),
+     startDate : joi.date().required().min("now"),
+     endDate : joi.date().required().min(joi.ref('startDate'))
+}).required();
+
+module.exports.updateCarbonEmissionChallengeSchema = joi.object({
+     id : joi.string().required(),
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("carbon emission").required(),
+     challengeType : joi.string().valid(
+              "carbon control challenge",
+      ).required(),
+     trackingType : joi.string().valid(
+               "all","transportation","electricity","waste management"
+     ).required(),
+     target : joi.number().min(0).required(),
+     unit : joi.string().valid("kgco2").required(),
+     period : joi.string().valid("daily","weekly","monthly").required(),
+     startDate : joi.date().required().min("now"),
+     endDate : joi.date().required().min(joi.ref('startDate'))
+}).required();
+
+module.exports.carbonSaveChallengeSchema = joi.object({
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("carbon save").required(),
+     challengeType : joi.string().valid(
+             "carbon saving challenge",
+      ).required(),
+     target : joi.number().min(0).required(),
+     unit : joi.string().valid("kgco2").required(),
+     period : joi.string().valid("daily","weekly","monthly").required(),
+     startDate : joi.date().required().min("now"),
+     endDate : joi.date().required().min(joi.ref('startDate'))
+}).required();
+
+module.exports.updateCarbonSaveChallengeSchema = joi.object({
+     id : joi.string().required(),
+     title : joi.string().required().min(3),
+     description : joi.object({
+         completionCriteria : joi.string().required(),
+         instructions : joi.array().items(joi.string()).required(),
+         objective : joi.string().required(),
+     }).required(),
+     category : joi.string().valid("carbon save").required(),
+     challengeType : joi.string().valid(
+             "carbon saving challenge",
+      ).required(),
+     target : joi.number().min(0).required(),
+     unit : joi.string().valid("kgco2").required(),
+     period : joi.string().valid("daily","weekly","monthly").required(),
+     startDate : joi.date().required().min("now"),
+     endDate : joi.date().required().min(joi.ref('startDate'))
+}).required();
+
+module.exports.adminProfileSchema = joi.object({
+    name : joi.string().required().min(3).pattern(/^(?=.{3,}$)[A-Za-z]+(?: [A-Za-z]+)?$/),
+    profilePhoto: joi.string().allow("",null),
+    location : joi.string().min(3).required(),
+}).required();
+
+module.exports.notificationSettingSchema = joi.object({
+    goalSuggestion : joi.boolean().required(),
+    challengeSuggestion : joi.boolean().required(),
+    goalReminder : joi.boolean().required(),
+    challengeReminder : joi.boolean().required(),
+    updates : joi.boolean().required()
 }).required();

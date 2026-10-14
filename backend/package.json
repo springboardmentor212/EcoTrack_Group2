@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "goalSuggestion": "node service/notification/createGoalAndNotificationForSuggestion.js"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +25,7 @@
     "mongoose": "^9.9.4",
     "multer": "^2.4.0",
     "multer-storage-cloudinary": "^4.0.0",
+    "node-cron": "^4.6.0",
     "nodemailer": "^9.1.1"
   }
 }

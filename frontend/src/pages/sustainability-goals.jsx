@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const GOALS_URL = import.meta.env.VITE_GOAL_API;
 
@@ -152,6 +154,49 @@ const getToday = () => {
   ].join("-");
 };
 
+const parseDateInput = (value) => {
+  if (!value) return null;
+
+  const datePart = String(value).split("T")[0];
+
+  const [year, month, day] = datePart.split("-").map(Number);
+
+  if (!year || !month || !day) return null;
+
+  return new Date(year, month - 1, day);
+};
+
+const formatDateInput = (date) => {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+};
+
+const addDays = (date, days) => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
+const getWeekEnd = (date) => {
+  const result = new Date(date);
+  const day = result.getDay();
+  const daysUntilSunday = day === 0 ? 0 : 7 - day;
+  result.setDate(result.getDate() + daysUntilSunday);
+  return result;
+};
+
+const getMonthEnd = (date) =>
+  new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+const startOfCalendarMonth = (date) =>
+  new Date(date.getFullYear(), date.getMonth(), 1);
+
+const sameMonth = (a, b) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+
 const formatLabel = (value) => {
   if (!value) return "";
 
@@ -161,38 +206,44 @@ const formatLabel = (value) => {
     .join(" ");
 };
 
-const getGoalTitle = ({ category, trackingType, goalType, target, unit }) => {
-  if (!goalType || !target || !unit) return "";
+const getGoalTitle = ({
+  category,
+  trackingType,
+  goalType,
+  target,
+  unit,
+  period,
+}) => {
+  if (!goalType || !target || !unit || !period) return "";
+
+  const periodText = String(period).toLowerCase();
+
+  const cleanGoalType = goalType.replace(/ within limit$/i, "");
+  let title = "";
 
   if (category === "Carbon Emissions") {
     if (trackingType && trackingType !== "All") {
       if (goalType.startsWith("Reduce")) {
-        return `${goalType} from ${trackingType} by ${target}${unit}`;
+        title = `${cleanGoalType} from ${trackingType} by ${target}${unit}`;
+      } else {
+        title = `${cleanGoalType} from ${trackingType} within ${target} ${unit}`;
       }
-
-      return `${goalType} from ${trackingType} within ${target} ${unit}`;
+    } else if (goalType.startsWith("Reduce")) {
+      title = `${cleanGoalType} by ${target}${unit}`;
+    } else {
+      title = `${cleanGoalType} within ${target} ${unit}`;
     }
-
-    if (goalType.startsWith("Reduce")) {
-      return `${goalType} by ${target}${unit}`;
-    }
-
-    return `${goalType} within ${target} ${unit}`;
+  } else if (goalType.startsWith("Reduce")) {
+    title = `${cleanGoalType} by ${target}${unit}`;
+  } else if (goalType.startsWith("Keep")) {
+    title = `${cleanGoalType} within ${target} ${unit}`;
+  } else if (goalType.startsWith("Use only")) {
+    title = `${cleanGoalType} for ${target} ${unit}`;
+  } else {
+    title = `${cleanGoalType} by ${target} ${unit}`;
   }
 
-  if (goalType.startsWith("Reduce")) {
-    return `${goalType} by ${target}${unit}`;
-  }
-
-  if (goalType.startsWith("Keep")) {
-    return `${goalType} within ${target} ${unit}`;
-  }
-
-  if (goalType.startsWith("Use only")) {
-    return `${goalType} for ${target} ${unit}`;
-  }
-
-  return `${goalType} by ${target} ${unit}`;
+  return period ? `${title} ${period.toLowerCase()}` : title;
 };
 
 const normalizeGoal = (goal) => {
@@ -428,6 +479,80 @@ function CustomSelect({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function GoalDatePicker({ value, period, startDate, onChange }) {
+  const today = useMemo(() => getToday(), []);
+  const todayDate = parseDateInput(today);
+  const actualStartDate = parseDateInput(startDate || today);
+
+  const getMinimumDate = () => {
+    if (period === "Daily") {
+      const minimum = new Date(actualStartDate);
+      minimum.setDate(minimum.getDate() + 1);
+      return minimum;
+    }
+
+    if (period === "Weekly") {
+      return getWeekEnd(todayDate);
+    }
+
+    if (period === "Monthly") {
+      return getMonthEnd(todayDate);
+    }
+
+    return todayDate;
+  };
+
+  const filterDate = (date) => {
+    if (period === "Daily") {
+      return date > actualStartDate;
+    }
+
+    if (period === "Weekly") {
+      return date >= getWeekEnd(todayDate) && date.getDay() === 0;
+    }
+
+    if (period === "Monthly") {
+      return (
+        date >= getMonthEnd(todayDate) &&
+        date.getDate() === getMonthEnd(date).getDate()
+      );
+    }
+
+    return date >= todayDate;
+  };
+
+  const selectedDate = value ? parseDateInput(value) : null;
+
+  return (
+    <div className="goal-date-picker">
+      <label className="goal-form-label">End Date</label>
+
+      <DatePicker
+        selected={selectedDate}
+        onChange={(date) => {
+          if (date) {
+            onChange(formatDateInput(date));
+          }
+        }}
+        minDate={getMinimumDate()}
+        filterDate={filterDate}
+        dateFormat="dd MMM yyyy"
+        placeholderText="Select end date"
+        className="goal-date-input"
+        wrapperClassName="goal-date-picker-wrapper"
+        popperClassName="goal-date-popper"
+        showPopperArrow={false}
+        isClearable
+        onChangeRaw={(event) => {
+          if (event?.preventDefault) {
+            event.preventDefault();
+          }
+        }}
+      />
     </div>
   );
 }
@@ -721,6 +846,7 @@ export default function SustainabilityGoals() {
     goalType: form.goalType,
     target: form.target,
     unit: form.unit,
+    period: form.period,
   });
 
   const activeGoals = goals.filter((goal) => goal.status === "active");
@@ -818,7 +944,6 @@ export default function SustainabilityGoals() {
 
       if (success) {
         const normalizedGoal = normalizeGoal(responseGoal);
-
         setTargetError("");
         setEditingGoal(normalizedGoal);
         setForm({
@@ -863,6 +988,8 @@ export default function SustainabilityGoals() {
       goalType: "",
       target: "",
       unit: "",
+      period: value === "Electricity" ? "Monthly" : "",
+      endDate: "",
     }));
   };
 
@@ -915,13 +1042,14 @@ export default function SustainabilityGoals() {
     setForm((current) => ({
       ...current,
       period: value,
+      endDate: "",
     }));
   };
 
-  const handleEndDateChange = (event) => {
+  const handleEndDateChange = (value) => {
     setForm((current) => ({
       ...current,
-      endDate: event.target.value,
+      endDate: value,
     }));
   };
 
@@ -964,11 +1092,6 @@ export default function SustainabilityGoals() {
       return;
     }
 
-    if (form.endDate < today) {
-      toast.error("End date cannot be before today.");
-      return;
-    }
-
     try {
       setSaving(true);
 
@@ -980,9 +1103,36 @@ export default function SustainabilityGoals() {
         target: targetValue,
         unit: unitApiMap[form.unit],
         period: form.period.toLowerCase(),
-        ...(editingGoal ? { startDate: editingGoal.startDate } : {}),
         endDate: form.endDate,
       };
+
+      if (editingGoal) {
+        body.startDate = form.startDate || today;
+      }
+
+      if (form.period === "Weekly") {
+        const selectedDate = parseDateInput(form.endDate);
+        if (editingGoal) {
+          body.startDate = formatDateInput(
+            new Date(
+              selectedDate.getFullYear(),
+              selectedDate.getMonth(),
+              selectedDate.getDate() - 6,
+            ),
+          );
+        }
+        body.endDate = form.endDate;
+      }
+
+      if (form.period === "Monthly") {
+        const selectedDate = parseDateInput(form.endDate);
+        if (editingGoal) {
+          body.startDate = formatDateInput(
+            new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1),
+          );
+        }
+        body.endDate = form.endDate;
+      }
 
       if (form.category === "Carbon Emissions") {
         body.trackingType = trackingTypeApiMap[form.trackingType];
@@ -1202,23 +1352,23 @@ export default function SustainabilityGoals() {
                 <CustomSelect
                   label="Period"
                   value={form.period}
-                  options={categoryConfig?.periods || []}
+                  options={
+                    form.category === "Carbon Emissions" &&
+                    form.trackingType === "Electricity"
+                      ? ["Monthly"]
+                      : categoryConfig?.periods || []
+                  }
                   placeholder="Select period"
                   disabled={!selectedType}
                   onChange={handlePeriodChange}
                 />
 
-                <div>
-                  <label className="goal-form-label">End Date</label>
-
-                  <input
-                    type="date"
-                    min={today}
-                    value={form.endDate}
-                    onChange={handleEndDateChange}
-                    className="goal-input"
-                  />
-                </div>
+                <GoalDatePicker
+                  value={form.endDate}
+                  period={form.period}
+                  startDate={editingGoal?.startDate || today}
+                  onChange={handleEndDateChange}
+                />
 
                 <div className="goal-title-field">
                   <label className="goal-form-label">Goal Title</label>
@@ -1251,7 +1401,6 @@ export default function SustainabilityGoals() {
                     !form.target ||
                     !form.period ||
                     !form.endDate ||
-                    form.endDate < today ||
                     (form.category === "Carbon Emissions" && !form.trackingType)
                   }
                   className="start-goal-button"
@@ -1314,14 +1463,14 @@ export default function SustainabilityGoals() {
         .sustainability-goals-page {
           min-height: 100%;
           background: #f8fbf9;
-          padding: 28px 32px 42px;
+          padding: 5px;
           color: #173f2a;
         }
 
         .sustainability-goals-container {
           width: 100%;
           max-width: 1180px;
-          margin: 0 auto;
+          margin: 0;
         }
 
         .goals-topbar {
@@ -1764,6 +1913,202 @@ export default function SustainabilityGoals() {
           color: #173f2a;
           font-size: 11px;
           font-weight: 600;
+        }
+
+        .goal-date-picker {
+          position: relative;
+        }
+
+        .goal-date-picker-wrapper {
+          display: block;
+          width: 100%;
+        }
+
+        .goal-date-picker-wrapper .react-datepicker-wrapper {
+          display: block;
+          width: 100%;
+        }
+
+        .goal-date-picker-wrapper .react-datepicker__input-container {
+          display: block;
+          width: 100%;
+        }
+
+        .goal-date-picker-wrapper .goal-date-input {
+          display: block;
+          width: 100%;
+          min-height: 44px;
+          box-sizing: border-box;
+          border: 1px solid #dce7df;
+          border-radius: 10px;
+          outline: none;
+          background: white;
+          padding: 0 13px;
+          color: #405149;
+          cursor: pointer;
+          font-size: 11px;
+          transition: .22s ease;
+        }
+
+        .goal-date-picker-wrapper .goal-date-input:hover,
+        .goal-date-picker-wrapper .goal-date-input:focus {
+          border-color: #72a988;
+          box-shadow: 0 0 0 4px rgba(114,169,136,.11);
+        }
+
+        .goal-date-popper {
+          z-index: 100;
+        }
+
+        .goal-date-popper .react-datepicker {
+          border: 1px solid #dce8df;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 14px 35px rgba(25,67,42,.14);
+          font-family: inherit;
+        }
+
+        .goal-date-popper .react-datepicker__header {
+          background: #f2f7f3;
+          border-bottom: 1px solid #dce8df;
+        }
+
+        .goal-date-popper .react-datepicker__day--selected,
+        .goal-date-popper .react-datepicker__day--keyboard-selected {
+          background: #27834d;
+          color: white;
+        }
+
+        .goal-date-popper .react-datepicker__day--selected:hover,
+        .goal-date-popper .react-datepicker__day--keyboard-selected:hover {
+          background: #216b42;
+        }
+
+        .goal-date-popper .react-datepicker__day--disabled {
+          color: #c8d0cb;
+          cursor: not-allowed;
+        }
+
+        .goal-date-input {
+          width: 100%;
+          min-height: 44px;
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          border: 1px solid #dce7df;
+          border-radius: 10px;
+          outline: none;
+          background: white;
+          padding: 0 13px;
+          color: #405149;
+          cursor: pointer;
+          font-size: 11px;
+          text-align: left;
+          transition: .22s ease;
+        }
+
+        .goal-date-input:hover,
+        .goal-date-input:focus-visible {
+          border-color: #72a988;
+          box-shadow: 0 0 0 4px rgba(114,169,136,.11);
+          outline: none;
+        }
+
+        .goal-calendar-icon {
+          color: #27834d;
+          font-size: 15px;
+        }
+
+        .goal-calendar {
+          position: absolute;
+          z-index: 30;
+          top: calc(100% + 7px);
+          left: 0;
+          width: 292px;
+          box-sizing: border-box;
+          border: 1px solid #dce8df;
+          border-radius: 12px;
+          background: white;
+          padding: 13px;
+          box-shadow: 0 14px 35px rgba(25,67,42,.14);
+        }
+
+        .goal-calendar-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+          color: #173f2a;
+          font-size: 12px;
+        }
+
+        .goal-calendar-nav {
+          width: 30px;
+          height: 30px;
+          border: 0;
+          border-radius: 7px;
+          background: #f2f7f3;
+          color: #27834d;
+          cursor: pointer;
+          font-size: 20px;
+          line-height: 1;
+        }
+
+        .goal-calendar-nav:disabled {
+          opacity: .35;
+          cursor: not-allowed;
+        }
+
+        .goal-calendar-weekdays,
+        .goal-calendar-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 4px;
+        }
+
+        .goal-calendar-weekdays {
+          margin-bottom: 5px;
+        }
+
+        .goal-calendar-weekdays span {
+          color: #91a097;
+          font-size: 9px;
+          font-weight: 700;
+          text-align: center;
+        }
+
+        .goal-calendar-day {
+          width: 34px;
+          height: 34px;
+          justify-self: center;
+          border: 0;
+          border-radius: 8px;
+          font-size: 11px;
+          transition: .15s ease;
+        }
+
+        .goal-calendar-day-enabled {
+          background: #edf7f0;
+          color: #216b42;
+          cursor: pointer;
+        }
+
+        .goal-calendar-day-enabled:hover {
+          background: #d7eddf;
+        }
+
+        .goal-calendar-day-disabled {
+          background: transparent;
+          color: #c8d0cb;
+          cursor: not-allowed;
+        }
+
+        .goal-calendar-day-selected {
+          background: #27834d;
+          color: white;
+          font-weight: 700;
         }
 
         .goal-input,

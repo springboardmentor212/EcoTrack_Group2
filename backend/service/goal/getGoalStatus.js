@@ -1,13 +1,14 @@
-const {utcDates} = require("../utills/getDate");
-const {getGoalTrackingData} = require("../service/getGoalTrackingData");
+const {utcDates} = require("../../utills/getDate");
+const {getGoalTrackingData} = require("./getGoalTrackingData");
 
 module.exports.getGoalStatus = async (goal) => {
     const {startDate,endDate,goalDirection} = goal;
-    let previousDay = new Date().setDate(new Date().getDate() - 1);
-    previousDay = utcDates(previousDay);
-      if (previousDay < startDate) {
+    let currDay = new Date().setDate(new Date().getDate());
+    currDay = utcDates(currDay);
+      if (currDay < startDate) {
         return "active";
     }
+    
   
     const {values,goalValue} = await getGoalTrackingData(goal);
 
@@ -43,16 +44,16 @@ module.exports.getGoalStatus = async (goal) => {
     // Final status
     // ----------------------------------
 
-    // पहले से कोई period missing है
-    if (hasMissingEntry || values.length===0) {
-        return "not have entry";
-    }
+   if (endDate <= currDay) {
+    return hasMissingEntry || values.length === 0
+        ? "failed"
+        : "completed";
+}
 
-    // Goal अभी चल रहा है
-    if (endDate > previousDay) {
-        return "active";
-    }
+  // अभी active है
+   if (hasMissingEntry || values.length === 0) {
+    return "not have entry";
+  }
 
-    // Goal पूरा हो चुका है
-    return "completed";
+return "active";
 };

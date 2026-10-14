@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
-import { FiBell, FiChevronDown } from "react-icons/fi";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { FiChevronDown } from "react-icons/fi";
 import { toast } from "react-toastify";
 
 const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
 const GOALS_URL = import.meta.env.VITE_GOAL_API;
+const CHALLENGE_URL = import.meta.env.VITE_CHALLENGE_API;
 
 const trackerPeriods = {
   All: [
@@ -58,19 +59,6 @@ const overviewData = {
   ],
 };
 
-const navItems = [
-  ["Dashboard", "/dashboard"],
-  ["Carbon Tracking System", "/tracking"],
-  ["Sustainability Goals", "/sustainability-goals"],
-  ["Community Challenges", "/community-challenges"],
-  ["AI Insights", "/ai-insights"],
-  ["Analytics", "/analytics"],
-  ["Reports", "/reports"],
-  ["Rewards", "/rewards"],
-  ["Notifications", "/notifications"],
-  ["Profile", "/profile"],
-];
-
 const trackerApiTypes = {
   All: "carbon",
   Transportation: "transportation",
@@ -92,27 +80,68 @@ const getApiDuration = (tracker, period) => {
   return "year";
 };
 
+const formatCardNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "0.00";
+  }
+
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return value;
+  }
+
+  return number.toFixed(2);
+};
+
+const formatCardText = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  if (value === "—") {
+    return "—";
+  }
+
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+
+const formatPersonName = (value) => {
+  if (!value) return "";
+
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(
+      /(^|[\s'-])([a-z])/g,
+      (_, separator, letter) => separator + letter.toUpperCase(),
+    );
+};
+
 const createStatsFromSummary = (tracker, summary) => {
   if (tracker === "All") {
     return [
       {
         title: "Total Carbon Emissions",
-        value: summary?.emission ?? 0,
+        value: formatCardNumber(summary?.emission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Transportation Carbon Emissions",
-        value: summary?.transportationEmission ?? 0,
+        value: formatCardNumber(summary?.transportationEmission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Electricity Carbon Emissions",
-        value: summary?.electricityEmission ?? 0,
+        value: formatCardNumber(summary?.electricityEmission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Waste Management Carbon Emissions",
-        value: summary?.wasteEmission ?? 0,
+        value: formatCardNumber(summary?.wasteEmission ?? 0),
         unit: "kg CO₂e",
       },
     ];
@@ -122,22 +151,22 @@ const createStatsFromSummary = (tracker, summary) => {
     return [
       {
         title: "Carbon Emissions",
-        value: summary?.emission ?? 0,
+        value: formatCardNumber(summary?.emission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Total Distance Travelled",
-        value: summary?.distance ?? 0,
+        value: formatCardNumber(summary?.distance ?? 0),
         unit: "km",
       },
       {
         title: "Most Used Transport Mode",
-        value: summary?.mostUsedTransportMode?.mode || "—",
+        value: formatCardText(summary?.mostUsedTransportMode?.mode),
         unit: "",
       },
       {
         title: "Most Used Fuel Type",
-        value: summary?.mostUsedFuelType?.fuel || "—",
+        value: formatCardText(summary?.mostUsedFuelType?.fuel),
         unit: "",
       },
     ];
@@ -147,17 +176,19 @@ const createStatsFromSummary = (tracker, summary) => {
     return [
       {
         title: "Carbon Emissions",
-        value: summary?.emission ?? 0,
+        value: formatCardNumber(summary?.emission ?? 0),
         unit: "kg CO₂e",
       },
       {
         title: "Total Consumption",
-        value: summary?.consumption ?? 0,
+        value: formatCardNumber(summary?.consumption ?? 0),
         unit: "kWh",
       },
       {
         title: "No. of Entries",
-        value: summary?.entries ?? 0,
+        value: Number.isFinite(Number(summary?.entries))
+          ? Number(summary.entries)
+          : 0,
         unit: "entries",
       },
     ];
@@ -166,30 +197,52 @@ const createStatsFromSummary = (tracker, summary) => {
   return [
     {
       title: "Carbon Emissions",
-      value: summary?.emission ?? 0,
+      value: formatCardNumber(summary?.emission ?? 0),
       unit: "kg CO₂e",
     },
     {
       title: "Carbon Saved",
-      value: summary?.carbonSave ?? 0,
+      value: formatCardNumber(summary?.carbonSave ?? 0),
       unit: "kg CO₂e",
     },
     {
       title: "Total Waste Generated",
-      value: summary?.wasteAmount ?? 0,
+      value: formatCardNumber(summary?.wasteAmount ?? 0),
       unit: "kg",
     },
     {
       title: "Most Tracked Waste Type",
-      value: summary?.mostUsedWasteType?.type || "—",
+      value: formatCardText(summary?.mostUsedWasteType?.type),
       unit: "",
     },
     {
       title: "Most Used Disposal/Handling Method",
-      value: summary?.mostUsedDisposalMethod?.method || "—",
+      value: formatCardText(summary?.mostUsedDisposalMethod?.method),
       unit: "",
     },
   ];
+};
+
+const formatChallengeLabel = (value) => {
+  if (!value) return "—";
+
+  return String(value)
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
+const formatChallengeCategory = (category) => {
+  const categoryMap = {
+    transportation: "Transportation",
+    electricity: "Electricity",
+    "waste management": "Waste Management",
+    "carbon emission": "Carbon Emission",
+    "carbon save": "Carbon Save",
+  };
+
+  return categoryMap[category] || formatChallengeLabel(category);
 };
 
 const getDurationData = (duration, durationSummary) => {
@@ -208,36 +261,38 @@ const getDurationData = (duration, durationSummary) => {
 
 function Dashboard() {
   const navigate = useNavigate();
-
+  const { profile } = useOutletContext();
   const [selectedPeriod, setSelectedPeriod] = useState("This Month (Day-wise)");
   const [selectedTracker, setSelectedTracker] = useState("All");
   const [periodOpen, setPeriodOpen] = useState(false);
   const [trackerOpen, setTrackerOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [notificationOpen, setNotificationOpen] = useState(false);
-  const [notifications] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
-
   const [dashboardStats, setDashboardStats] = useState(overviewData);
   const [chartData, setChartData] = useState([]);
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [noActivity, setNoActivity] = useState(false);
   const [goals, setGoals] = useState([]);
   const [goalsLoading, setGoalsLoading] = useState(true);
+  const [challenges, setChallenges] = useState([]);
+  const [challengesLoading, setChallengesLoading] = useState(true);
 
   useEffect(() => {
-    const handleDocumentClick = (event) => {
-      if (!event.target.closest(".period-dropdown")) setPeriodOpen(false);
-      if (!event.target.closest(".tracking-dropdown")) setTrackerOpen(false);
-      if (!event.target.closest(".profile-wrapper")) setProfileOpen(false);
-      if (!event.target.closest(".notification-wrapper"))
-        setNotificationOpen(false);
-    };
+  const handleDocumentClick = (event) => {
+    if (!event.target.closest(".period-dropdown")) {
+      setPeriodOpen(false);
+    }
 
-    document.addEventListener("click", handleDocumentClick);
+    if (!event.target.closest(".tracking-dropdown")) {
+      setTrackerOpen(false);
+    }
+  };
 
-    return () => document.removeEventListener("click", handleDocumentClick);
-  }, []);
+  document.addEventListener("click", handleDocumentClick);
+
+  return () => {
+    document.removeEventListener("click", handleDocumentClick);
+  };
+}, []);
 
   useEffect(() => {
     setRefreshKey((value) => value + 1);
@@ -302,7 +357,12 @@ function Dashboard() {
         }));
 
         setChartData(durationData);
-        setNoActivity(false);
+
+        const hasActivity = durationData.some(
+          (item) => Number(item.totalEmission) > 0,
+        );
+
+        setNoActivity(!hasActivity);
       } catch (error) {
         setDashboardStats((current) => ({
           ...current,
@@ -362,22 +422,43 @@ function Dashboard() {
     fetchGoals();
   }, []);
 
-  const activeGoals = goals.filter((goal) => goal.status === "active");
-  const completedGoals = goals.filter(
-    (goal) =>
-      goal.status === "complete" ||
-      goal.status === "completed" ||
-      goal.status === "achieve" ||
-      goal.status === "achieved",
-  );
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      try {
+        setChallengesLoading(true);
 
-  const otherGoals = goals.filter(
-    (goal) =>
-      goal.status !== "active" &&
-      goal.status !== "complete" &&
-      goal.status !== "completed" &&
-      goal.status !== "achieve" &&
-      goal.status !== "achieved",
+        const { data } = await axios.get(`${CHALLENGE_URL}/user`, {
+          withCredentials: true,
+        });
+
+        if (data.success === true) {
+          setChallenges(
+            Array.isArray(data.userChallengesData)
+              ? data.userChallengesData
+              : [],
+          );
+        } else {
+          setChallenges([]);
+        }
+      } catch (error) {
+        console.error(
+          "Challenges fetch error:",
+          error.response?.data?.message || error.message,
+        );
+
+        setChallenges([]);
+      } finally {
+        setChallengesLoading(false);
+      }
+    };
+
+    fetchChallenges();
+  }, []);
+
+  const activeGoals = goals.filter((goal) => goal.status === "active");
+
+  const activeChallenges = challenges.filter(
+    (challenge) => challenge.status === "active",
   );
 
   const stats =
@@ -388,9 +469,6 @@ function Dashboard() {
       ? "Tracking Overview"
       : `${selectedTracker} Overview`;
 
-  const unreadNotifications = notifications.filter(
-    (notification) => !notification.read,
-  );
 
   const periods = trackerPeriods[selectedTracker];
 
@@ -446,8 +524,6 @@ function Dashboard() {
     [chartData, selectedTracker, selectedPeriod],
   );
 
-  const goalTitle = selectedChart.goalTitle;
-
   const chartScale = useMemo(() => {
     const maximum = Math.max(...selectedChart.values, 0);
 
@@ -491,7 +567,7 @@ function Dashboard() {
 
   const getStatRoute = (tracker, title) => {
     if (tracker === "All" && title === "Total Carbon Emissions") {
-      return "/analytics";
+      return "/tracking";
     }
 
     if (tracker === "All" && title === "Transportation Carbon Emissions") {
@@ -527,193 +603,98 @@ function Dashboard() {
     if (route) navigate(route);
   };
 
-  const handleLogout = () => {
-    window.location.href = "/";
-  };
 
   return (
     <>
       <style>{`
-                @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes sidebarReveal { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
-                @keyframes topbarReveal { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes heroFadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes cardFadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes progressReveal { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: scale(1); } }
-                @keyframes barGrow { from { transform: scaleY(0); transform-origin: bottom; } to { transform: scaleY(1); transform-origin: bottom; } }
-            `}</style>
+        @keyframes pageFadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
 
-      <div className="min-h-screen bg-[#f7fbf8] text-[#173f2a] animate-[pageFadeIn_.7s_ease_both] lg:flex">
-        <aside className="fixed inset-y-0 left-0 z-40 flex w-[250px] shrink-0 flex-col overflow-hidden border-r border-[#e2ece5] bg-white px-[18px] py-5 animate-[sidebarReveal_.6s_ease_.05s_both] max-lg:w-[220px] max-md:w-[190px] max-sm:relative max-sm:w-full max-sm:border-b max-sm:border-r-0 max-sm:py-5">
-          <Link
-            to="/"
-            className="flex shrink-0 items-center border-b border-[#e2ece5] px-3 pb-4"
-          >
-            <img
-              src="/assets/Ecotrack1.png"
-              alt="EcoTrack"
-              className="block h-auto w-[160px] max-w-full transition-transform duration-200 hover:scale-[1.02] max-md:w-[150px] max-sm:w-[180px]"
-            />
-          </Link>
+        @keyframes sidebarReveal {
+          from {
+            opacity: 0;
+            transform: translateX(-18px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
 
-          <nav className="min-h-0 flex-1 overflow-hidden py-2 pr-1">
-            <div className="flex flex-col gap-1">
-              {navItems.map(([label, href]) => (
-                <Link
-                  key={label}
-                  to={href}
-                  className={`rounded-lg px-3.5 py-3 text-sm font-medium transition-all duration-200 hover:translate-x-[3px] hover:bg-[#f1f8f3] hover:text-[#27834d] ${label === "Dashboard" ? "bg-[#eaf5ed] font-semibold text-[#27834d]" : "text-[#5c7064]"}`}
-                >
-                  {label}
-                </Link>
-              ))}
-            </div>
-          </nav>
+        @keyframes topbarReveal {
+          from {
+            opacity: 0;
+            transform: translateY(-12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
 
-          <div className="shrink-0 pt-1">
-            <div className="mx-2 my-2 h-px bg-[#e2ece5]" />
+        @keyframes heroFadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(18px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full rounded-lg border-0 bg-transparent px-3.5 py-2 text-left text-sm text-[#65766c] transition-all duration-200 hover:translate-x-[3px] hover:bg-[#fdf2f2] hover:text-[#b34b4b]"
-            >
-              Logout
-            </button>
-          </div>
-        </aside>
+        @keyframes cardFadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
 
-        <div className="w-full lg:ml-[250px] lg:w-[calc(100%-250px)] max-lg:ml-[220px] max-lg:w-[calc(100%-220px)] max-md:ml-[190px] max-md:w-[calc(100%-190px)] max-sm:ml-0 max-sm:w-full">
-          <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-[#e2ece5] bg-white px-[4%] animate-[topbarReveal_.6s_ease_.12s_both]">
-            <div className="text-lg font-semibold text-[#173f2a]">
-              Dashboard
-            </div>
+        @keyframes progressReveal {
+          from {
+            opacity: 0;
+            transform: scale(.88);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
 
-            <div className="flex items-center gap-3.5">
-              <div className="notification-wrapper relative">
-                <button
-                  type="button"
-                  aria-label="Notifications"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setNotificationOpen(!notificationOpen);
-                    setProfileOpen(false);
-                  }}
-                  className="relative flex h-[38px] w-[38px] items-center justify-center rounded-[9px] border-0 bg-transparent text-[#53685b] transition-all duration-200 hover:bg-[#f1f8f3] hover:text-[#27834d] active:scale-95"
-                >
-                  <FiBell size={19} />
+        @keyframes barGrow {
+          from {
+            transform: scaleY(0);
+            transform-origin: bottom;
+          }
+          to {
+            transform: scaleY(1);
+            transform-origin: bottom;
+          }
+        }
+      `}</style>
 
-                  {unreadNotifications.length > 0 && (
-                    <span className="absolute right-0 top-0 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#27834d] px-1 text-[10px] font-bold text-white">
-                      {unreadNotifications.length > 99
-                        ? "99+"
-                        : unreadNotifications.length}
-                    </span>
-                  )}
-                </button>
-
-                {notificationOpen && (
-                  <div className="absolute right-0 top-[47px] z-50 w-[310px] overflow-hidden rounded-xl border border-[#e1ebe4] bg-white shadow-[0_12px_30px_rgba(23,63,42,0.12)]">
-                    <div className="border-b border-[#edf2ee] px-4 py-3 text-sm font-semibold text-[#294a36]">
-                      Recent Notifications
-                    </div>
-
-                    <div className="max-h-[280px] overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <div className="px-4 py-7 text-center text-xs text-[#8a998f]">
-                          No notifications
-                        </div>
-                      ) : (
-                        notifications.slice(0, 5).map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`border-b border-[#f0f4f1] px-4 py-3 text-xs text-[#53685b] ${!notification.read ? "bg-[#f3f9f4] font-semibold" : ""}`}
-                          >
-                            {notification.message}
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    <div className="border-t border-[#edf2ee] px-4 py-3 text-center">
-                      <Link
-                        to="/notifications"
-                        className="text-xs font-semibold text-[#27834d] hover:underline"
-                      >
-                        See All Notifications
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="profile-wrapper relative">
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setProfileOpen(!profileOpen);
-                    setNotificationOpen(false);
-                  }}
-                  className="flex items-center gap-2.5 rounded-lg border-0 bg-transparent px-1 py-1.5 text-left"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eaf5ed] text-sm font-semibold text-[#27834d]">
-                    E
-                  </div>
-
-                  <div className="profile-info flex min-w-0 flex-col max-md:hidden">
-                    <strong className="text-xs font-semibold text-[#294a36]">
-                      Eco User
-                    </strong>
-
-                    <span className="text-[10px] text-[#8a998f]">Member</span>
-                  </div>
-
-                  <FiChevronDown
-                    className={`text-[#718277] transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
-                    size={15}
-                  />
-                </button>
-
-                {profileOpen && (
-                  <div className="absolute right-0 top-[47px] z-50 w-[180px] overflow-hidden rounded-xl border border-[#e1ebe4] bg-white p-1.5 shadow-[0_12px_30px_rgba(23,63,42,0.12)]">
-                    <Link
-                      to="/profile"
-                      className="block rounded-lg px-3 py-2.5 text-xs text-[#53685b] hover:bg-[#f1f8f3] hover:text-[#27834d]"
-                    >
-                      My Profile
-                    </Link>
-
-                    <Link
-                      to="/settings"
-                      className="block rounded-lg px-3 py-2.5 text-xs text-[#53685b] hover:bg-[#f1f8f3] hover:text-[#27834d]"
-                    >
-                      Settings
-                    </Link>
-
-                    <div className="my-1 h-px bg-[#edf2ee]" />
-
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="w-full rounded-lg px-3 py-2.5 text-left text-xs text-[#53685b] hover:bg-[#fdf2f2] hover:text-[#b34b4b]"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header>
-
-          <main className="px-[4%] pb-12 pt-8 sm:pt-10">
+      <div className="animate-[pageFadeIn_.7s_ease_both]">
+          <div className="min-w-0">
             <section className="mb-8 animate-[heroFadeUp_.55s_ease_.2s_both]">
               <p className="mb-2 text-[11px] font-bold tracking-[.16em] text-[#27834d]">
                 YOUR SUSTAINABILITY JOURNEY
               </p>
 
               <h1 className="text-[32px] font-semibold leading-tight text-[#173f2a] max-sm:text-[28px]">
-                Welcome back, <span className="text-[#27834d]">Eco User!</span>
+                  Welcome back,{" "}
+                  <span className="text-[#27834d]">
+                    {profile?.name || "Eco User"}
+                  </span>
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#718277]">
@@ -748,7 +729,9 @@ function Dashboard() {
                       <span>{selectedPeriod}</span>
 
                       <FiChevronDown
-                        className={`transition-transform duration-200 ${periodOpen ? "rotate-180" : ""}`}
+                        className={`transition-transform duration-200 ${
+                          periodOpen ? "rotate-180" : ""
+                        }`}
                         size={13}
                       />
                     </button>
@@ -785,7 +768,9 @@ function Dashboard() {
                       <span>{selectedTracker}</span>
 
                       <FiChevronDown
-                        className={`transition-transform duration-200 ${trackerOpen ? "rotate-180" : ""}`}
+                        className={`transition-transform duration-200 ${
+                          trackerOpen ? "rotate-180" : ""
+                        }`}
                         size={13}
                       />
                     </button>
@@ -813,7 +798,13 @@ function Dashboard() {
 
               <div
                 key={`stats-${refreshKey}`}
-                className={`grid gap-[18px] ${selectedTracker === "Electricity" ? "grid-cols-3 max-xl:grid-cols-3 max-md:grid-cols-1" : selectedTracker === "Waste Management" ? "grid-cols-5 max-2xl:grid-cols-3 max-xl:grid-cols-2 max-sm:grid-cols-1" : "grid-cols-4 max-xl:grid-cols-2 max-sm:grid-cols-1"}`}
+                className={`grid gap-[18px] ${
+                  selectedTracker === "Electricity"
+                    ? "grid-cols-3 max-xl:grid-cols-3 max-md:grid-cols-1"
+                    : selectedTracker === "Waste Management"
+                      ? "grid-cols-5 max-2xl:grid-cols-3 max-xl:grid-cols-2 max-sm:grid-cols-1"
+                      : "grid-cols-4 max-xl:grid-cols-2 max-sm:grid-cols-1"
+                }`}
               >
                 {stats.map((stat, index) => (
                   <button
@@ -849,10 +840,7 @@ function Dashboard() {
               </div>
             </section>
 
-            <section key={`dynamic-${refreshKey}`} className="mb-[22px]">
-              <button
-                type="button"
-                onClick={() => navigate("/analytics")}
+            <section
                 className="scroll-reveal w-full rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] text-left shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.58s_both] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(33,78,50,0.08)]"
               >
                 <div className="flex items-center justify-between gap-5">
@@ -944,7 +932,7 @@ function Dashboard() {
                     </div>
                   </div>
                 )}
-              </button>
+            </section>
 
               <section className="mt-[22px] scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.66s_both]">
                 <div className="flex items-center justify-between gap-5 max-sm:flex-col max-sm:items-start">
@@ -954,7 +942,7 @@ function Dashboard() {
                     </p>
 
                     <h2 className="text-[21px] font-semibold text-[#173f2a]">
-                      Your Goals
+                      Your Active Goals
                     </h2>
                   </div>
 
@@ -973,12 +961,13 @@ function Dashboard() {
                       Loading goals...
                     </span>
                   </div>
-                ) : goals.length === 0 ? (
+                ) : activeGoals.length === 0 ? (
                   <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
                     <div className="px-6 text-center">
                       <p className="text-sm font-semibold text-[#294a36]">
-                        No sustainability goals yet
+                        No active sustainability goals found
                       </p>
+
                       <p className="mt-2 text-xs leading-5 text-[#8a998f]">
                         Create a goal to start tracking your sustainability
                         progress.
@@ -988,12 +977,6 @@ function Dashboard() {
                 ) : (
                   <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {activeGoals.slice(0, 3).map((goal, index) => {
-                      const isCompleted =
-                        goal.status === "complete" ||
-                        goal.status === "completed" ||
-                        goal.status === "achieve" ||
-                        goal.status === "achieved";
-
                       return (
                         <button
                           key={goal._id || goal.id || `${goal.title}-${index}`}
@@ -1006,23 +989,16 @@ function Dashboard() {
                               <p className="text-[10px] font-bold tracking-[.12em] text-[#27834d]">
                                 {goal.category || "SUSTAINABILITY"}
                               </p>
+
                               <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
-                                {goal.title || "Sustainability Goal"}
+                                {formatChallengeLabel(
+                                  goal.title || "Sustainability Goal",
+                                )}
                               </h3>
                             </div>
 
-                            <span
-                              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                                isCompleted
-                                  ? "bg-[#eaf5ed] text-[#27834d]"
-                                  : "bg-[#f3f8f4] text-[#53685b]"
-                              }`}
-                            >
-                              {isCompleted
-                                ? "Completed"
-                                : goal.status === "active"
-                                  ? "Active"
-                                  : "Previous"}
+                            <span className="shrink-0 rounded-full bg-[#eaf5ed] px-2.5 py-1 text-[10px] font-semibold text-[#27834d]">
+                              Active
                             </span>
                           </div>
 
@@ -1051,10 +1027,12 @@ function Dashboard() {
                             </p>
                             <p className="mt-1 text-xs font-medium text-[#53685b]">
                               {goal.endDate
-                                .split("T")[0]
-                                .split("-")
-                                .reverse()
-                                .join("/") || "—"}
+                                ? goal.endDate
+                                    .split("T")[0]
+                                    .split("-")
+                                    .reverse()
+                                    .join("/")
+                                : "—"}
                             </p>
                           </div>
                         </button>
@@ -1063,66 +1041,122 @@ function Dashboard() {
                   </div>
                 )}
               </section>
-            </section>
 
-            <section
-              key={`recommendation-${refreshKey}`}
-              className="scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.72s_both]"
-            >
-              <div className="flex items-center justify-between gap-5">
-                <div>
-                  <p className="mb-1 text-[11px] font-bold tracking-[.15em] text-[#27834d]">
-                    RECOMMENDATION
-                  </p>
+              <section className="mt-[22px] scroll-reveal rounded-[15px] border border-[#e1ebe4] bg-white p-[25px] shadow-[0_10px_30px_rgba(33,78,50,0.05)] animate-[cardFadeUp_.65s_ease_.72s_both]">
+                <div className="flex items-center justify-between gap-5 max-sm:flex-col max-sm:items-start">
+                  <div>
+                    <p className="mb-1 text-[11px] font-bold tracking-[.15em] text-[#27834d]">
+                      COMMUNITY CHALLENGES
+                    </p>
 
-                  <h2 className="text-[21px] font-semibold text-[#173f2a]">
-                    Make an Impact
-                  </h2>
+                    <h2 className="text-[21px] font-semibold text-[#173f2a]">
+                      Your Active Challenges
+                    </h2>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate("/community-challenges")}
+                    className="h-[40px] rounded-lg border border-[#cfe0d4] bg-white px-4 text-[12px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
+                  >
+                    View All Challenges
+                  </button>
                 </div>
 
-                <img
-                  src="/assets/earth.jpg"
-                  alt="Earth"
-                  className="h-[52px] w-[52px] rounded-xl object-contain"
-                />
-              </div>
+                {challengesLoading ? (
+                  <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                    <span className="animate-pulse text-sm text-[#8a998f]">
+                      Loading challenges...
+                    </span>
+                  </div>
+                ) : activeChallenges.length === 0 ? (
+                  <div className="mt-6 flex min-h-[170px] items-center justify-center rounded-xl bg-[#f8faf9]">
+                    <div className="px-6 text-center">
+                      <p className="text-sm font-semibold text-[#294a36]">
+                        No active challenges found
+                      </p>
 
-              <button
-                type="button"
-                onClick={() => navigate("/ai-insights")}
-                className="mt-[22px] flex w-full gap-3.5 rounded-[11px] border border-[#e1eee4] bg-[#f3f9f4] p-[17px] text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-[#d4e5da] hover:shadow-md"
-              >
-                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px]">
-                  <img
-                    src="/assets/Footprints.jpg"
-                    alt="Carbon footprint"
-                    className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                  />
-                </div>
+                      <p className="mt-2 text-xs leading-5 text-[#8a998f]">
+                        Explore community challenges and join one to start
+                        participating.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {activeChallenges.slice(0, 3).map((challenge, index) => (
+                      <button
+                        key={
+                          challenge._id ||
+                          challenge.id ||
+                          `${challenge.title}-${index}`
+                        }
+                        type="button"
+                        onClick={() => navigate("/community-challenges")}
+                        className="rounded-xl border border-[#e1ebe4] bg-[#fbfdfb] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#d1e3d7] hover:bg-white hover:shadow-[0_12px_28px_rgba(33,78,50,0.07)]"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold tracking-[.12em] text-[#27834d]">
+                              {formatChallengeCategory(challenge.category)}
+                            </p>
 
-                <div>
-                  <h3 className="text-sm font-semibold leading-5 text-[#294a36]">
-                    Start tracking your first activity
-                  </h3>
+                            <h3 className="mt-1.5 text-sm font-semibold leading-5 text-[#294a36]">
+                              {formatChallengeLabel(
+                                challenge.title || "Challenge",
+                              )}
+                            </h3>
 
-                  <p className="mt-1.5 text-[11px] leading-5 text-[#718277]">
-                    Add your transportation, energy, or lifestyle activity to
-                    start understanding your carbon footprint.
-                  </p>
-                </div>
-              </button>
+                            <p className="mt-1 text-[11px] text-[#8a998f]">
+                              {formatChallengeLabel(challenge.challengeType)}
+                            </p>
+                          </div>
 
-              <button
-                type="button"
-                onClick={() => navigate("/ai-insights")}
-                className="mt-[18px] h-[42px] w-full rounded-lg border border-[#cfe0d4] bg-white text-[13px] font-semibold text-[#27834d] transition-all hover:-translate-y-0.5 hover:border-[#bcd5c4] hover:bg-[#f0f8f2] hover:shadow-md active:scale-[.98]"
-              >
-                View More Recommendations
-              </button>
-            </section>
-          </main>
-        </div>
-      </div>
+                          <span className="shrink-0 rounded-full bg-[#eaf5ed] px-2.5 py-1 text-[10px] font-semibold text-[#27834d]">
+                            {formatChallengeLabel(challenge.status)}
+                          </span>
+                        </div>
+
+                        <div className="mt-5 grid grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-[10px] text-[#8a998f]">Target</p>
+
+                            <p className="mt-1 text-sm font-semibold text-[#173f2a]">
+                              {challenge.target ?? "—"} {challenge.unit || ""}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-[10px] text-[#8a998f]">Period</p>
+
+                            <p className="mt-1 text-sm font-semibold text-[#173f2a]">
+                              {formatChallengeLabel(challenge.period)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 border-t border-[#edf2ee] pt-3">
+                          <p className="text-[10px] text-[#8a998f]">
+                            Start Date
+                          </p>
+
+                          <p className="mt-1 text-xs font-medium text-[#53685b]">
+                            {challenge.startDate
+                              ? String(challenge.startDate)
+                                  .slice(0, 10)
+                                  .split("-")
+                                  .reverse()
+                                  .join("/")
+                              : "—"}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          </div>
     </>
   );
 }

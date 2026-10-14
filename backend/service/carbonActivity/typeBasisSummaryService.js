@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const {carbonActivityModel} = require("../model/carbonActivityModel");
+const {carbonActivityModel} = require("../../model/carbonActivityModel");
 
 const carbonTypeSummary = async (startDate,endDate,userId) => {
     const typeSummary = await carbonActivityModel.aggregate([

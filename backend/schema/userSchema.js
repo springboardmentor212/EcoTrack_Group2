@@ -2,6 +2,34 @@ const {Schema} = require('mongoose');
 const bcrypt = require("bcrypt");
 const {carbonActivityModel} = require("../model/carbonActivityModel");
 const {goalModel} = require("../model/goalModel");
+const {userNotificationModel} = require("../model/userNotificationModel");
+
+const notificationPreferenceSchema = new Schema({
+     goalSuggestion : {
+         type : Boolean,
+         default : true,
+     },
+    
+     challengeSuggestion : {
+         type : Boolean,
+         default : true,
+     },
+
+     goalReminder : {
+         type : Boolean,
+         default : true,
+     },
+
+     challengeReminder : {
+         type : Boolean,
+         default : true,
+     },
+
+     updates : {
+        type : Boolean,
+        default : true,
+     }
+},{_id : false});
 
 const userSchema = new Schema({
     name : {
@@ -37,7 +65,7 @@ const userSchema = new Schema({
     },
     role : {
         type : String,
-        enum : ['user','administrator '],
+        enum : ['user','admin'],
         lowercase : true,
         trim : true,
     },
@@ -47,7 +75,17 @@ const userSchema = new Schema({
       default : '../utills/user.png'
     },
 
-  sustainabilityPreferences: [{
+    isBlocked : {
+       type : Boolean,
+       default : false,
+    },
+    
+    notificationPreference : {
+         type : notificationPreferenceSchema,
+         default : {},
+    },
+
+  sustainabilityPreferences : [{
     type: String,
     enum: [
       "small daily changes",
@@ -57,7 +95,6 @@ const userSchema = new Schema({
       "sustainable waste disposal",
       "sustainable travel",
       "sustainable efficient electricity",
-      "carbon footprints"
     ],
     lowercase : true,
     trim : true,
@@ -87,6 +124,28 @@ const userSchema = new Schema({
     lowercase : true,
     trim : true,
   }],
+  
+  suggestedGoal: [
+    {
+        type: Schema.Types.ObjectId,
+        ref: "Goal"
+    }],
+
+  joinChallenges : [
+  {
+    challengeId: {
+      type: Schema.Types.ObjectId,
+      ref: "Challenge",
+      required: true
+    },
+
+    status: {
+      type: String,
+      enum: ["not started","active","completed","failed","cancelled","not have entry"],
+      default: "not started"
+    }
+  },{ _id: false }
+]
 } , { timestamps: true });
 
 userSchema.pre("save",async function(){
@@ -104,5 +163,6 @@ userSchema.pre("findOneAndDelete",async function(){
     const userId = this.getQuery()._id; 
     await carbonActivityModel.deleteMany({userId});
     await goalModel.deleteMany({userId});
+    await userNotificationModel.deleteMany({userId});
 });
 module.exports = {userSchema};

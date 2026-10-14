@@ -30,6 +30,36 @@ const currentMonth = [
   { value: "dec", label: "December" },
 ][now.getMonth()];
 
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const MONTH_VALUES = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+];
+
 const toInputDate = (date) => {
   if (!date) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
@@ -39,7 +69,6 @@ const toInputDate = (date) => {
 
 const displayDate = (date) => {
   if (!date) return "";
-  //if (/^\d{2}\/\d{2}\/\d{4}$/.test(date)) return date;
   const [year, month, day] = date.split("-");
   return `${day.substr(0, 2)}/${month}/${year}`;
 };
@@ -55,12 +84,15 @@ export default function Transportation() {
   const [error, setError] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(currentMonth.label);
 
-  const [selectedYear, setSelectedYear] = useState(new Date(currentYear, 0, 1));
-  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedYear, setSelectedYear] = useState(
+    new Date(currentYear, 0, 1),
+  );
 
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
   const recordsPerPage = 5;
+
   const fuelOptions =
     transportMode === "2 wheeler"
       ? [
@@ -91,7 +123,9 @@ export default function Transportation() {
               : [];
 
   const [previousEntries, setPreviousEntries] = useState([]);
+
   const CARBON_ACTIVITY = import.meta.env.VITE_CARBON_ACTIVITY;
+
   const fetchTransportationActivities = async (
     month = currentMonth.value,
     year = currentYear,
@@ -106,44 +140,63 @@ export default function Transportation() {
 
       if (response.data.success) {
         setPreviousEntries(response.data.transporatationActivity || []);
+      } else {
+        setPreviousEntries([]);
       }
     } catch (error) {
       console.error(error);
+      setPreviousEntries([]);
     }
   };
+
+  /*
+   * Fetch transportation activities whenever
+   * selected month or selected year changes.
+   */
+  useEffect(() => {
+    if (!selectedMonth || !selectedYear) {
+      setPreviousEntries([]);
+      return;
+    }
+
+    const monthIndex = MONTHS.indexOf(selectedMonth);
+
+    if (monthIndex === -1) {
+      setPreviousEntries([]);
+      return;
+    }
+
+    const month = MONTH_VALUES[monthIndex];
+    const year = new Date(selectedYear).getFullYear();
+
+    fetchTransportationActivities(month, year);
+  }, [selectedMonth, selectedYear]);
 
   const filteredTrips = previousEntries.filter((trip) => {
     if (!trip.date) return false;
 
-    const [year, month, day] = trip.date.split("-");
+    const [year, month] = trip.date.split("-");
 
-    const selectedMonthNumber =
-      [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ].indexOf(selectedMonth) + 1;
+    const selectedMonthNumber = MONTHS.indexOf(selectedMonth) + 1;
 
-    const monthMatch = !selectedMonth || Number(month) === selectedMonthNumber;
+    const monthMatch =
+      !selectedMonth || Number(month) === selectedMonthNumber;
+
     const selectedYearValue = selectedYear
       ? new Date(selectedYear).getFullYear()
       : null;
-    const yearMatch = !selectedYear || Number(year) === selectedYearValue;
+
+    const yearMatch =
+      !selectedYear || Number(year) === selectedYearValue;
+
     return monthMatch && yearMatch;
   });
 
   const totalPages = Math.ceil(filteredTrips.length / recordsPerPage);
   const pageCount = totalPages || 1;
+
   const startIndex = (currentPage - 1) * recordsPerPage;
+
   const currentTrips = filteredTrips.slice(
     startIndex,
     startIndex + recordsPerPage,
@@ -186,9 +239,6 @@ export default function Transportation() {
 
     setError("");
   };
-  useEffect(() => {
-    fetchTransportationActivities();
-  }, []);
 
   const handleAddTrip = async () => {
     if (loading) return;
@@ -197,6 +247,7 @@ export default function Transportation() {
       const trimmedFrom = fromLocation.trim();
       const trimmedTo = toLocation.trim();
       const numericDistance = Number(distance);
+
       if (
         !travelDate ||
         !transportMode ||
@@ -206,11 +257,10 @@ export default function Transportation() {
         numericDistance <= 0
       ) {
         setError("Please fill all required fields.");
-
         return;
       }
-      setLoading(true);
 
+      setLoading(true);
       setError("");
 
       const payload = {
@@ -250,7 +300,12 @@ export default function Transportation() {
 
       if (response.data.success) {
         clearForm();
-        fetchTransportationActivities();
+
+        const monthIndex = MONTHS.indexOf(selectedMonth);
+        const month = MONTH_VALUES[monthIndex];
+        const year = new Date(selectedYear).getFullYear();
+
+        fetchTransportationActivities(month, year);
       }
     } catch (error) {
       setError(
@@ -269,7 +324,11 @@ export default function Transportation() {
       });
 
       if (response.data.success) {
-        fetchTransportationActivities();
+        const monthIndex = MONTHS.indexOf(selectedMonth);
+        const month = MONTH_VALUES[monthIndex];
+        const year = new Date(selectedYear).getFullYear();
+
+        fetchTransportationActivities(month, year);
 
         if (editingId === tripId) {
           clearForm();
@@ -282,6 +341,7 @@ export default function Transportation() {
       );
     }
   };
+
   return (
     <TrackingDetailLayout
       breadcrumbLabel="Transportation"
@@ -298,7 +358,7 @@ export default function Transportation() {
             value={travelDate}
             onChange={setTravelDate}
             valueFormat="DD/MM/YYYY"
-            minDate={new Date(2000, 0, 1)}
+            minDate={minYearDate}
             maxDate={new Date()}
             placeholder="Select travel date"
             color="green"
@@ -439,15 +499,20 @@ export default function Transportation() {
                   onChange={(value) => {
                     if (value) {
                       const pickedYear = new Date(value).getFullYear();
-                      if (pickedYear > currentYear || pickedYear < MIN_YEAR) {
+
+                      if (
+                        pickedYear > currentYear ||
+                        pickedYear < MIN_YEAR
+                      ) {
                         return;
                       }
                     }
+
                     setSelectedYear(value);
                     setCurrentPage(1);
                   }}
-                  minDate={new Date(2000, 0, 1)}
-                  maxDate={new Date(currentYear, 11, 31)}
+                  minDate={minYearDate}
+                  maxDate={maxYearDate}
                   placeholder="Year"
                   clearable={!!selectedYear}
                   styles={{
@@ -466,20 +531,7 @@ export default function Transportation() {
                   }}
                   placeholder="Month"
                   clearable={!!selectedMonth}
-                  data={[
-                    "January",
-                    "February",
-                    "March",
-                    "April",
-                    "May",
-                    "June",
-                    "July",
-                    "August",
-                    "September",
-                    "October",
-                    "November",
-                    "December",
-                  ]}
+                  data={MONTHS}
                   styles={{
                     input: {
                       minHeight: "40px",
@@ -510,18 +562,23 @@ export default function Transportation() {
                   <th className="px-6 py-4 text-left text-sm font-semibold">
                     Date
                   </th>
+
                   <th className="px-6 py-4 text-left text-sm font-semibold">
                     Mode
                   </th>
+
                   <th className="px-6 py-4 text-left text-sm font-semibold">
                     Distance (km)
                   </th>
+
                   <th className="px-6 py-4 text-left text-sm font-semibold">
                     Fuel Type
                   </th>
+
                   <th className="px-6 py-4 text-left text-sm font-semibold">
                     Carbon Emission (kg CO₂e)
                   </th>
+
                   <th className="px-6 py-4 text-left text-sm font-semibold">
                     Actions
                   </th>
@@ -532,16 +589,29 @@ export default function Transportation() {
                 {currentTrips.map((trip) => (
                   <tr key={trip._id} className="border-t border-[#D7EADF]">
                     <td className="px-6 py-4">{displayDate(trip.date)}</td>
+
                     <td className="px-6 py-4">
-                      {trip.transportation.transportMode}
+                      {trip.transportation.transportMode
+                        ?.replace(/\b[a-z]/g, (char) => char.toUpperCase()) || "N/A"}
                     </td>
+
                     <td className="px-6 py-4">
                       {trip.transportation.distance} km
                     </td>
+
                     <td className="px-6 py-4">
-                      {trip.transportation?.fuelType || "N/A"}
+                      {trip.transportation?.fuelType
+                        ? trip.transportation.fuelType.charAt(0).toUpperCase() +
+                          trip.transportation.fuelType.slice(1)
+                        : "N/A"}
                     </td>
-                    <td className="px-6 py-4"> {trip.emission ?? "N/A"}</td>
+
+                    <td className="px-6 py-4">
+                      {trip.emission != null && Number.isFinite(Number(trip.emission))
+                        ? Number(trip.emission).toFixed(2)
+                        : "N/A"}
+                    </td>
+
                     <td className="px-6 py-4">
                       <div className="flex gap-3">
                         <button
@@ -585,6 +655,7 @@ export default function Transportation() {
                 1,
                 Math.min(currentPage - 2, totalPages - 4),
               );
+
               const pageNumber = startPage + index;
 
               if (pageNumber > totalPages) return null;
