@@ -25,9 +25,21 @@ function ForgotPassword() {
   );
   const [otpExpired, setOtpExpired] = useState(false);
 
-  console.log(new URLSearchParams(location.search).get("from"));
-  const isAdminReset =
-    new URLSearchParams(location.search).get("from") === "admin-settings";
+  const queryFrom = new URLSearchParams(location.search).get("from");
+
+const resetOrigin =
+  location.state?.from ||
+  queryFrom ||
+  (isPasswordChange ? "settings" : "login");
+
+const redirectAfterReset = {
+  login: "/login",
+  "admin-login": "/admin-login",
+  settings: "/settings",
+  "admin-settings": "/admin-settings",
+};
+
+const redirectPath = redirectAfterReset[resetOrigin] || "/login";
 
   const emailPattern = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
@@ -223,7 +235,7 @@ function ForgotPassword() {
         toast.success(data.message);
 
         setTimeout(() => {
-          navigate(isAdminReset ? "/admin-login" : "/login");
+          navigate(redirectPath, { replace: true });
         }, 1500);
 
         return;
@@ -482,13 +494,20 @@ function ForgotPassword() {
           )}
 
           <div className="mt-6 text-center">
-            <Link
-              to="/login"
-              className="text-[#27834d] text-[13px] font-semibold no-underline hover:underline"
-            >
-              ← Back to Login
-            </Link>
-          </div>
+  <Link
+    to={redirectPath}
+    className="text-[#27834d] text-[13px] font-semibold no-underline hover:underline"
+  >
+    ← Back
+    {resetOrigin === "settings"
+      ? " to Settings"
+      : resetOrigin === "admin-settings"
+        ? " to Admin Settings"
+        : resetOrigin === "admin-login"
+          ? " to Admin Login"
+          : " to Login"}
+  </Link>
+</div>
         </div>
       </main>
     </div>

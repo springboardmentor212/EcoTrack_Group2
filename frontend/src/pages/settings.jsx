@@ -219,7 +219,7 @@ export default function Settings() {
           state: {
             passwordChange: true,
             email: response.data.email,
-            from: window.location.pathname,
+            from: "settings",
           },
         });
       } else {

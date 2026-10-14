@@ -277,17 +277,11 @@ function Login() {
 
                   <Link
                     to="/forgot-password"
-                    state={{ from: window.location.pathname }}
+                    state={{ from: "login" }}
                     className="self-end mt-px text-[#27834d] text-xs font-semibold no-underline hover:underline"
                   >
                     Forgot password?
                   </Link>
-                  {/* <a
-                    href="/forgot-password"
-                    className="self-end mt-px text-[#27834d] text-xs font-semibold no-underline hover:underline"
-                  >
-                    Forgot password?
-                  </a> */}
                 </div>
 
                 {error && (

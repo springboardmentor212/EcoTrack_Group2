@@ -1,8 +1,31 @@
+
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+const userRoutes = [
+  "/dashboard",
+  "/profile",
+  "/sustainability-goals",
+  "/tracking",
+  "/tracking/transportation",
+  "/tracking/electricity",
+  "/tracking/waste",
+  "/community-challenges",
+  "/notifications",
+  "/settings",
+];
+
+const adminRoutes = [
+  "/admin-dashboard",
+  "/admin-profile",
+  "/admin-user-management",
+  "/admin-challenge-management",
+  "/admin-reports",
+  "/admin-settings",
+];
 
 function ProtectedRoute({ children }) {
   const navigate = useNavigate();
@@ -12,101 +35,72 @@ function ProtectedRoute({ children }) {
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkUser = async () => {
+      setLoading(true);
+      setAuthorized(false);
+
       try {
         const { data } = await axios.get(`${API_URL}/checkUser`, {
           withCredentials: true,
         });
 
-        console.log("checkUser response:", data);
-        console.log("Current path:", location.pathname);
+        if (!isMounted) return;
 
-        // =========================
-        // HOME PAGE
-        // =========================
+        // Root route: redirect logged-in users to their dashboards.
         if (location.pathname === "/") {
-          // User logged in
           if (data.success && data.role === "user") {
             navigate("/dashboard", { replace: true });
             return;
           }
 
-          // Admin logged in
           if (data.success && data.role === "admin") {
             navigate("/admin-dashboard", { replace: true });
             return;
           }
 
-          // User is NOT logged in
+          // Preserve the existing behavior for the root page.
           setAuthorized(true);
           return;
         }
 
-        // =========================
-        // USER NOT LOGGED IN
-        // =========================
+        // All non-root protected routes require a valid session.
         if (!data.success) {
           navigate("/", { replace: true });
           return;
         }
 
-        // =========================
-        // NORMAL USER
-        // =========================
+        // User routes can only be opened by users.
         if (data.role === "user") {
-          const userRoutes = [
-            "/profile",
-            "/dashboard",
-            "/sustainability-goals",
-            "/tracking",
-            "/tracking/transportation",
-            "/tracking/electricity",
-            "/tracking/waste",
-            "/community-challenges",
-            "/notifications",
-            "/settings",
-          ];
-
           if (userRoutes.includes(location.pathname)) {
             setAuthorized(true);
             return;
           }
 
-          // User trying to access admin/unknown page
           navigate("/dashboard", { replace: true });
           return;
         }
 
-        // =========================
-        // ADMIN
-        // =========================
+        // Admin routes can only be opened by admins.
         if (data.role === "admin") {
-          const adminRoutes = [
-            "/admin-dashboard",
-            "/admin-user-management",
-            "/admin-challenge-management",
-            "/admin-profile",
-            "/admin-reports",
-            "/admin-settings",
-          ];
-
           if (adminRoutes.includes(location.pathname)) {
             setAuthorized(true);
             return;
           }
 
-          // Admin trying to access user/unknown page
           navigate("/admin-dashboard", { replace: true });
           return;
         }
 
-        // Unknown role
+        // Unknown role: return to the root route.
         navigate("/", { replace: true });
       } catch (error) {
+        if (!isMounted) return;
+
         console.error("checkUser error:", error);
 
-        // Agar checkUser fail ho jaye aur Home hai,
-        // to Home ko display kar do
+        // Preserve the current root-route fallback behavior.
         if (location.pathname === "/") {
           setAuthorized(true);
           return;
@@ -114,18 +108,28 @@ function ProtectedRoute({ children }) {
 
         navigate("/", { replace: true });
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     checkUser();
+
+    return () => {
+      isMounted = false;
+    };
   }, [location.pathname, navigate]);
 
   if (loading) {
-    return null;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f7fbf8]">
+        <p className="text-sm text-[#5c7064]">Checking access...</p>
+      </div>
+    );
   }
 
-  return authorized ? children : null;
+  return authorized ? (children || <Outlet />) : null;
 }
 
 export default ProtectedRoute;

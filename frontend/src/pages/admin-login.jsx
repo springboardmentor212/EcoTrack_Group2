@@ -172,10 +172,11 @@ function AdminLogin() {
             {/* Forgot Password */}
             <div className="text-right -mt-[5px]">
               <Link
-                to="/forgot-password?from=admin"
-                className="text-[#27834d] text-[13px] font-semibold no-underline hover:underline"
+                to="/forgot-password"
+                state={{ from: "admin-login" }}
+                className="self-end mt-px text-[#27834d] text-xs font-semibold no-underline hover:underline"
               >
-                Forgot Password?
+                Forgot password?
               </Link>
             </div>
 

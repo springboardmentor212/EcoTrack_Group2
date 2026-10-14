@@ -37,7 +37,7 @@ export default function AdminSettings() {
           state: {
             passwordChange: true,
             email: response.data.email,
-            from: window.location.pathname,
+            from: "admin-settings",
           },
         });
       } else {
