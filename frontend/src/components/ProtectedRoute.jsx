@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -129,7 +128,7 @@ function ProtectedRoute({ children }) {
     );
   }
 
-  return authorized ? (children || <Outlet />) : null;
+  return authorized ? children || <Outlet /> : null;
 }
 
 export default ProtectedRoute;
