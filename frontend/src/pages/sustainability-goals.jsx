@@ -1463,14 +1463,14 @@ export default function SustainabilityGoals() {
         .sustainability-goals-page {
           min-height: 100%;
           background: #f8fbf9;
-          padding: 28px 32px 42px;
+          padding: 5px;
           color: #173f2a;
         }
 
         .sustainability-goals-container {
           width: 100%;
           max-width: 1180px;
-          margin: 0 auto;
+          margin: 0;
         }
 
         .goals-topbar {

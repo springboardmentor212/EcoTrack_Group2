@@ -845,7 +845,7 @@ function CommunityChallenges() {
           min-height: 100vh;
           background: #f8fbf9;
           color: #173f2a;
-          padding: 34px 28px 60px;
+          padding: 5px;
         }
 
         .community-challenges-container {

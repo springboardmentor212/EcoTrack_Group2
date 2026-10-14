@@ -1458,7 +1458,7 @@ function AdminChallengeManagement() {
         .admin-challenge-page {
           min-height: 100vh;
           background: #f8fbf9;
-          padding: 38px 48px 55px;
+          padding: 4px 5px 25px;
           color: #173f2a;
           animation: pageFadeUp 0.55s ease;
         }

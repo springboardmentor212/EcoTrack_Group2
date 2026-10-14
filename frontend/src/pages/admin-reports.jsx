@@ -725,7 +725,7 @@ function AdminReports() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7fbf8] px-[4%] py-7 text-[#173f2a] sm:py-8 admin-reports-page">
+    <div className="min-h-screen bg-[#f7fbf8] px-[1%] py-1 text-[#173f2a] sm:py-8 admin-reports-page">
       <style>{pageLoadingStyles}</style>
       <style>{reportAnimationStyles}</style>
       <div className="mx-auto w-full max-w-[1500px]">

@@ -117,8 +117,16 @@ export default function AdminSettings() {
   };
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f5f8f5] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-      <div className="mx-auto max-w-5xl">
+    <main className="min-h-screen overflow-hidden bg-[#f5f8f5] px-4 py-3 sm:px-6 sm:py-8 lg:px-8">
+      <style>
+        {`
+         .setting-page{
+            margin : -25px -30px 5px -20px;
+            width : 104%;
+         }
+      `}
+      </style>
+      <div className="setting-page">
         <header className="mb-8 animate-[adminSettingsFadeDown_.55s_ease-out_both]">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-[#27834d]">
             EcoTrack · Administration

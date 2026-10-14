@@ -12,13 +12,7 @@ export default function TrackingDetailLayout({
   return (
     <div className="min-h-screen bg-[#f7fbf8] text-[#173f2a] animate-[pageFadeIn_.7s_ease_both] lg:flex">
       <div className="w-full">
-        <header className="sticky top-0 z-30 flex h-[76px] items-center border-b border-[#e2ece5] bg-white px-[4%] animate-[topbarReveal_.6s_ease_.12s_both]">
-          <div className="text-lg font-semibold text-[#173f2a]">
-            Carbon Tracking System
-          </div>
-        </header>
-
-        <main className="px-[4%] pb-12 pt-8 sm:pt-10">
+        <main>
           <button
             type="button"
             onClick={() => navigate("/tracking")}

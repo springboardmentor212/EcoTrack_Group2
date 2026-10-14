@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 
-import {FiSearch,FiChevronDown,FiChevronLeft,FiChevronRight,FiUserX,FiUserCheck,} from "react-icons/fi";
+import {
+  FiSearch,
+  FiChevronDown,
+  FiChevronLeft,
+  FiChevronRight,
+  FiUserX,
+  FiUserCheck,
+} from "react-icons/fi";
 import { toast } from "react-toastify";
 
 const initialUsers = [];
@@ -50,10 +57,7 @@ function AdminUserManagement() {
 
   useEffect(() => {
     const handleDocumentClick = (event) => {
-      if (
-        filterRef.current &&
-        !filterRef.current.contains(event.target)
-      ) {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
         setFilterOpen(false);
       }
     };
@@ -82,14 +86,14 @@ function AdminUserManagement() {
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredUsers.length / USERS_PER_PAGE)
+    Math.ceil(filteredUsers.length / USERS_PER_PAGE),
   );
 
   const startIndex = (currentPage - 1) * USERS_PER_PAGE;
 
   const paginatedUsers = filteredUsers.slice(
     startIndex,
-    startIndex + USERS_PER_PAGE
+    startIndex + USERS_PER_PAGE,
   );
 
   useEffect(() => {
@@ -125,13 +129,18 @@ function AdminUserManagement() {
         currentUsers.map((currentUser) =>
           currentUser._id === user._id
             ? { ...currentUser, isBlocked: !user.isBlocked }
-            : currentUser
-        )
+            : currentUser,
+        ),
       );
 
-      toast.success(data.message || `User ${action === "block" ? "blocked" : "unblocked"} successfully.`);
+      toast.success(
+        data.message ||
+          `User ${action === "block" ? "blocked" : "unblocked"} successfully.`,
+      );
     } catch (error) {
-      toast.error(error.message || `Failed to ${actionLabel.toLowerCase()} user.`);
+      toast.error(
+        error.message || `Failed to ${actionLabel.toLowerCase()} user.`,
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -144,8 +153,7 @@ function AdminUserManagement() {
   ];
 
   const selectedStatusLabel =
-    statusOptions.find(([value]) => value === statusFilter)?.[1] ||
-    "All Users";
+    statusOptions.find(([value]) => value === statusFilter)?.[1] || "All Users";
 
   const getInitials = (name = "") => {
     const words = name.trim().split(" ").filter(Boolean);
@@ -235,13 +243,10 @@ function AdminUserManagement() {
       `}</style>
 
       <div className="min-h-screen bg-[#f7fbf8] text-[#173f2a] animate-[pageFadeIn_.7s_ease_both]">
-
         {/* Main */}
         <div className="w-full">
-
           {/* Page Content */}
-          <main className="px-[4%] py-8">
-
+          <main>
             {/* Page Heading */}
             <section className="mb-7 animate-[heroFadeUp_.6s_ease_.18s_both]">
               <div>
@@ -254,20 +259,17 @@ function AdminUserManagement() {
                 </h1>
 
                 <p className="mt-2 max-w-[650px] text-sm leading-6 text-[#718277]">
-                  View registered users, check their account status, and
-                  manage user access from one place.
+                  View registered users, check their account status, and manage
+                  user access from one place.
                 </p>
               </div>
             </section>
 
             {/* Search & Filter */}
             <section className="relative z-50 mb-6 overflow-visible rounded-[15px] border border-[#e1ebe4] bg-white p-5 shadow-[0_8px_25px_rgba(33,78,50,0.04)] animate-[contentFadeUp_.6s_ease_.26s_both]">
-
               <div className="flex items-center gap-3 max-md:flex-col">
-
                 {/* Search */}
                 <div className="relative min-w-0 flex-1 max-md:w-full">
-
                   <FiSearch
                     size={17}
                     className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8a998f]"
@@ -276,9 +278,7 @@ function AdminUserManagement() {
                   <input
                     type="text"
                     value={searchTerm}
-                    onChange={(event) =>
-                      setSearchTerm(event.target.value)
-                    }
+                    onChange={(event) => setSearchTerm(event.target.value)}
                     placeholder="Search by name or email..."
                     className="h-[45px] w-full rounded-lg border border-[#dce8df] bg-[#fbfdfb] pl-10 pr-4 text-sm text-[#294a36] outline-none transition-all duration-200 placeholder:text-[#9aa79f] focus:border-[#7eb493] focus:bg-white focus:ring-2 focus:ring-[#e8f3eb]"
                   />
@@ -291,9 +291,7 @@ function AdminUserManagement() {
                 >
                   <button
                     type="button"
-                    onClick={() =>
-                      setFilterOpen((open) => !open)
-                    }
+                    onClick={() => setFilterOpen((open) => !open)}
                     className={`flex h-[45px] w-full items-center justify-between rounded-lg border px-4 text-sm outline-none transition-all duration-200 ${
                       filterOpen
                         ? "border-[#7eb493] bg-white ring-2 ring-[#e8f3eb]"
@@ -314,7 +312,6 @@ function AdminUserManagement() {
 
                   {filterOpen && (
                     <div className="absolute left-0 right-0 top-[50px] z-50 overflow-hidden rounded-xl border border-[#dce8df] bg-white p-1.5 shadow-[0_12px_30px_rgba(33,78,50,0.12)]">
-
                       {statusOptions.map(([value, label]) => (
                         <button
                           key={value}
@@ -340,24 +337,18 @@ function AdminUserManagement() {
                           {label}
                         </button>
                       ))}
-
                     </div>
                   )}
                 </div>
-
               </div>
             </section>
 
             {/* User Table */}
             <section className="relative z-10 overflow-hidden rounded-[15px] border border-[#e1ebe4] bg-white shadow-[0_8px_25px_rgba(33,78,50,0.04)] animate-[contentFadeUp_.6s_ease_.36s_both]">
-
               <div className="admin-scroll overflow-x-auto">
-
                 <table className="w-full min-w-[850px] border-collapse">
-
                   <thead>
                     <tr className="border-b border-[#e7eee9] bg-[#fbfdfb]">
-
                       <th className="px-5 py-4 text-left text-[11px] font-semibold uppercase tracking-[.08em] text-[#718277]">
                         User
                       </th>
@@ -377,12 +368,10 @@ function AdminUserManagement() {
                       <th className="px-5 py-4 text-right text-[11px] font-semibold uppercase tracking-[.08em] text-[#718277]">
                         Action
                       </th>
-
                     </tr>
                   </thead>
 
                   <tbody>
-
                     {paginatedUsers.length > 0 ? (
                       paginatedUsers.map((user, index) => (
                         <tr
@@ -392,11 +381,9 @@ function AdminUserManagement() {
                             animationDelay: `${index * 0.05}s`,
                           }}
                         >
-
                           {/* User */}
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
-
                               {user.profilePhoto ? (
                                 <img
                                   src={user.profilePhoto}
@@ -410,7 +397,6 @@ function AdminUserManagement() {
                               )}
 
                               <div className="min-w-0">
-
                                 <p className="truncate text-sm font-semibold text-[#294a36]">
                                   {user.name || "Unknown User"}
                                 </p>
@@ -418,7 +404,6 @@ function AdminUserManagement() {
                                 <p className="mt-0.5 text-[11px] text-[#8a998f]">
                                   EcoTrack User
                                 </p>
-
                               </div>
                             </div>
                           </td>
@@ -446,9 +431,7 @@ function AdminUserManagement() {
                                   : "bg-[#eaf5ed] text-[#27834d]"
                               }`}
                             >
-                              {user.isBlocked
-                                ? "Blocked"
-                                : "Active"}
+                              {user.isBlocked ? "Blocked" : "Active"}
                             </span>
                           </td>
 
@@ -464,7 +447,6 @@ function AdminUserManagement() {
                                   : "bg-[#fdf2f2] text-[#b34b4b] hover:bg-[#f9e7e7]"
                               }`}
                             >
-
                               {actionLoadingId === user._id ? (
                                 "Updating..."
                               ) : user.isBlocked ? (
@@ -478,27 +460,22 @@ function AdminUserManagement() {
                                   Block
                                 </>
                               )}
-
                             </button>
                           </td>
-
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td
-                          colSpan="5"
-                          className="px-5 py-16 text-center"
-                        >
-
+                        <td colSpan="5" className="px-5 py-16 text-center">
                           <div className="mx-auto flex max-w-sm flex-col items-center">
-
                             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf5ed] text-[#27834d]">
                               <FiSearch size={22} />
                             </div>
 
                             <h3 className="text-sm font-semibold text-[#294a36]">
-                              {isLoading ? "Loading users..." : "No users found"}
+                              {isLoading
+                                ? "Loading users..."
+                                : "No users found"}
                             </h3>
 
                             <p className="mt-1 text-sm leading-7 text-[#8a998f]">
@@ -506,42 +483,33 @@ function AdminUserManagement() {
                                 ? "Please wait while user data is loaded."
                                 : "Try adjusting your search or status filter."}
                             </p>
-
                           </div>
-
                         </td>
                       </tr>
                     )}
-
                   </tbody>
-
                 </table>
-
               </div>
 
               {/* Pagination */}
               {filteredUsers.length > 0 && (
                 <div className="flex items-center justify-between border-t border-[#e7eee9] px-5 py-4 max-sm:flex-col max-sm:gap-3">
-
                   <p className="text-xs text-[#8a998f]">
                     Showing {startIndex + 1}-
                     {Math.min(
                       startIndex + USERS_PER_PAGE,
-                      filteredUsers.length
+                      filteredUsers.length,
                     )}{" "}
                     of {filteredUsers.length} users
                   </p>
 
                   <div className="flex items-center gap-1.5">
-
                     {/* Previous */}
                     <button
                       type="button"
                       disabled={currentPage === 1}
                       onClick={() =>
-                        setCurrentPage((page) =>
-                          Math.max(1, page - 1)
-                        )
+                        setCurrentPage((page) => Math.max(1, page - 1))
                       }
                       className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#dce8df] bg-white text-[#718277] transition-all duration-200 hover:bg-[#f1f8f3] hover:text-[#27834d] disabled:cursor-not-allowed disabled:opacity-40"
                     >
@@ -551,7 +519,7 @@ function AdminUserManagement() {
                     {/* Page Numbers */}
                     {Array.from(
                       { length: totalPages },
-                      (_, index) => index + 1
+                      (_, index) => index + 1,
                     ).map((page) => (
                       <button
                         key={page}
@@ -572,23 +540,17 @@ function AdminUserManagement() {
                       type="button"
                       disabled={currentPage === totalPages}
                       onClick={() =>
-                        setCurrentPage((page) =>
-                          Math.min(totalPages, page + 1)
-                        )
+                        setCurrentPage((page) => Math.min(totalPages, page + 1))
                       }
                       className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#dce8df] bg-white text-[#718277] transition-all duration-200 hover:bg-[#f1f8f3] hover:text-[#27834d] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <FiChevronRight size={15} />
                     </button>
-
                   </div>
                 </div>
               )}
-
             </section>
-
           </main>
-
         </div>
       </div>
     </>

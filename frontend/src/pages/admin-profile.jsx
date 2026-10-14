@@ -165,7 +165,7 @@ export default function AdminProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f8f6] px-4 py-6 md:px-8 md:py-8">
+    <div className="min-h-screen bg-[#f5f8f6] px-1 py-1 md:px-2 md:py-2">
       <div className="mx-auto max-w-6xl">
         {/* Page Header */}
         <div className="mb-7 animate-[fadeDown_0.6s_ease-out]">

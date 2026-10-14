@@ -298,7 +298,8 @@ function Notifications() {
 
         .notifications-page {
           min-height: 100vh;
-          padding: 40px 7%;
+          padding: 5px;
+          margin : -30px -35px;
           background:
             radial-gradient(circle at top left, rgba(46, 125, 50, 0.08), transparent 35%),
             linear-gradient(135deg, #f6fff7, #eef8f0);
