@@ -627,6 +627,13 @@ function GoalCard({ goal, onCancel, onEdit, onDelete }) {
 
             {goal.period && <span>{formatLabel(goal.period)}</span>}
 
+            {goal.startDate && (
+              <span>
+                Start Date :{" "}
+                {goal.startDate.split("T")[0].split("-").reverse().join("/")}
+              </span>
+            )}
+
             {goal.endDate && (
               <span>
                 End Date :{" "}
