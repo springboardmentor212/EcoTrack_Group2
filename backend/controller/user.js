@@ -31,7 +31,7 @@ module.exports.register = async(req,res) => {
 
     const existUser = await userModel.findOne({email});
     if(existUser){
-        return res.status(400).json({success : false , message : "your is already existing please login"});
+        return res.status(400).json({success : false , message : "your email is already existing please login"});
     }
 
     const user = new userModel({name,email,password,location,verified : false,role : "user"});
@@ -39,7 +39,7 @@ module.exports.register = async(req,res) => {
 
     await verificationCodeModel.deleteMany({email});
     let otp = generateOtp();
-    sendVerificationMail(user.email,otp);
+    await sendVerificationMail(user.email,otp);
    
     const verificationCode = new verificationCodeModel({email : user.email,code : otp});
     await verificationCode.save();
@@ -79,7 +79,7 @@ module.exports.login = async(req,res) => {
    }else{
         await verificationCodeModel.deleteMany({email});
         let otp = generateOtp();
-        sendVerificationMail(user.email,otp);
+        await sendVerificationMail(user.email,otp);
         
        await verificationCodeModel.deleteMany({email});
        const verificationCode = new verificationCodeModel({email : user.email,code : otp});
@@ -213,7 +213,7 @@ module.exports.resendOtp = async(req,res) => {
 
     await verificationCodeModel.deleteMany({email});
     let otp = generateOtp();
-    sendVerificationMail(existUser.email,otp);
+    await sendVerificationMail(existUser.email,otp);
     const verificationCode = new verificationCodeModel({email : existUser.email,code : otp});
     await verificationCode.save();
     return res.status(200).json({success : true , message : "OTP send on your email please verify your email and OTP send after 30 second so please wait"});
@@ -228,7 +228,12 @@ module.exports.logOut = async(req,res)=>{
         return res.status(400).json({success : false , message : "All ready you are log out"});
      }
 
-     res.clearCookie('token');
+     res.clearCookie('token',{
+            httpOnly: false,
+            secure: true,                 
+            sameSite: "none",             
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
      return res.status(200).json({success : true, message : "logout successfully"});
     }catch(err){
         return res.status(500).json({success : false , message : "some error "});
@@ -311,7 +316,7 @@ module.exports.changePassword = async (req,res) => {
     const email = (await userModel.findById(userId).distinct("email"))[0];
     await verificationCodeModel.deleteMany({email});
     let otp = generateOtp();
-    sendVerificationMail(email,otp);
+    await sendVerificationMail(email,otp);
     const verificationCode = new verificationCodeModel({email : email,code : otp});
     await verificationCode.save();
     return res.status(200).json({success : true , message : "OTP send on your email please verify your email and OTP send after 30 second so please wait",email});  
@@ -330,7 +335,12 @@ module.exports.deleteAccount = async(req,res)=>{
         return res.status(400).json({success : "false", message : "password is wrong please enter valid password"}); 
     }
 
-    res.clearCookie('token');
+    res.clearCookie('token',{
+            httpOnly: false,
+            secure: true,                 
+            sameSite: "none",             
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
     await userModel.findOneAndDelete({_id : userId});
     return res.status(200).json({success : true, message : "user account delete successfully"});
 };
