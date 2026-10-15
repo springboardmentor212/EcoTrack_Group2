@@ -1,4 +1,5 @@
 const {userModel} = require("../model/userModel");
+const { cloudinary } = require("../cloundConfig");
 
 module.exports.getProfile = async(req,res)=>{
   try{
@@ -49,11 +50,17 @@ module.exports.updateProfile = async(req,res)=>{
 
         const {name,sustainabilityPreferences, environmentalInterests, personalGoalPreferences,location} = req.body;
         const user = {name,sustainabilityPreferences, environmentalInterests, personalGoalPreferences,location};
+        const existingUser = await userModel.findOne({_id : userId , role : "user"});
 
-          if(typeof req.file !== "undefined"){
-              const profilePhoto = req.file.path;
-              user.profilePhoto = profilePhoto;
-          }
+        if(!existingUser){
+           return res.status(404).json({success: false,message: "Profile not found"});
+        }
+          
+        if(typeof req.file !== "undefined"){
+            user.profilePhoto = req.file.path;
+            user.profilePhotoPublicId = req.file.filename;
+        }
+
         const updateprofile = await userModel.findByIdAndUpdate(
                userId,
                {
@@ -63,6 +70,15 @@ module.exports.updateProfile = async(req,res)=>{
                    returnDocument: 'after',
                    runValidators: true     
                 });
+        
+        if(req.file && existingUser.profilePhotoPublicId && 
+            existingUser.profilePhotoPublicId !== user.profilePhotoPublicId) {
+            try {
+               await cloudinary.uploader.destroy(existingUser.profilePhotoPublicId);
+            } catch (error) {
+               console.error("Old photo deletion failed:", error);
+            }
+        }
         
         if(updateprofile){
             res.status(200).json({success : true, message : "Profile updated successfully"});

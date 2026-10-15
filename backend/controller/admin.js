@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const { cloudinary } = require("../cloundConfig");
 const {secreatToken} = require("../utills/secreatToken");
 const {userModel} = require('../model/userModel');
 const {getUser} = require("../service/report/user");
@@ -68,11 +69,17 @@ module.exports.updateAdminProfile = async (req,res) => {
 
     const {name,location} = req.body;
     const user = {name,location};
+    const existingUser = await userModel.findOne({_id : userId , role : "admin"});
+    
+    if(!existingUser){
+        return res.status(404).json({success: false,message: "Profile not found"});
+    }
 
-     if(typeof req.file !== "undefined"){
-        const profilePhoto = req.file.path;
-        user.profilePhoto = profilePhoto;
-     }
+    if(typeof req.file !== "undefined"){
+        user.profilePhoto = req.file.path;
+        user.profilePhotoPublicId = req.file.filename;
+    }
+
     const updateprofile = await userModel.findByIdAndUpdate(
             userId,
             {
@@ -82,7 +89,15 @@ module.exports.updateAdminProfile = async (req,res) => {
                     returnDocument: 'after' ,
                     runValidators: true     
             });
-        
+    
+    if(req.file && existingUser.profilePhotoPublicId && 
+        existingUser.profilePhotoPublicId !== user.profilePhotoPublicId) {
+            try {
+                await cloudinary.uploader.destroy(existingUser.profilePhotoPublicId);
+            } catch (error) {
+                console.error("Old photo deletion failed:", error);
+            }
+    }
     if(updateprofile){
             res.status(200).json({success : true, message : "Admin Profile updated successfully"});
     }else{
