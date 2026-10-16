@@ -81,7 +81,6 @@ module.exports.userCheck = async(req,res,next) => {
       }
       const token = req.cookies.token;
       const data = jwt.verify(token, process.env.Token_key); 
-      console.log(data);
       const user = await userModel.findById(data.id);
       if(!user) {
          return res.status(200).json({ success: false , message : "please login first"});

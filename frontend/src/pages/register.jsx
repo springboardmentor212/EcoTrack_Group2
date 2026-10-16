@@ -290,7 +290,7 @@ function Register() {
               <p className="mt-1 text-center text-[#65786c] text-[13px]">
                 Already have an account?{" "}
                 <Link
-                  href="/login"
+                  to="/login"
                   className="text-[#27834d] font-semibold no-underline hover:underline"
                 >
                   Log in
@@ -438,7 +438,7 @@ function Register() {
               <p className="text-center text-[#65786c] text-[13px]">
                 Already have an account?{" "}
                 <Link
-                  href="/login"
+                  to="/login"
                   className="text-[#27834d] font-semibold no-underline hover:underline"
                 >
                   Log in
