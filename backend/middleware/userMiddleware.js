@@ -1,3 +1,4 @@
+require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const {userModel} = require("../model/userModel");
 const {loginSchema,registerSchema,verifyEmailSchema,resendOtpSchema,resentPasswordSchema,
@@ -79,7 +80,7 @@ module.exports.userCheck = async(req,res,next) => {
         return res.status(200).json({ success: false ,  message : "please login first"});
       }
       const token = req.cookies.token;
-      const data = jwt.verify(token, process.env.token_key); 
+      const data = jwt.verify(token, process.env.Token_key); 
       const user = await userModel.findById(data.id);
       if(!user) {
          return res.status(200).json({ success: false , message : "please login first"});

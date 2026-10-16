@@ -74,7 +74,7 @@ function Login() {
       );
 
       const data = response.data;
-
+      console.log(data);
       if (data.success === "true") {
         toast.success(data.message);
 
@@ -301,12 +301,12 @@ function Login() {
 
               <p className="mt-[14px] text-center text-[#718277] text-[13px]">
                 Don't have an account?{" "}
-                <a
-                  href="/register"
+                <Link
+                  to="/register"
                   className="text-[#27834d] font-semibold no-underline hover:underline"
                 >
                   Create an account
-                </a>
+                </Link>
               </p>
             </>
           )}

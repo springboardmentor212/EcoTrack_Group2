@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -289,12 +289,12 @@ function Register() {
 
               <p className="mt-1 text-center text-[#65786c] text-[13px]">
                 Already have an account?{" "}
-                <a
-                  href="/login"
+                <Link
+                  to="/login"
                   className="text-[#27834d] font-semibold no-underline hover:underline"
                 >
                   Log in
-                </a>
+                </Link>
               </p>
             </form>
           ) : (
@@ -437,12 +437,12 @@ function Register() {
 
               <p className="text-center text-[#65786c] text-[13px]">
                 Already have an account?{" "}
-                <a
-                  href="/login"
+                <Link
+                  to="/login"
                   className="text-[#27834d] font-semibold no-underline hover:underline"
                 >
                   Log in
-                </a>
+                </Link>
               </p>
             </>
           )}

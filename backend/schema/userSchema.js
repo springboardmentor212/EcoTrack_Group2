@@ -75,6 +75,10 @@ const userSchema = new Schema({
       default : '../utills/user.png'
     },
 
+    profilePhotoPublicId: {
+      type: String
+    },
+
     isBlocked : {
        type : Boolean,
        default : false,

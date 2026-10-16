@@ -32,12 +32,6 @@ const {sendDailyGoalSuggestion,sendGoalReminder} = require("./jobs/goalSuggestio
 const {updateChallengesStatus} = require("./jobs/challengeUpdate");
 const {sendChallengeReminder} = require("./jobs/challengeReminder");
 
-const {sendGoalSuggestion,sendDailyGoalReminderNotification,
-       sendWeeklyGoalReminderNotification,sendMonthlyGoalReminderNotification} = require("./service/notification/goalNotificationService");
-const {sendDailyChallengeReminderNotification,sendWeeklyChallengeReminderNotification,sendMonthlyChallengeReminderNotification}
-     = require("./service/notification/challengeNotificationService");
-const {updateAllChallengesStatus} = require("./service/challenge/challengesStatus");
-
 async function main(){
         await mongoose.connect(url);
 }
@@ -61,17 +55,6 @@ app.use("/notification",notificationRouter);
 app.use("/challenge",challengeRouter);
 app.use("/admin",adminRouter);
 
-app.get("/",async (req,res)=>{
-    await sendGoalSuggestion();
-    await sendDailyGoalReminderNotification();
-    await sendWeeklyGoalReminderNotification();
-    await sendMonthlyGoalReminderNotification();
-    await updateAllChallengesStatus();
-    await sendDailyChallengeReminderNotification();
-    await sendWeeklyChallengeReminderNotification();
-    await sendMonthlyChallengeReminderNotification();
-    res.send("work complete");
-});
 app.listen(port,()=>{
    console.log(`Server is running on port ${port}`);
 });
