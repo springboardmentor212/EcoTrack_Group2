@@ -32,6 +32,12 @@ const {sendDailyGoalSuggestion,sendGoalReminder} = require("./jobs/goalSuggestio
 const {updateChallengesStatus} = require("./jobs/challengeUpdate");
 const {sendChallengeReminder} = require("./jobs/challengeReminder");
 
+const {sendDailyChallengeReminderNotification,sendWeeklyChallengeReminderNotification,
+       sendMonthlyChallengeReminderNotification} = require("./service/notification/challengeNotificationService");
+const {sendGoalSuggestion,sendDailyGoalReminderNotification,sendWeeklyGoalReminderNotification,
+       sendMonthlyGoalReminderNotification} = require("./service/notification/goalNotificationService");
+const {updateAllChallengesStatus} = require("./service/challenge/challengesStatus");
+
 async function main(){
         await mongoose.connect(url);
 }
@@ -46,6 +52,30 @@ sendDailyGoalSuggestion();
 sendGoalReminder();
 updateChallengesStatus();
 sendChallengeReminder();
+
+app.get("/updates",async(req,res) => {
+    await sendGoalSuggestion();
+    await updateAllChallengesStatus();
+    res.json({success : true , message : "update successfully"});
+});
+
+app.get("/dailyReminder",async (req,res) => {
+     await sendDailyChallengeReminderNotification();
+     await sendDailyGoalReminderNotification();
+     res.json({success : true , message : "daily reminder send successfully"});
+});
+
+app.get("/weeklyReminder",async (req,res) => {
+     await sendWeeklyChallengeReminderNotification();
+     await sendWeeklyGoalReminderNotification();
+     res.json({success : true , message : "weekly reminder send successfully"});
+});
+
+app.get("/monthlyReminder",async (req,res) => {
+     await sendMonthlyChallengeReminderNotification();
+     await sendMonthlyGoalReminderNotification();
+     res.json({success : true , message : "monthly reminder send successfully"});
+});
 
 app.use("/user",userRouter);
 app.use("/profile",profileRouter);

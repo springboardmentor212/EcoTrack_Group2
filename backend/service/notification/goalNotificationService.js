@@ -90,7 +90,7 @@ const getGoalForSuggestion = async(user) => {
 };
 
 const sendGoalSuggestion = async() => {
-    const users = await userModel.find({role : "user" , isBlocked : false , 
+    const users = await userModel.find({role : "user" , isBlocked : false , verified : true,
                         "notificationPreference.goalSuggestion" : true });
 
     for(const user of users){
@@ -139,7 +139,7 @@ const sendGoalSuggestion = async() => {
 
 
 const sendDailyGoalReminderNotification = async() => {
-    const users = await userModel.find({role : "user" , isBlocked : false ,
+    const users = await userModel.find({role : "user" , isBlocked : false ,verified : true,
                         "notificationPreference.goalReminder" : true
     });
 
@@ -203,7 +203,7 @@ const sendDailyGoalReminderNotification = async() => {
 };
 
 const sendWeeklyGoalReminderNotification = async() => {
-    const users = await userModel.find({role : "user" , isBlocked : false,
+    const users = await userModel.find({role : "user" , isBlocked : false,verified : true,
                        "notificationPreference.goalReminder" : true});
     const {weekStart, weekEnd} = getCurrentWeekDates();
 
@@ -266,7 +266,7 @@ const sendWeeklyGoalReminderNotification = async() => {
 }
 
 const sendMonthlyGoalReminderNotification = async() => {
-    const users = await userModel.find({role : "user" , isBlocked : false ,
+    const users = await userModel.find({role : "user" , isBlocked : false , verified : true,
                         "notificationPreference.goalReminder" : true
     });
     const {monthStart, monthEnd} = getCurrentMonthDates();

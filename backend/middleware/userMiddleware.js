@@ -85,6 +85,10 @@ module.exports.userCheck = async(req,res,next) => {
       if(!user) {
          return res.status(200).json({ success: false , message : "please login first"});
       }
+
+      if(!user.verified){
+         return res.status(200).json({ success: false , message : "please verified your email"});
+      }
       req.currUser = user._id;
       req.userRole = user.role;
       req.isBlocked = user.isBlocked;
