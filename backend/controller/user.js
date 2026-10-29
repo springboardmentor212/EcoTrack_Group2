@@ -12,6 +12,10 @@ module.exports.checkUser = async(req,res)=>{
          const id = req.currUser;
          const user = await userModel.findById(id);
 
+         if(!user.verified){
+             return res.status(200).json({success : false , message : "user is unverified"});
+         }
+
          if(user.isBlocked){
              return res.status(200).json({success : false , message : "user is blocked"});
          }
@@ -57,9 +61,9 @@ module.exports.login = async(req,res) => {
         return res.status(400).json({success : "false", message : "Email and password are required"});
    }
 
-   const user = await userModel.findOne({email , role : "user"});
+   const user = await userModel.findOne({email});
    if(!user){
-        return res.status(400).json({success : "false", message : "please Enter user registered email"});
+        return res.status(400).json({success : "false", message : "please Enter registered email"});
    }
    
    const isMatch = await bcrypt.compare(password,user.password);

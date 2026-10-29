@@ -77,7 +77,7 @@ const sendChallengeSuggestion = async (challenge) => {
         action : "join challenge"
    });
 
-   const users = await userModel.find({role : "user" , isBlocked : false, 
+   const users = await userModel.find({role : "user" , isBlocked : false,verified : true,  
                   "notificationPreference.challengeSuggestion" : true
                  }).select("_id sustainabilityPreferences");;
    
@@ -114,7 +114,7 @@ const sendUpdateChallengeNotification = async (challenge) => {
         action : "informational notification"
    });
 
-   const users = await userModel.find({role : "user",isBlocked : false,
+   const users = await userModel.find({role : "user",isBlocked : false,verified : true,
                       "notificationPreference.updates" : true
                   }).select("_id sustainabilityPreferences joinChallenges");;
    
@@ -152,7 +152,7 @@ const sendDeleteChallengeNotification = async (challenge) => {
    });
 
    const userIds = await userModel.distinct("_id", {
-      role : "user", isBlocked : false,
+      role : "user", isBlocked : false,verified : true,
       "notificationPreference.updates" : true,
       "joinChallenges.challengeId" : challenge._id
    });
@@ -179,7 +179,7 @@ const sendDeleteChallengeNotification = async (challenge) => {
 
 //challenge Remainder
 const sendDailyChallengeReminderNotification = async() => {
-    const users = await userModel.find({role : "user" , isBlocked : false,
+    const users = await userModel.find({role : "user" , isBlocked : false,verified : true,
                         "notificationPreference.challengeReminder" : true});
     const {dayStart,dayEnd} = getCurrentDayDates();
 
@@ -244,7 +244,7 @@ const sendDailyChallengeReminderNotification = async() => {
 };
 
 const sendWeeklyChallengeReminderNotification = async() => {
-    const users = await userModel.find({role : "user", isBlocked : false ,
+    const users = await userModel.find({role : "user", isBlocked : false ,verified : true,
                          "notificationPreference.challengeReminder" : true
     });
     const {weekStart, weekEnd} = getCurrentWeekDates();
@@ -310,7 +310,7 @@ const sendWeeklyChallengeReminderNotification = async() => {
 };
 
 const sendMonthlyChallengeReminderNotification = async() => {
-    const users = await userModel.find({role : "user", isBlocked : false ,
+    const users = await userModel.find({role : "user", isBlocked : false ,verified : true,
                    "notificationPreference.challengeReminder" : true
     });
     const {monthStart, monthEnd} = getCurrentMonthDates();

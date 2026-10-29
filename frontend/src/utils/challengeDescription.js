@@ -50,7 +50,7 @@ const CHALLENGE_DESCRIPTIONS = {
 
   "waste reduction week": {
     objective: (target, unit, period) =>
-      `Reduce or divert at least ${target} ${unit} of eligible waste during the selected ${period} challenge period.`,
+      `Reduce or divert at most ${target} ${unit} of eligible waste during the selected ${period} challenge period.`,
     instructions: (target, unit) => [
       "Separate recyclable and reusable materials from general waste.",
       "Record eligible waste reduction or diversion in your activities.",

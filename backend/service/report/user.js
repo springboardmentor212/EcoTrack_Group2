@@ -4,7 +4,8 @@ const getUser = async () => {
 const result = await userModel.aggregate([
     {
         $match: {
-            role: "user"
+            role: "user",
+            verified : true
         }
     },
     {
